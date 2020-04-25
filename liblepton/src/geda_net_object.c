@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include <math.h>
 
 #include "libgeda_priv.h"
+
 
 /*! \file o_net_basic.c
  *  \brief functions for the net object
@@ -211,13 +212,11 @@ geda_net_object_set_y1 (GedaObject *object, gint y)
  *
  *  On failure, this function sets the bounds to empty.
  *
- *  \param [in]  toplevel Unused
  *  \param [in]  object   The net object
  *  \param [out] bounds   The bounds of the net
  */
 void
-geda_net_object_calculate_bounds (TOPLEVEL *toplevel,
-                                  const OBJECT *object,
+geda_net_object_calculate_bounds (const OBJECT *object,
                                   GedaBounds *bounds)
 {
   gint expand;
@@ -240,7 +239,6 @@ geda_net_object_calculate_bounds (TOPLEVEL *toplevel,
  *  \par Function Description
  *  This function creates and returns a new net object.
  *
- *  \param [in]     toplevel    The TOPLEVEL object.
  *  \param [in]     type        The OBJECT type (usually OBJ_NET)
  *  \param [in]     color       The color of the net
  *  \param [in]     x1          x-coord of the first point
@@ -250,8 +248,12 @@ geda_net_object_calculate_bounds (TOPLEVEL *toplevel,
  *  \return A new net OBJECT
  */
 OBJECT*
-geda_net_object_new (TOPLEVEL *toplevel, char type,
-                     int color, int x1, int y1, int x2, int y2)
+geda_net_object_new (char type,
+                     int color,
+                     int x1,
+                     int y1,
+                     int x2,
+                     int y2)
 {
   OBJECT *new_node;
 
@@ -266,8 +268,6 @@ geda_net_object_new (TOPLEVEL *toplevel, char type,
   new_node->line->y[1] = y2;
   new_node->line_width = NET_WIDTH;
 
-  new_node->w_bounds_valid_for = NULL;
-
   return new_node;
 }
 
@@ -277,15 +277,17 @@ geda_net_object_new (TOPLEVEL *toplevel, char type,
  *  If the netobject was read successfully, a new net object is
  *  allocated and appended to the \a object_list.
  *
- *  \param [in] toplevel     The TOPLEVEL object
  *  \param [in] buf          a text buffer (usually a line of a schematic file)
  *  \param [in] release_ver  The release number gEDA
  *  \param [in] fileformat_ver a integer value of the file format
  *  \return The object list, or NULL on error.
  *
  */
-OBJECT *o_net_read (TOPLEVEL *toplevel, const char buf[],
-                    unsigned int release_ver, unsigned int fileformat_ver, GError **err)
+OBJECT*
+o_net_read (const char buf[],
+            unsigned int release_ver,
+            unsigned int fileformat_ver,
+            GError **err)
 {
   OBJECT *new_obj;
   char type;
@@ -310,7 +312,7 @@ OBJECT *o_net_read (TOPLEVEL *toplevel, const char buf[],
     color = DEFAULT_COLOR;
   }
 
-  new_obj = geda_net_object_new (toplevel, type, color, x1, y1, x2, y2);
+  new_obj = geda_net_object_new (type, color, x1, y1, x2, y2);
 
   return new_obj;
 }
@@ -359,21 +361,17 @@ geda_net_object_translate (GedaObject *object, int dx, int dy)
   object->line->y[0] = object->line->y[0] + dy;
   object->line->x[1] = object->line->x[1] + dx;
   object->line->y[1] = object->line->y[1] + dy;
-
-  /* Update bounding box */
-  object->w_bounds_valid_for = NULL;
 }
 
 /*! \brief create a copy of a net object
  *  \par Function Description
  *  This function creates a copy of the net object \a o_current.
  *
- *  \param [in] toplevel     The TOPLEVEL object
  *  \param [in] o_current    The object that is copied
  *  \return a new net object
  */
 OBJECT*
-geda_net_object_copy (TOPLEVEL *toplevel,  OBJECT *o_current)
+geda_net_object_copy (OBJECT *o_current)
 {
   OBJECT *new_obj;
 
@@ -381,9 +379,12 @@ geda_net_object_copy (TOPLEVEL *toplevel,  OBJECT *o_current)
   /* still doesn't work... you need to pass in the new values */
   /* or don't update and update later */
   /* I think for now I'll disable the update and manually update */
-  new_obj = geda_net_object_new (toplevel, OBJ_NET, o_current->color,
-                                 o_current->line->x[0], o_current->line->y[0],
-                                 o_current->line->x[1], o_current->line->y[1]);
+  new_obj = geda_net_object_new (OBJ_NET,
+                                 o_current->color,
+                                 o_current->line->x[0],
+                                 o_current->line->y[0],
+                                 o_current->line->x[1],
+                                 o_current->line->y[1]);
 
   return new_obj;
 }
@@ -393,15 +394,16 @@ geda_net_object_copy (TOPLEVEL *toplevel,  OBJECT *o_current)
  *  This function rotates a net \a object around the point
  *  (\a world_centerx, \a world_centery).
  *
- *  \param [in] toplevel      The TOPLEVEL object
  *  \param [in] world_centerx x-coord of the rotation center
  *  \param [in] world_centery y-coord of the rotation center
  *  \param [in] angle         The angle to rotat the net object
  *  \param [in] object        The net object
  *  \note only steps of 90 degrees are allowed for the \a angle
  */
-void geda_net_object_rotate (TOPLEVEL *toplevel,
-			int world_centerx, int world_centery, int angle,
+void
+geda_net_object_rotate (int world_centerx,
+                        int world_centery,
+                        int angle,
 			OBJECT *object)
 {
   int newx, newy;
@@ -436,13 +438,14 @@ void geda_net_object_rotate (TOPLEVEL *toplevel,
  *  This function mirrors a net \a object horizontaly at the point
  *  (\a world_centerx, \a world_centery).
  *
- *  \param [in] toplevel      The TOPLEVEL object
  *  \param [in] world_centerx x-coord of the mirror position
  *  \param [in] world_centery y-coord of the mirror position
  *  \param [in] object        The net object
  */
-void geda_net_object_mirror (TOPLEVEL *toplevel, int world_centerx,
-			int world_centery, OBJECT *object)
+void
+geda_net_object_mirror (int world_centerx,
+			int world_centery,
+                        OBJECT *object)
 {
   g_return_if_fail (object != NULL);
   g_return_if_fail (object->line != NULL);
@@ -608,12 +611,12 @@ static int o_net_consolidate_nomidpoint (OBJECT *object, int x, int y)
  *  This function tries to consolidate a net with any other object
  *  that is connected to the current \a object.
  *
- *  \param toplevel   The TOPLEVEL object
  *  \param object     The object to consolidate
  *  \return 0 if no consolidation was possible, -1 otherwise
  *
  */
-static int o_net_consolidate_segments (TOPLEVEL *toplevel, OBJECT *object)
+static int
+o_net_consolidate_segments (OBJECT *object)
 {
   int object_orient;
   int other_orient;
@@ -623,12 +626,11 @@ static int o_net_consolidate_segments (TOPLEVEL *toplevel, OBJECT *object)
   PAGE *page;
   int changed = 0;
 
-  g_return_val_if_fail ((toplevel != NULL), 0);
   g_return_val_if_fail ((object != NULL), 0);
   g_return_val_if_fail ((object->type == OBJ_NET), 0);
 
   /* It's meaningless to do anything here if the object isn't in a page. */
-  page = o_get_page (toplevel, object);
+  page = o_get_page (object);
   g_return_val_if_fail ((page != NULL), 0);
 
   object_orient = geda_net_object_orientation (object);
@@ -660,18 +662,17 @@ static int o_net_consolidate_segments (TOPLEVEL *toplevel, OBJECT *object)
 
           changed++;
           if (other_object->selected == TRUE ) {
-            o_selection_remove (toplevel, page->selection_list, other_object);
+            o_selection_remove (page->selection_list, other_object);
 
             /* If we're consolidating with a selected object,
              * ensure we select the resulting object.
              */
             if (object->selected == FALSE) {
-              o_selection_add (toplevel, page->selection_list, object);
+              o_selection_add (page->selection_list, object);
             }
           }
 
-          s_delete_object (toplevel, other_object);
-          object->w_bounds_valid_for = NULL;
+          s_delete_object (other_object);
           s_conn_update_object (page, object);
           return(-1);
         }
@@ -690,18 +691,23 @@ static int o_net_consolidate_segments (TOPLEVEL *toplevel, OBJECT *object)
  *  This function consolidates all net objects in a page until no more
  *  consolidations are possible.
  *
- *  \param toplevel  The TOPLEVEL object.
  *  \param page      The PAGE to consolidate nets in.
  */
 void
-geda_net_object_consolidate (TOPLEVEL *toplevel, PAGE *page)
+geda_net_object_consolidate (PAGE *page)
 {
   OBJECT *o_current;
   const GList *iter;
   int status = 0;
+  gboolean net_consolidate;
 
-  g_return_if_fail (toplevel != NULL);
   g_return_if_fail (page != NULL);
+
+  cfg_read_bool ("schematic", "net-consolidate",
+                 default_net_consolidate, &net_consolidate);
+
+  if (!net_consolidate)
+    return;
 
   iter = s_page_objects (page);
 
@@ -709,7 +715,7 @@ geda_net_object_consolidate (TOPLEVEL *toplevel, PAGE *page)
     o_current = (OBJECT *)iter->data;
 
     if (o_current->type == OBJ_NET) {
-      status = o_net_consolidate_segments(toplevel, o_current);
+      status = o_net_consolidate_segments (o_current);
     }
 
     if (status == -1) {
@@ -727,7 +733,6 @@ geda_net_object_consolidate (TOPLEVEL *toplevel, PAGE *page)
  *  is specified by the \a whichone variable and the new coordinate
  *  is (\a x, \a y).
  *
- *  \param toplevel   The TOPLEVEL object
  *  \param object     The net OBJECT to modify
  *  \param x          new x-coord of the net point
  *  \param y          new y-coord of the net point
@@ -735,11 +740,11 @@ geda_net_object_consolidate (TOPLEVEL *toplevel, PAGE *page)
  *
  */
 void
-geda_net_object_modify (TOPLEVEL *toplevel, OBJECT *object,
-                        int x, int y, int whichone)
+geda_net_object_modify (OBJECT *object,
+                        int x,
+                        int y,
+                        int whichone)
 {
   object->line->x[whichone] = x;
   object->line->y[whichone] = y;
-
-  object->w_bounds_valid_for = NULL;
 }

@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2014 gEDA Contributors
+ * Copyright (C) 2017-2019 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -813,8 +814,11 @@ gschem_bottom_widget_set_status_text (GschemBottomWidget *widget, const char *te
 {
   g_return_if_fail (widget != NULL);
 
-  gchar* str = g_strdup_printf (widget->status_bold_font ? "<b>%s</b>" : "%s",
-                                text);
+  gchar* str = g_markup_printf_escaped (widget->status_bold_font
+                                        ? "<b>%s</b>"
+                                        : "%s",
+                                        text);
+
   gtk_label_set_markup (GTK_LABEL (widget->status_label), str);
   g_free (str);
 

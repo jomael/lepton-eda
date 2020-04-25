@@ -1,5 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 2010-2011 Peter Brett <peter@peter-b.co.uk>
+ * Copyright (C) 2010-2015 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -136,7 +138,7 @@ g_current_window ()
 
   if (!(SCM_SMOB_PREDICATE (window_smob_tag, window_s)
         &&  ((void *)SCM_SMOB_DATA (window_s) != NULL))) {
-    scm_misc_error (NULL, _("Found invalid gschem window smob ~S"),
+    scm_misc_error (NULL, _("Found invalid lepton-schematic window smob ~S"),
                     scm_list_1 (window_s));
   }
 
@@ -146,11 +148,12 @@ g_current_window ()
 /*!
  * \brief Get the active page.
  * \par Function Description
- * Returns the page which is active in the current gschem window.  If
- * there is no active page, returns SCM_BOOL_F.
+ * Returns the page which is active in the current
+ * lepton-schematic window.  If there is no active page, returns
+ * SCM_BOOL_F.
  *
  * \note Scheme API: Implements the %active-page procedure in the
- * (gschem core window) module.
+ * (schematic core window) module.
  *
  * \return the active page.
  */
@@ -168,11 +171,11 @@ SCM_DEFINE (active_page, "%active-page", 0, 0, 0,
 /*!
  * \brief Set the active page.
  * \par Function Description
- * Sets the page which is active in the current gschem window to \a
- * page_s.
+ * Sets the page which is active in the current lepton-schematic
+ * window to \a page_s.
  *
  * \note Scheme API: Implements the %set-active-page! procedure in the
- * (gschem core window) module.
+ * (schematic core window) module.
  *
  * \param page_s Page to switch to.
  * \return \a page_s.
@@ -194,8 +197,8 @@ SCM_DEFINE (set_active_page_x, "%set-active-page!", 1, 0, 0,
  * Closes the page \a page_s.
  *
  * \note Scheme API: Implements the %close-page! procedure in the
- * (gschem core window) module.  Overrides the %close-page! procedure
- * in the (geda core page) module.
+ * (schematic core window) module.  Overrides the %close-page! procedure
+ * in the (lepton core page) module.
  *
  * \param page_s Page to close.
  * \return SCM_UNDEFINED
@@ -238,7 +241,7 @@ SCM_DEFINE (override_close_page_x, "%close-page!", 1, 0, 0,
  * <code>(x . y)</code>
  *
  * \note Scheme API: Implements the %pointer-position procedure in the
- * (gschem core window) module.
+ * (schematic core window) module.
  *
  * \return The current pointer position, or SCM_BOOL_F.
  */
@@ -265,7 +268,7 @@ SCM_DEFINE (pointer_position, "%pointer-position", 0, 0, 0,
  * current user snap settings.
  *
  * \note Scheme API: Implements the %snap-point procedure in the
- * (gschem core window) module.
+ * (schematic core window) module.
  *
  * \param x_s the x-coordinate of the point to be snapped to grid.
  * \param y_s the y-coordinate of the point to be snapped to grid.
@@ -290,13 +293,13 @@ SCM_DEFINE (snap_point, "%snap-point", 2, 0, 0,
 }
 
 /*!
- * \brief Create the (gschem core window) Scheme module
+ * \brief Create the (schematic core window) Scheme module
  * \par Function Description
- * Defines procedures in the (gschem core window) module. The module
- * can be accessed using (use-modules (gschem core window)).
+ * Defines procedures in the (schematic core window) module. The module
+ * can be accessed using (use-modules (schematic core window)).
  */
 static void
-init_module_gschem_core_window (void *unused)
+init_module_schematic_core_window (void *unused)
 {
   /* Register the functions */
   #include "g_window.x"
@@ -306,9 +309,9 @@ init_module_gschem_core_window (void *unused)
                 s_override_close_page_x, s_pointer_position,
                 s_snap_point, NULL);
 
-  /* Override procedures in the (geda core page) module */
+  /* Override procedures in the (lepton core page) module */
   {
-    SCM geda_page_module = scm_c_resolve_module ("geda core page");
+    SCM geda_page_module = scm_c_resolve_module ("lepton core page");
     SCM close_page_proc =
       scm_variable_ref (scm_c_lookup (s_override_close_page_x));
     scm_c_module_define (geda_page_module, "%close-page!", close_page_proc);
@@ -326,7 +329,7 @@ init_module_gschem_core_window (void *unused)
 void
 g_init_window ()
 {
-  /* Register gEDA smob type */
+  /* Register Lepton EDA smob type */
   window_smob_tag = scm_make_smob_type ("gschem-window", 0);
   scm_set_smob_free (window_smob_tag, smob_free);
   scm_set_smob_print (window_smob_tag, smob_print);
@@ -334,8 +337,8 @@ g_init_window ()
   /* Create fluid */
   scheme_window_fluid = scm_permanent_object (scm_make_fluid ());
 
-  /* Define the (gschem core window) module */
-  scm_c_define_module ("gschem core window",
-                       (void (*)(void*)) init_module_gschem_core_window,
+  /* Define the (schematic core window) module */
+  scm_c_define_module ("schematic core window",
+                       (void (*)(void*)) init_module_schematic_core_window,
                        NULL);
 }

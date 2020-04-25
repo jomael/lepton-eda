@@ -27,8 +27,7 @@ G_BEGIN_DECLS
 /* construction, destruction */
 
 GedaObject*
-geda_bus_object_new (TOPLEVEL *toplevel,
-                     gint color,
+geda_bus_object_new (gint color,
                      gint x1,
                      gint y1,
                      gint x2,
@@ -36,13 +35,12 @@ geda_bus_object_new (TOPLEVEL *toplevel,
                      gint bus_ripper_direction);
 
 GedaObject*
-geda_bus_object_copy (TOPLEVEL *toplevel, const GedaObject *o_current);
+geda_bus_object_copy (const GedaObject *o_current);
 
 /* methods */
 
 void
-geda_bus_object_calculate_bounds (TOPLEVEL *toplevel,
-                                  const GedaObject *object,
+geda_bus_object_calculate_bounds (const GedaObject *object,
                                   GedaBounds *bounds);
 
 gboolean
@@ -64,14 +62,12 @@ gint
 geda_bus_object_get_y1 (const GedaObject *object);
 
 void
-geda_bus_object_mirror (TOPLEVEL *toplevel,
-                        gint world_centerx,
+geda_bus_object_mirror (gint world_centerx,
                         gint world_centery,
                         OBJECT *object);
 
 void
-geda_bus_object_modify (TOPLEVEL *toplevel,
-                        GedaObject *object,
+geda_bus_object_modify (GedaObject *object,
                         gint x,
                         gint y,
                         gint whichone);
@@ -80,8 +76,7 @@ gint
 geda_bus_object_orientation (const GedaObject *object);
 
 void
-geda_bus_object_rotate (TOPLEVEL *toplevel,
-                        gint world_centerx,
+geda_bus_object_rotate (gint world_centerx,
                         gint world_centery,
                         gint angle,
                         GedaObject *object);
@@ -108,8 +103,7 @@ void
 geda_bus_object_translate (GedaObject *object, gint dx, gint dy);
 
 GedaObject*
-o_bus_read (TOPLEVEL *toplevel,
-            const char buf[],
+o_bus_read (const char buf[],
             unsigned int release_ver,
             unsigned int fileformat_ver,
             GError **err);

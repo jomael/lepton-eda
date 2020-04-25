@@ -1,6 +1,6 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's Library
- * Copyright (C) 2011-2012 gEDA Contributors (see ChangeLog for details)
+/* Lepton EDA library
+ * Copyright (C) 2011-2013 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -144,6 +144,12 @@ void eda_config_set_string_list (EdaConfig *cfg, const char *group, const char *
 void eda_config_set_boolean_list (EdaConfig *cfg, const char *group, const char *key, gboolean list[], gsize length);
 void eda_config_set_int_list (EdaConfig *cfg, const char *group, const char *key, gint list[], gsize length);
 void eda_config_set_double_list (EdaConfig *cfg, const char *group, const char *key, gdouble list[], gsize length);
+
+gboolean eda_config_remove_key (EdaConfig *cfg, const char *group, const char *key, GError **error);
+gboolean eda_config_remove_group (EdaConfig *cfg, const char *group, GError **error);
+
+void config_set_legacy_mode(gboolean legacy);
+gboolean config_get_legacy_mode();
 
 G_END_DECLS
 

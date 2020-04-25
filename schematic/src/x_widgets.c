@@ -1,5 +1,5 @@
 /* Lepton EDA Schematic Capture
- * Copyright (C) 2017 dmn <graahnul.grom@gmail.com>
+ * Copyright (C) 2017-2019 dmn <graahnul.grom@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,13 +31,15 @@
  *   - log
  */
 
+#include "config.h"
+
 #include "gschem.h"
 
 
 
 
 static gboolean
-g_x_widgets_use_docks = TRUE;
+g_x_widgets_use_docks = FALSE;
 
 
 
@@ -74,9 +76,8 @@ gboolean x_widgets_use_docks()
  * key:   use-docks
  * group: schematic.gui
  * type:  boolean
- * default value: true
+ * default value: false
  *
- * \return TRUE if use-docks option is set to true, FALSE otherwise.
  */
 void x_widgets_init()
 {
@@ -127,15 +128,11 @@ void x_widgets_create (GschemToplevel* w_current)
   g_signal_connect (w_current->find_text_state, "select-object",
                     G_CALLBACK (&x_window_select_object), w_current);
 
-  if (x_widgets_use_docks())
-  {
-    gtk_widget_set_size_request (GTK_WIDGET (w_current->find_text_state),
-                                 default_width, default_height / 4);
-  }
-
   w_current->color_edit_widget = color_edit_widget_new (w_current);
 
   w_current->font_select_widget = font_select_widget_new (w_current);
+
+  w_current->page_select_widget = page_select_widget_new (w_current);
 
 } /* x_widgets_create() */
 
@@ -275,6 +272,19 @@ void x_widgets_show_font_select (GschemToplevel* w_current)
 
 
 
+void x_widgets_show_page_select (GschemToplevel* w_current)
+{
+  g_return_if_fail (w_current != NULL);
+
+  x_widgets_show_in_dialog (w_current,
+                            GTK_WIDGET (w_current->page_select_widget),
+                            &w_current->page_select_dialog,
+                            _("Page Manager"),
+                            "pagesel");
+}
+
+
+
 
 static void
 x_widgets_show_in_dock (GtkWidget* wbook, GtkWidget* widget)
@@ -320,7 +330,7 @@ x_widgets_show_in_dialog (GschemToplevel* w_current,
   GtkWidget* dlg = gschem_dialog_new_with_buttons(
     title,
     GTK_WINDOW (w_current->main_window),
-    (GtkDialogFlags) 0,
+    (GtkDialogFlags) GTK_DIALOG_DESTROY_WITH_PARENT,
     ini_group,
     w_current,
     GTK_STOCK_CLOSE, GTK_RESPONSE_NONE,

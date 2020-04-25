@@ -1,7 +1,9 @@
 #!/bin/sh
-
 # icon-theme-installer
 # Copyright (C) 2006 Novell, Inc.
+# Copyright (C) 2007-2015 gEDA Contributors
+# Copyright (C) 2019-2020 Lepton EDA Contributors
+#
 # Written by Aaron Bockover <abock@gnome.org>
 # Licensed under the MIT/X11 license
 #
@@ -52,7 +54,6 @@
 #	uninstall-hook:
 #		$(install_icon_exec) -u $(theme_icons)
 #
-#	MAINTAINERCLEANFILES = Makefile.in
 #	EXTRA_DIST = $(wildcard *.svg *.png)
 # ---------------
 #
@@ -103,13 +104,13 @@ if test -z "$INSTALL_BASE_DIR"; then
 	exit 1
 fi
 
-if test ! -x `echo "$MKINSTALLDIRS_EXEC" | cut -f1 -d' '`; then
-	echo "Cannot find '$MKINSTALLDIRS_EXEC'; You probably want to pass -m \$(mkinstalldirs)"
+if test -z "$MKINSTALLDIRS_EXEC"; then
+	echo "\$MKINSTALLDIRS_EXEC is not set. Pass it with the -m command line option"
 	exit 1
 fi
 
-if test ! -x `echo "$INSTALL_DATA_EXEC" | cut -f1 -d' '`; then
-	echo "Cannot find '$INSTALL_DATA_EXEC'; You probably want to pass -x \$(INSTALL_DATA)"
+if test -z "$INSTALL_DATA_EXEC"; then
+	echo "\$INSTALL_DATA_EXEC' is not set. Pass it with the -x command line option"
 	exit 1
 fi
 

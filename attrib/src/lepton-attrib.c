@@ -1,6 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * gattrib -- gEDA component and net attribute manipulation using spreadsheet.
+/* Lepton EDA attribute editor
  * Copyright (C) 2003-2010 Stuart D. Brorson.
+ * Copyright (C) 2005-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,6 +77,26 @@ GtkWidget *label;
  */
 gboolean gattrib_really_quit(void)
 {
+  /* Save main window's geometry:
+  */
+  gint x = 0;
+  gint y = 0;
+  gtk_window_get_position (GTK_WINDOW (window), &x, &y);
+
+  gint width  = 0;
+  gint height = 0;
+  gtk_window_get_size (GTK_WINDOW (window), &width, &height);
+
+  EdaConfig* cfg = eda_config_get_cache_context();
+
+  eda_config_set_int (cfg, "attrib.window-geometry", "x", x);
+  eda_config_set_int (cfg, "attrib.window-geometry", "y", y);
+  eda_config_set_int (cfg, "attrib.window-geometry", "width", width);
+  eda_config_set_int (cfg, "attrib.window-geometry", "height", height);
+
+  eda_config_save (cfg, NULL);
+
+
   if (sheet_head->CHANGED == TRUE) {
     x_dialog_unsaved_data();
   } else {
@@ -100,7 +121,8 @@ gint gattrib_quit(gint return_code)
 #ifdef DEBUG
   fflush(stderr);
   fflush(stdout);
-  printf("In gattrib_quit, calling gtk_main_quit()\n");
+  printf ("gattrib_quit: ");
+  printf ("Calling gtk_main_quit().\n");
 #endif
   gtk_main_quit();
   exit(return_code);
@@ -118,7 +140,6 @@ gint gattrib_quit(gint return_code)
  * - initialises libgeda;
  * - parses the command line;
  * - starts logging;
- * - registers the Scheme functions with Guile;
  * - parses the RC files;
  * - initialises the GTK UI;
  * - populates the spreadsheet data structure;
@@ -146,7 +167,7 @@ void gattrib_main(void *closure, int argc, char *argv[])
 #endif
 
   /* Initialize gEDA stuff */
-  libgeda_init();
+  liblepton_init();
 
   /* Note that argv_index holds index to first non-flag command line option
    * (that is, to the first file name) */
@@ -161,14 +182,11 @@ void gattrib_main(void *closure, int argc, char *argv[])
      PREPEND_VERSION_STRING, PACKAGE_DOTTED_VERSION,
      PACKAGE_DATE_VERSION, PACKAGE_GIT_COMMIT);
 
-  /* ------  register guile (scheme) functions.  Necessary to parse RC file.  ------ */
-  g_register_funcs();
-
   /* ---------- Start creation of new project: (TOPLEVEL *pr_current) ---------- */
   pr_current = s_toplevel_new();
 
   /* ----- Read in RC files.   ----- */
-  g_rc_parse (pr_current, argv[0], "gattribrc", NULL);
+  g_rc_parse (pr_current, argv[0], NULL, NULL);
 
   i_vars_set(pr_current);
 
@@ -234,6 +252,10 @@ int main(int argc, char *argv[])
   textdomain("lepton-attrib");
   bind_textdomain_codeset("lepton-attrib", "UTF-8");
 #endif
+
+
+  set_guile_compiled_path();
+
 
   /* Initialize the Guile Scheme interpreter. This function does not
    * return but calls exit(0) on completion.

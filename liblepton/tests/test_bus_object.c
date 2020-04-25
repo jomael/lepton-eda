@@ -15,8 +15,7 @@ check_construction ()
     gint color = g_test_rand_int_range (0, MAX_COLORS - 1);
     gint ripper = g_test_rand_int_range (-1, 2);
 
-    GedaObject *object0 = geda_bus_object_new (toplevel,
-                                               color,
+    GedaObject *object0 = geda_bus_object_new (color,
                                                x0,
                                                y0,
                                                x1,
@@ -33,13 +32,13 @@ check_construction ()
     g_assert_cmpint (color, ==, geda_object_get_color (object0));
     g_assert_cmpint (ripper, ==, geda_bus_object_get_ripper_direction (object0));
 
-    GedaObject *object1 = geda_bus_object_copy (toplevel, object0);
+    GedaObject *object1 = geda_bus_object_copy (object0);
 
     g_assert (object1 != NULL);
     g_assert (object1 != object0);
     g_assert_cmpint (OBJ_BUS, ==, object1->type);
 
-    s_delete_object (toplevel, object0);
+    s_delete_object (object0);
 
     g_assert_cmpint (x0, ==, geda_bus_object_get_x0 (object1));
     g_assert_cmpint (y0, ==, geda_bus_object_get_y0 (object1));
@@ -48,7 +47,7 @@ check_construction ()
     g_assert_cmpint (color, ==, geda_object_get_color (object1));
     g_assert_cmpint (ripper, ==, geda_bus_object_get_ripper_direction (object1));
 
-    s_delete_object (toplevel, object1);
+    s_delete_object (object1);
   }
 
   s_toplevel_delete (toplevel);
@@ -68,8 +67,7 @@ check_accessors ()
     gint color = g_test_rand_int_range (0, MAX_COLORS - 1);
     gint ripper = g_test_rand_int_range (-1, 2);
 
-    GedaObject *object0 = geda_bus_object_new (toplevel,
-                                               color,
+    GedaObject *object0 = geda_bus_object_new (color,
                                                x0,
                                                y0,
                                                x1,
@@ -90,7 +88,7 @@ check_accessors ()
     geda_bus_object_set_y0 (object0, y0);
     geda_bus_object_set_x1 (object0, x1);
     geda_bus_object_set_y1 (object0, y1);
-    o_set_color (toplevel, object0, color);
+    o_set_color (object0, color);
     geda_bus_object_set_ripper_direction (object0, ripper);
 
     g_assert_cmpint (x0, ==, geda_bus_object_get_x0 (object0));
@@ -100,7 +98,7 @@ check_accessors ()
     g_assert_cmpint (color, ==, geda_object_get_color (object0));
     g_assert_cmpint (ripper, ==, geda_bus_object_get_ripper_direction (object0));
 
-    s_delete_object (toplevel, object0);
+    s_delete_object (object0);
   }
 
   s_toplevel_delete (toplevel);
@@ -125,8 +123,7 @@ check_serialization ()
     gint color = g_test_rand_int_range (0, MAX_COLORS - 1);
     gint ripper = g_test_rand_int_range (-1, 2);
 
-    GedaObject *object0 = geda_bus_object_new (toplevel,
-                                               color,
+    GedaObject *object0 = geda_bus_object_new (color,
                                                x0,
                                                y0,
                                                x1,
@@ -136,11 +133,10 @@ check_serialization ()
     g_assert (object0 != NULL);
 
     gchar *buffer0 = geda_bus_object_to_buffer (object0);
-    s_delete_object (toplevel, object0);
+    s_delete_object (object0);
     g_assert (buffer0 != NULL);
 
-    GedaObject *object1 = o_bus_read (toplevel,
-                                      buffer0,
+    GedaObject *object1 = o_bus_read (buffer0,
                                       version,
                                       FILEFORMAT_VERSION,
                                       NULL);
@@ -155,7 +151,7 @@ check_serialization ()
     g_assert_cmpint (ripper, ==, geda_bus_object_get_ripper_direction (object1));
 
     gchar *buffer1 = geda_bus_object_to_buffer (object1);
-    s_delete_object (toplevel, object1);
+    s_delete_object (object1);
     g_assert (buffer1 != NULL);
 
     g_assert_cmpstr (buffer0, ==, buffer1);

@@ -1,12 +1,86 @@
-
-scmdatadir = $(GEDADATADIR)/scheme
+scmdatadir = $(LEPTONDATADIR)/scheme
 nobase_dist_scmdata_DATA = \
-	geda.scm geda-deprecated-config.scm color-map.scm \
-	geda/object.scm geda/page.scm geda/attrib.scm geda/deprecated.scm \
-	geda/os.scm geda/config.scm geda/log-rotate.scm geda/log.scm \
-	geda/library.scm geda/repl.scm \
-	lepton/version.scm
-nobase_scmdata_DATA = geda/core/gettext.scm
+	geda.scm \
+	geda-deprecated-config.scm \
+	color-map.scm \
+	geda/object.scm \
+	geda/page.scm \
+	geda/attrib.scm \
+	geda/deprecated.scm \
+	geda/os.scm \
+	geda/config.scm \
+	geda/log.scm \
+	geda/library.scm \
+	lepton/attrib.scm \
+	lepton/config.scm \
+	lepton/file-system.scm \
+	lepton/library.scm \
+	lepton/library/component.scm \
+	lepton/log.scm \
+	lepton/log-rotate.scm \
+	lepton/object.scm \
+	lepton/os.scm \
+	lepton/page.scm \
+	lepton/rc.scm \
+	lepton/repl.scm \
+	lepton/version.scm \
+	lepton/legacy-config/keylist.scm \
+	lepton/legacy-config.scm \
+	netlist.scm \
+	netlist/attrib/compare.scm \
+	netlist/attrib/refdes.scm \
+	netlist/backend-getopt.scm \
+	netlist/config.scm \
+	netlist/deprecated.scm \
+	netlist/duplicate.scm \
+	netlist/error.scm \
+	netlist/hierarchy.scm \
+	netlist/mode.scm \
+	netlist/net.scm \
+	netlist/option.scm \
+	netlist/package-pin.scm \
+	netlist/package.scm \
+	netlist/partlist.scm \
+	netlist/partlist/common.scm \
+	netlist/port.scm \
+	netlist/schematic-component.scm \
+	netlist/schematic-connection.scm \
+	netlist/schematic-port.scm \
+	netlist/schematic.scm \
+	netlist/schematic/toplevel.scm \
+	netlist/subschematic.scm \
+	netlist/subschematic-connection.scm \
+	netlist/verbose.scm \
+	symbol/blame.scm \
+	symbol/check.scm \
+	symbol/check/alignment.scm \
+	symbol/check/arc.scm \
+	symbol/check/attrib.scm \
+	symbol/check/box.scm \
+	symbol/check/bus.scm \
+	symbol/check/circle.scm \
+	symbol/check/component.scm \
+	symbol/check/connection.scm \
+	symbol/check/duplicate.scm \
+	symbol/check/entity-pin.scm \
+	symbol/check/forbidden.scm \
+	symbol/check/line.scm \
+	symbol/check/log.scm \
+	symbol/check/net.scm \
+	symbol/check/net-attrib.scm \
+	symbol/check/obsolete.scm \
+	symbol/check/path.scm \
+	symbol/check/picture.scm \
+	symbol/check/pin.scm \
+	symbol/check/pin-attrib.scm \
+	symbol/check/primitive.scm \
+	symbol/check/slot.scm \
+	symbol/check/text.scm \
+	symcheck/check.scm \
+	symcheck/option.scm \
+	symcheck/report.scm
+
+nobase_scmdata_DATA = lepton/core/gettext.scm
 
 check-am: update-cli-tool
 
@@ -25,7 +99,7 @@ TESTS = unit-tests/t0001-geda-conf-lib.scm \
 	unit-tests/t0102-object-circle.scm \
 	unit-tests/t0103-object-arc.scm\
 	unit-tests/t0104-object-text.scm \
-	unit-tests/t0105-object-complex.scm \
+	unit-tests/t0105-object-component.scm \
 	unit-tests/t0106-object-bounds.scm \
 	unit-tests/t0107-object-stroke-fill.scm \
 	unit-tests/t0108-object-connections.scm \
@@ -33,6 +107,8 @@ TESTS = unit-tests/t0001-geda-conf-lib.scm \
 	unit-tests/t0110-object-transform.scm \
 	unit-tests/t0111-object-path.scm \
 	unit-tests/t0112-object-picture.scm \
+	unit-tests/t0113-object-selectable.scm \
+	unit-tests/t0114-object-embedded.scm \
 	unit-tests/t0200-page.scm \
 	unit-tests/t0201-page-dirty.scm \
 	unit-tests/t0202-page-string.scm \
@@ -41,7 +117,7 @@ TESTS = unit-tests/t0001-geda-conf-lib.scm \
 	unit-tests/t0205-page-parse-unterminated-attribute-list.scm \
 	unit-tests/t0206-page-parse-garbage-attribute.scm \
 	unit-tests/t0207-page-parse-line-endings.scm \
-	unit-tests/t0208-page-parse-embed-no-complex.scm \
+	unit-tests/t0208-page-parse-embed-no-component.scm \
 	unit-tests/t0300-attribute.scm \
 	unit-tests/t0301-promotable-attributes.scm \
 	unit-tests/t0400-os.scm \
@@ -53,11 +129,11 @@ TESTS = unit-tests/t0001-geda-conf-lib.scm \
 XFAIL_TESTS = \
 	unit-tests/t0301-promotable-attributes.scm
 
-dist_noinst_DATA = geda/core/gettext.scm.in unit-test.scm $(TESTS)
+dist_noinst_DATA = lepton/core/gettext.scm.in unit-test.scm $(TESTS)
 
-geda/core/gettext.scm: $(srcdir)/geda/core/gettext.scm.in Makefile
+lepton/core/gettext.scm: $(srcdir)/lepton/core/gettext.scm.in Makefile
 	@domain=$(LIBLEPTON_GETTEXT_DOMAIN); \
-	$(MKDIR_P) geda/core; \
+	$(MKDIR_P) lepton/core; \
 	sed -e"s:[@]LIBLEPTON_GETTEXT_DOMAIN@:$$domain:" < $(srcdir)/$@.in > $@.new; \
 	if cmp $@ $@.new > /dev/null 2>&1; then \
 	  rm $@.new; echo "$@ is unchanged"; \
@@ -72,7 +148,4 @@ update-cli-tool:
 
 .PHONY: update-cli-tool
 
-MOSTLYCLEANFILES = *.log *~
-CLEANFILES = *.log *~ geda/core/gettext.scm
-DISTCLEANFILES = *.log core FILE *~
-MAINTAINERCLEANFILES = *.log *~ Makefile.in
+CLEANFILES = lepton/core/gettext.scm unit-tests/dummy.sym unit-tests/dummy.xpm

@@ -1,7 +1,8 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
  * Copyright (C) 2016 Peter Brett <peter@peter-b.co.uk>
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,11 +18,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
 #include <config.h>
-
-#include <stdio.h>
-
 #include "gschem.h"
+
 
 #define GSCHEM_THEME_ICON_NAME "lepton-schematic"
 
@@ -83,6 +83,32 @@ static GtkWidget*
 create_notebook_bottom (GschemToplevel *w_current);
 
 
+static void
+geometry_save (GschemToplevel* w_current);
+
+static void
+geometry_restore (GschemToplevel* w_current);
+
+
+static void
+open_page_error_dialog (GschemToplevel* w_current,
+                        const gchar*    filename,
+                        GError*         err);
+
+static void
+recent_manager_add (GschemToplevel* w_current,
+                    const gchar*    filename);
+
+static int
+untitled_next_index (GschemToplevel* w_current);
+
+static gchar*
+untitled_filename (GschemToplevel* w_current, gboolean log_skipped);
+
+static PAGE*
+x_window_new_page (GschemToplevel* w_current);
+
+
 
 /*! \todo Finish function documentation!!!
  *  \brief
@@ -107,8 +133,6 @@ void x_window_setup (GschemToplevel *w_current)
 
   /* X related stuff */
   x_window_create_main (w_current);
-
-  x_menu_attach_recent_files_submenu(w_current);
 }
 
 /*! \todo Finish function documentation!!!
@@ -118,22 +142,13 @@ void x_window_setup (GschemToplevel *w_current)
  */
 void x_window_create_drawing(GtkWidget *scrolled, GschemToplevel *w_current)
 {
-  /* drawing next */
-  w_current->drawing_area = GTK_WIDGET (gschem_page_view_new_with_page (w_current->toplevel->page_current));
-  /* Set the size here.  Be sure that it has an aspect ratio of 1.333
-   * We could calculate this based on root window size, but for now
-   * lets just set it to:
-   * Width = root_width*3/4   Height = Width/1.3333333333
-   * 1.3333333 is the desired aspect ratio!
-   */
-
-  gtk_widget_set_size_request (w_current->drawing_area,
-                               default_width,
-                               default_height);
+  PAGE* page = w_current->toplevel->page_current;
+  GschemPageView* view = gschem_page_view_new_with_page (page);
+  w_current->drawing_area = GTK_WIDGET (view);
 
   gtk_container_add(GTK_CONTAINER(scrolled), w_current->drawing_area);
 
-  GTK_WIDGET_SET_FLAGS (w_current->drawing_area, GTK_CAN_FOCUS );
+  gtk_widget_set_can_focus (w_current->drawing_area, TRUE);
   gtk_widget_grab_focus (w_current->drawing_area);
   gtk_widget_show (w_current->drawing_area);
 }
@@ -199,7 +214,6 @@ void x_window_setup_draw_events_drawing_area (GschemToplevel* w_current,
   struct event_reg_t drawing_area_events[] =
   {
     { "expose_event",         G_CALLBACK(x_event_expose)                       },
-    { "expose_event",         G_CALLBACK(x_event_raise_dialog_boxes)           },
     { "button_press_event",   G_CALLBACK(x_event_button_pressed)               },
     { "button_release_event", G_CALLBACK(x_event_button_released)              },
     { "motion_notify_event",  G_CALLBACK(x_event_motion)                       },
@@ -351,25 +365,6 @@ x_window_show_text (GtkWidget *widget, gint response, GschemToplevel *w_current)
 }
 
 
-static void
-x_window_invoke_macro (GschemMacroWidget *widget, int response, GschemToplevel *w_current)
-{
-  if (response == GTK_RESPONSE_OK) {
-    const char *macro = gschem_macro_widget_get_macro_string (widget);
-
-    SCM interpreter = scm_list_2(scm_from_utf8_symbol("invoke-macro"),
-                                 scm_from_utf8_string(macro));
-
-    scm_dynwind_begin ((scm_t_dynwind_flags) 0);
-    g_dynwind_window (w_current);
-    g_scm_eval_protected(interpreter, SCM_UNDEFINED);
-    scm_dynwind_end ();
-  }
-
-  gtk_widget_grab_focus (w_current->drawing_area);
-  gtk_widget_hide (GTK_WIDGET (widget));
-}
-
 void
 x_window_select_object (GschemFindTextState *state, OBJECT *object, GschemToplevel *w_current)
 {
@@ -398,8 +393,8 @@ static void
 x_window_translate_response (GschemTranslateWidget *widget, gint response, GschemToplevel *w_current)
 {
   if (response == GTK_RESPONSE_OK) {
-    o_complex_translate_all (w_current,
-                             gschem_translate_widget_get_value (widget));
+    o_component_translate_all (w_current,
+                               gschem_translate_widget_get_value (widget));
   }
 
   i_set_state (w_current, SELECT);
@@ -431,15 +426,6 @@ void x_window_create_main(GschemToplevel *w_current)
    * set a size of the main window.  The drawing area's size is fixed,
    * see below
    */
-
-   /*
-    * normally we let the window manager handle locating and sizing
-    * the window.  However, for some batch processing of schematics
-    * (generating a pdf of all schematics for example) we want to
-    * override this.  Hence "auto_place_mode".
-    */
-   if( auto_place_mode )
-   	gtk_widget_set_uposition (w_current->main_window, 10, 10);
 
   /* this should work fine */
   g_signal_connect (G_OBJECT (w_current->main_window), "delete_event",
@@ -556,6 +542,7 @@ void x_window_create_main(GschemToplevel *w_current)
   */
   create_bottom_widget (w_current, main_box);
 
+  geometry_restore (w_current);
 
   /* show all widgets: */
   gtk_widget_show_all (w_current->main_window);
@@ -619,8 +606,6 @@ void x_window_close(GschemToplevel *w_current)
   if (w_current->aewindow)
   gtk_widget_destroy(w_current->aewindow);
 
-  x_pagesel_close (w_current);
-
   if (w_current->hkwindow)
   gtk_widget_destroy(w_current->hkwindow);
 
@@ -633,6 +618,11 @@ void x_window_close(GschemToplevel *w_current)
   if (g_list_length (global_window_list) == 1) {
     /* no more window after this one, remember to quit */
     last_window = TRUE;
+  }
+
+  if (last_window)
+  {
+    geometry_save (w_current);
   }
 
   if (toplevel->major_changed_refdes) {
@@ -721,79 +711,53 @@ void x_window_close_all(GschemToplevel *w_current)
 PAGE*
 x_window_open_page_impl (GschemToplevel *w_current, const gchar *filename)
 {
-  PAGE *page;
-  gchar *fn;
-
   TOPLEVEL *toplevel = gschem_toplevel_get_toplevel (w_current);
   g_return_val_if_fail (toplevel != NULL, NULL);
 
-  /* Generate untitled filename if none was specified */
-  if (filename == NULL) {
-    gchar *cwd, *tmp, *untitled_name;
-    EdaConfig *cfg;
-    cwd = g_get_current_dir ();
-    cfg = eda_config_get_context_for_path (cwd);
-    untitled_name = eda_config_get_string (cfg, "gschem", "default-filename", NULL);
-    tmp = g_strdup_printf ("%s_%d.sch",
-                           untitled_name,
-                           ++w_current->num_untitled);
-    fn = g_build_filename (cwd, tmp, NULL);
-    g_free (untitled_name);
-    g_free(cwd);
-    g_free(tmp);
-  } else {
-    fn = g_strdup (filename);
-  }
+  /* New blank page requested: */
+  if (filename == NULL)
+    return x_window_new_page (w_current);
 
-  /* Return existing page if it is already loaded */
-  page = s_page_search (toplevel, fn);
-  if ( page != NULL ) {
-    g_free(fn);
+
+  /* Return existing page if it is already loaded: */
+  PAGE* page = s_page_search (toplevel, filename);
+  if (page != NULL)
     return page;
-  }
 
-  page = s_page_new (toplevel, fn);
-  s_page_goto (toplevel, page);
+
+  /* Create a new page: */
+  page = s_page_new (toplevel, filename);
+
+  /* Switch to a new page: */
+  s_page_goto (toplevel, page); /* NOTE: sets toplevel->page_current */
   gschem_toplevel_page_changed (w_current);
 
-  /* Load from file if necessary, otherwise just print a message */
-  if (filename != NULL) {
-    GError *err = NULL;
-    if (!quiet_mode)
-      s_log_message (_("Loading schematic [%1$s]"), fn);
+  if (!quiet_mode)
+    s_log_message (_("Loading schematic [%1$s]"), filename);
 
-    if (!f_open (toplevel, page, (gchar *) fn, &err)) {
-      GtkWidget *dialog;
 
-      g_warning ("%s\n", err->message);
-      dialog = gtk_message_dialog_new_with_markup
-        (GTK_WINDOW (w_current->main_window),
-         GTK_DIALOG_DESTROY_WITH_PARENT,
-         GTK_MESSAGE_ERROR,
-         GTK_BUTTONS_CLOSE,
-         _("<b>An error occurred while loading the requested file.</b>\n\nLoading from '%1$s' failed: %2$s. The gschem log may contain more information."),
-         fn, err->message);
-      gtk_window_set_title (GTK_WINDOW (dialog), _("Failed to load file"));
-      gtk_dialog_run (GTK_DIALOG (dialog));
-      gtk_widget_destroy (dialog);
-      g_error_free (err);
-    } else {
-      if (w_current->recent_manager != NULL) {
-        gtk_recent_manager_add_item (w_current->recent_manager,
-                                     g_filename_to_uri(fn, NULL, NULL));
-      }
-    }
-  } else {
-    if (!quiet_mode)
-      s_log_message (_("New file [%s]"),
-                     s_page_get_filename (toplevel->page_current));
+  /* Try to load [filename]: */
+  GError* err = NULL;
+  if (!f_open (toplevel, page, filename, &err))
+  {
+    g_warning ("%s\n", err->message);
+    open_page_error_dialog (w_current, filename, err);
+    g_clear_error (&err);
 
-    g_run_hook_page (w_current, "%new-page-hook", toplevel->page_current);
+    /* Loading failed: delete page and open a blank one: */
+    s_page_delete (toplevel, page);
+    return x_window_new_page (w_current);
   }
 
-  o_undo_savestate (w_current, toplevel->page_current, UNDO_ALL);
 
-  g_free (fn);
+  /* Run hook: */
+  g_run_hook_page (w_current, "%open-page-hook", page);
+
+  /* Add page file name to the recent file list: */
+  recent_manager_add (w_current, filename);
+
+  /* Save current state of the page: */
+  o_undo_savestate (w_current, page, UNDO_ALL);
 
   return page;
 
@@ -830,7 +794,7 @@ x_window_set_current_page_impl (GschemToplevel *w_current, PAGE *page)
   i_update_menus (w_current);
   /* i_set_filename (w_current, page->page_filename); */
 
-  x_pagesel_update (w_current);
+  page_select_widget_update (w_current);
   x_multiattrib_update (w_current);
 
 } /* x_window_set_current_page_impl() */
@@ -867,7 +831,7 @@ x_window_save_page (GschemToplevel *w_current, PAGE *page, const gchar *filename
   g_return_val_if_fail (filename != NULL, 0);
 
   /* try saving page to filename */
-  ret = (gint)f_save (toplevel, page, filename, &err);
+  ret = (gint)f_save (page, filename, &err);
 
   if (ret != 1) {
     log_msg   = _("Could NOT save page [%1$s]\n");
@@ -901,13 +865,9 @@ x_window_save_page (GschemToplevel *w_current, PAGE *page, const gchar *filename
     page->CHANGED = 0;
 
     /* add to recent file list */
-    if (w_current->recent_manager != NULL) {
-      gtk_recent_manager_add_item (w_current->recent_manager,
-                                   g_filename_to_uri (filename, NULL, NULL));
-    }
+    recent_manager_add (w_current, filename);
 
-    /* i_set_filename (w_current, page->page_filename); */
-    x_pagesel_update (w_current);
+    page_select_widget_update (w_current);
   }
 
   /* log status of operation */
@@ -916,7 +876,8 @@ x_window_save_page (GschemToplevel *w_current, PAGE *page, const gchar *filename
   i_set_state_msg  (w_current, SELECT, state_msg);
 
   return ret;
-}
+
+} /* x_window_save_page() */
 
 
 
@@ -1060,7 +1021,7 @@ GschemToplevel* x_window_new (TOPLEVEL *toplevel)
   gschem_toplevel_get_toplevel (w_current)->load_newer_backup_data = w_current;
 
   o_text_set_rendered_bounds_func (gschem_toplevel_get_toplevel (w_current),
-                                   o_text_get_rendered_bounds, w_current);
+                                   w_current->renderer);
 
   /* Damage notifications should invalidate the object on screen */
   o_add_change_notify (gschem_toplevel_get_toplevel (w_current),
@@ -1316,16 +1277,11 @@ create_show_text_widget (GschemToplevel *w_current, GtkWidget *work_box)
 static void
 create_macro_widget (GschemToplevel *w_current, GtkWidget *work_box)
 {
-  gpointer obj = g_object_new (GSCHEM_TYPE_MACRO_WIDGET, NULL);
-
-  w_current->macro_widget = GTK_WIDGET (obj);
+  w_current->macro_widget = macro_widget_new (w_current);
 
   gtk_box_pack_start (GTK_BOX (work_box),
                       w_current->macro_widget,
                       FALSE, FALSE, 0);
-
-  g_signal_connect (w_current->macro_widget, "response",
-                    G_CALLBACK (&x_window_invoke_macro), w_current);
 }
 
 
@@ -1350,16 +1306,56 @@ create_translate_widget (GschemToplevel *w_current, GtkWidget *work_box)
 static void
 create_bottom_widget (GschemToplevel *w_current, GtkWidget *main_box)
 {
-  const char *right_button_text = NULL;
+  const char* text_mid_button = _("none");
 
-  if (default_third_button == POPUP_ENABLED)
+#ifdef HAVE_LIBSTROKE
+  if (w_current->middle_button == MOUSEBTN_DO_STROKE)
+    text_mid_button = _("Stroke");
+#endif
+
+  if (w_current->middle_button == MOUSEBTN_DO_ACTION)
+    text_mid_button = _("Action");
+  else
+  if (w_current->middle_button == MOUSEBTN_DO_REPEAT)
+      text_mid_button = _("Repeat");
+  else
+  if (w_current->middle_button == MOUSEBTN_DO_PAN)
+      text_mid_button = _("Pan");
+  else
+  if (w_current->middle_button == MOUSEBTN_DO_POPUP)
+      text_mid_button = _("Menu");
+
+
+  const char* text_right_button_action = NULL;
+  const char* text_right_button_cancel = NULL;
+  char*       text_right_button        = NULL;
+
+  if (w_current->third_button == MOUSEBTN_DO_POPUP)
   {
-    right_button_text = _("Menu/Cancel");
+    text_right_button_action = _("Menu");
+  }
+  else
+  if (w_current->third_button == MOUSEBTN_DO_PAN)
+  {
+    text_right_button_action = _("Pan");
   }
   else
   {
-    right_button_text = _("Pan/Cancel");
+    text_right_button_action = _("none");
   }
+
+  if (w_current->third_button_cancel)
+  {
+    text_right_button_cancel = _("/Cancel");
+  }
+  else
+  {
+    text_right_button_cancel = "";
+  }
+
+  text_right_button = g_strdup_printf ("%s%s",
+                                       text_right_button_action,
+                                       text_right_button_cancel);
 
   gpointer obj = g_object_new (GSCHEM_TYPE_BOTTOM_WIDGET,
                                "grid-mode",
@@ -1370,9 +1366,9 @@ create_bottom_widget (GschemToplevel *w_current, GtkWidget *main_box)
                                "left-button-text",
                                _("Pick"),
                                "middle-button-text",
-                               _("none"),
+                               text_mid_button,
                                "right-button-text",
-                               right_button_text,
+                               text_right_button,
                                "snap-mode",
                                gschem_options_get_snap_mode (w_current->options),
                                "snap-size",
@@ -1385,9 +1381,9 @@ create_bottom_widget (GschemToplevel *w_current, GtkWidget *main_box)
                                gschem_options_get_magnetic_net_mode (w_current->options),
                                NULL);
 
-  w_current->bottom_widget = GTK_WIDGET (obj);
+  g_free (text_right_button);
 
-  i_update_middle_button (w_current, NULL, NULL);
+  w_current->bottom_widget = GTK_WIDGET (obj);
 
   gtk_box_pack_start (GTK_BOX (main_box),
                       w_current->bottom_widget,
@@ -1546,5 +1542,346 @@ x_window_close_page (GschemToplevel* w_current, PAGE* page)
   else
   {
     x_window_close_page_impl (w_current, page);
+  }
+}
+
+
+
+/*! \brief Create new blank page.
+ *
+ * \todo Do further refactoring: this function should be used
+ *       instead of x_window_open_page() when a new page is reqested.
+ *
+ *  \param w_current The toplevel environment.
+ */
+static PAGE*
+x_window_new_page (GschemToplevel* w_current)
+{
+  g_return_val_if_fail (w_current != NULL, NULL);
+
+  TOPLEVEL* toplevel = gschem_toplevel_get_toplevel (w_current);
+  g_return_val_if_fail (toplevel != NULL, NULL);
+
+  /* New page file name: */
+  gchar* filename = untitled_filename (w_current, TRUE);
+
+  /* Create a new page: */
+  PAGE* page = s_page_new (toplevel, filename);
+
+  /* Switch to a new page: */
+  s_page_goto (toplevel, page);
+  gschem_toplevel_page_changed (w_current);
+
+  if (!quiet_mode)
+    s_log_message (_("New file [%s]"), filename);
+
+  g_free (filename);
+
+  /* Run hook: */
+  g_run_hook_page (w_current, "%new-page-hook", page);
+
+  /* Save current state of the page: */
+  o_undo_savestate (w_current, page, UNDO_ALL);
+
+  return page;
+
+} /* x_window_new_page() */
+
+
+
+/*! \brief Show "Failed to load file" dialog.
+ *
+ *  \param w_current The toplevel environment.
+ *  \param filename  File path that failed to load.
+ *  \param err       Associated GError.
+ */
+static void
+open_page_error_dialog (GschemToplevel* w_current,
+                        const gchar*    filename,
+                        GError*         err)
+{
+  g_return_if_fail (w_current != NULL);
+
+  const gchar* msg =
+    _("<b>An error occurred while loading the requested file.</b>"
+      "\n\n"
+      "Loading from '%1$s' failed. Error message:"
+      "\n\n"
+      "%2$s."
+      "\n\n"
+      "The lepton-schematic log may contain more information.\n"
+      "You may also launch lepton-schematic with --verbose command"
+      " line switch and monitor program's output in terminal window.");
+
+  GtkWidget* dialog = gtk_message_dialog_new_with_markup
+    (GTK_WINDOW (w_current->main_window),
+    GTK_DIALOG_DESTROY_WITH_PARENT,
+    GTK_MESSAGE_ERROR,
+    GTK_BUTTONS_CLOSE,
+    msg,
+    filename,
+    err != NULL ? err->message : "");
+
+  gtk_window_set_title (GTK_WINDOW (dialog), _("Failed to load file"));
+
+  gtk_dialog_run (GTK_DIALOG (dialog));
+  gtk_widget_destroy (dialog);
+
+} /* open_page_error_dialog() */
+
+
+
+/*! \brief Add \a filename to the recent files list.
+ *
+ * \todo gtk_recent_manager_add_item() also used in x_menus.c.
+ *       Consider making this function public.
+ *
+ *  \param w_current The toplevel environment.
+ *  \param filename  File name to add.
+ */
+static void
+recent_manager_add (GschemToplevel* w_current,
+                    const gchar*    filename)
+{
+  g_return_if_fail (w_current != NULL);
+
+  GtkRecentManager* manager = w_current->recent_manager;
+  if (manager != NULL)
+  {
+    gchar* uri = g_filename_to_uri (filename, NULL, NULL);
+    gtk_recent_manager_add_item (manager, uri);
+    g_free (uri);
+  }
+
+} /* recent_manager_add() */
+
+
+
+/*! \brief Get next number to be part of the untitled file name.
+ */
+static int
+untitled_next_index (GschemToplevel* w_current)
+{
+  return ++w_current->num_untitled;
+}
+
+
+
+/*! \brief Get untitled file name.
+ *  \par Function Description
+ *
+ * Determine "untitled" schematic file name (used for new pages)
+ * and build full path from this name and current working directory.
+ * When constructing this name, avoid reusing names of already opened
+ * files and existing files in current directory; if \a log_skipped
+ * is TRUE, report such (avoided) names to the log.
+ *
+ *  \param  w_current   The toplevel environment.
+ *  \param  log_skipped Print skipped file names to the log.
+ *  \return             Newly-allocated untitled file path.
+ */
+static gchar*
+untitled_filename (GschemToplevel* w_current, gboolean log_skipped)
+{
+  g_return_val_if_fail (w_current != NULL, NULL);
+
+  /* Determine default file name (without a number appended)
+  *  for a new page:
+  */
+  gchar*     cwd = g_get_current_dir ();
+  EdaConfig* cfg = eda_config_get_context_for_path (cwd);
+
+  gchar* name = eda_config_get_string (cfg,
+                                       "schematic",
+                                       "default-filename",
+                                       NULL);
+
+  gchar* fname = NULL;
+  gchar* fpath = NULL;
+
+  TOPLEVEL* toplevel = gschem_toplevel_get_toplevel (w_current);
+
+  for (;;)
+  {
+    /* Build file name (default name + number appended):
+    */
+    fname = g_strdup_printf ("%s_%d.sch",
+                             name ? name : UNTITLED_FILENAME_PREFIX,
+                             untitled_next_index (w_current));
+
+    /* Build full path for file name:
+    */
+    fpath = g_build_filename (cwd, fname, NULL);
+
+    /* Avoid reusing names of already opened files:
+    *  Avoid reusing names of existing files in current directory:
+    */
+    if ( s_page_search_by_basename (toplevel, fname) ||
+         g_file_test (fpath, G_FILE_TEST_EXISTS) )
+    {
+      if (log_skipped)
+      {
+        s_log_message (_("Skipping existing file [%s]"), fname);
+      }
+
+      g_free (fname);
+      g_free (fpath);
+    }
+    else
+    {
+      break;
+    }
+  }
+
+  g_free (cwd);
+  g_free (name);
+  g_free (fname);
+
+  return fpath;
+
+} /* untitled_filename() */
+
+
+
+/*! \brief Determine if a given \a page is "untitled" one.
+ *  \par Function Description
+ *
+ *"Untitled" pages are newly created pages with the default
+ * file name and not yet saved to disk.
+ * This function check if a \a page meets these conditions.
+ *
+ *  \param  w_current Page to check.
+ *  \return           TRUE if a \a page looks like "untitled" one.
+ */
+gboolean
+x_window_untitled_page (PAGE* page)
+{
+  g_return_val_if_fail (page != NULL, TRUE);
+
+  const gchar* fname = s_page_get_filename (page);
+  gchar* uname = NULL;
+
+  EdaConfig* cfg = eda_config_get_context_for_path (fname);
+  if (cfg != NULL)
+  {
+    uname = eda_config_get_string (cfg,
+                                   "schematic",
+                                   "default-filename",
+                                   NULL);
+  }
+
+  if (uname == NULL)
+  {
+    uname = g_strdup (UNTITLED_FILENAME_PREFIX);
+  }
+
+  gboolean named_like_untitled = strstr (fname, uname) != NULL;
+  gboolean file_exists = g_file_test (fname, G_FILE_TEST_EXISTS);
+
+  g_free (uname);
+
+  /*
+   * consider page as "untitled" if it is named like untitled
+   * and associated file does not exist:
+  */
+  return named_like_untitled && !file_exists;
+
+} /* untitled_page() */
+
+
+
+/*! \brief Save main window's geometry to the CACHE config context.
+ *
+ *  \param w_current The toplevel environment.
+ */
+static void
+geometry_save (GschemToplevel* w_current)
+{
+  gint x = 0;
+  gint y = 0;
+  gtk_window_get_position (GTK_WINDOW (w_current->main_window), &x, &y);
+
+  gint width = 0;
+  gint height = 0;
+  gtk_window_get_size (GTK_WINDOW (w_current->main_window), &width, &height);
+
+  EdaConfig* cfg = eda_config_get_cache_context();
+
+  eda_config_set_int (cfg, "schematic.window-geometry", "x", x);
+  eda_config_set_int (cfg, "schematic.window-geometry", "y", y);
+  eda_config_set_int (cfg, "schematic.window-geometry", "width", width);
+  eda_config_set_int (cfg, "schematic.window-geometry", "height", height);
+
+  eda_config_save (cfg, NULL);
+}
+
+
+
+/*! \brief Restore main window's geometry.
+ *
+ *  \par Function Description
+ *  If [schematic.gui]::restore-window-geometry configuration key is
+ *  set to true, read main window's geometry from the CACHE config
+ *  context and restore it.
+ *  Unless valid configuration values are read, use default width
+ *  and height.
+ *
+ *  \param w_current The toplevel environment.
+ */
+static void
+geometry_restore (GschemToplevel* w_current)
+{
+  gchar* cwd = g_get_current_dir();
+  EdaConfig* cfg = eda_config_get_context_for_path (cwd);
+  g_free (cwd);
+
+  gboolean restore = TRUE; /* by default, restore geometry */
+  GError*  err = NULL;
+  gboolean val = eda_config_get_boolean (cfg,
+                                         "schematic.gui",
+                                         "restore-window-geometry",
+                                         &err);
+  if (err == NULL)
+  {
+    restore = val;
+  }
+
+  g_clear_error (&err);
+
+
+  gint width  = -1;
+  gint height = -1;
+
+  if (restore)
+  {
+    EdaConfig* ccfg = eda_config_get_cache_context();
+
+    gint x = eda_config_get_int (ccfg, "schematic.window-geometry", "x", NULL);
+    gint y = eda_config_get_int (ccfg, "schematic.window-geometry", "y", NULL);
+
+    if (x > 0 && y > 0)
+    {
+      gtk_window_move (GTK_WINDOW (w_current->main_window), x, y);
+    }
+
+    width  = eda_config_get_int (ccfg, "schematic.window-geometry", "width",  NULL);
+    height = eda_config_get_int (ccfg, "schematic.window-geometry", "height", NULL);
+  }
+
+
+  if (width <= 0 || height <= 0)
+  {
+    width  = default_width;
+    height = default_height;
+  }
+
+  gtk_window_resize (GTK_WINDOW (w_current->main_window), width, height);
+
+
+  if (x_widgets_use_docks())
+  {
+    gtk_widget_set_size_request (w_current->find_text_state,
+                                 -1,
+                                 height / 4);
   }
 }

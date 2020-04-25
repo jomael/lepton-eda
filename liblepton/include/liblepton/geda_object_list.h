@@ -23,19 +23,25 @@
 G_BEGIN_DECLS
 
 void
-geda_object_list_delete (TOPLEVEL *toplevel, GList *list);
+geda_object_list_delete (GList *list);
 
 void
-geda_object_list_mirror (const GList *objects, int x, int y, TOPLEVEL *toplevel);
+geda_object_list_mirror (const GList *objects,
+                         int x,
+                         int y);
 
 void
 geda_object_list_print (GList *objects);
 
 void
-geda_object_list_rotate (const GList *objects, int x, int y, int angle, TOPLEVEL *toplevel);
+geda_object_list_rotate (const GList *objects,
+                         int x,
+                         int y,
+                         int angle);
 
 void
-geda_object_list_set_color (const GList *objects, int color, TOPLEVEL *toplevel);
+geda_object_list_set_color (const GList *objects,
+                            int color);
 
 void
 geda_object_list_set_selectable (const GList *objects, gboolean selectable);
@@ -47,6 +53,7 @@ void
 geda_object_list_translate (const GList *objects, int dx, int dy);
 
 GList*
-o_glist_copy_all (TOPLEVEL *toplevel, const GList *src_list, GList *dest_list);
+o_glist_copy_all (const GList *src_list,
+                  GList *dest_list);
 
 G_END_DECLS

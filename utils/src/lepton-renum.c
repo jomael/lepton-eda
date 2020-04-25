@@ -1,7 +1,8 @@
-/* $Id$ */
 /*	This is lepton-renum, an advanced refdes renumber utility for Lepton EDA's lepton-schematic.
  *
  *	Copyright (C) 2005-2010  Levente Kovacs
+ *  Copyright (C) 2005-2011 gEDA Contributors
+ *  Copyright (C) 2018-2020 Lepton EDA Contributors
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -342,7 +343,7 @@ int parse_refdes(struct refdes_ *refdes, char *ref_str)
 	printf("Prefix=%s\n",&buff[0]);
 #endif
 	strcpy(&refdes->prefix[0],&buff[0]);	/*Copy to refdes structure*/
-	for(i=0,cp;(*cp != '\n' && *cp>='0' && *cp<='9');++cp,++i)
+	for(i=0;(*cp != '\n' && *cp>='0' && *cp<='9');++cp,++i)
 		buff[i]=*cp;	/*Fill the buffer from char to char*/
 	buff[i]='\0';	/*Terminate with NULL to be a string*/
 #ifdef DEBUG

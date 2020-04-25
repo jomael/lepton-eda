@@ -193,8 +193,7 @@ void o_select_object(GschemToplevel *w_current, OBJECT *o_current,
 
       /* object not select, add it to the selection list */
       o_select_run_hooks( w_current, o_current, 1 );
-      o_selection_add (toplevel,
-                       toplevel->page_current->selection_list, o_current);
+      o_selection_add (toplevel->page_current->selection_list, o_current);
 
       break;
 
@@ -209,8 +208,8 @@ void o_select_object(GschemToplevel *w_current, OBJECT *o_current,
           /* result: remove object from selection */
           if (type != MULTIPLE) {
             o_select_run_hooks( w_current, o_current, 0 );
-            o_selection_remove (toplevel, toplevel->page_current->
-                                            selection_list, o_current);
+            o_selection_remove (toplevel->page_current->selection_list,
+                                o_current);
             removing_obj = 1;
           }
 
@@ -227,8 +226,7 @@ void o_select_object(GschemToplevel *w_current, OBJECT *o_current,
             o_select_unselect_all (w_current);
 
             o_select_run_hooks( w_current, o_current, 1 );
-            o_selection_add (toplevel,
-                             toplevel->page_current->selection_list, o_current);
+            o_selection_add (toplevel->page_current->selection_list, o_current);
           }
 
           /* condition: doing single object add */
@@ -239,14 +237,14 @@ void o_select_object(GschemToplevel *w_current, OBJECT *o_current,
             o_select_unselect_all (w_current);
 
             o_select_run_hooks (w_current, o_current, 1);
-            o_selection_add (toplevel, toplevel->page_current->
-                                         selection_list, o_current);
+            o_selection_add (toplevel->page_current->selection_list,
+                             o_current);
           }
 
           if (CONTROLKEY) {
             o_select_run_hooks(w_current, o_current, 0);
-            o_selection_remove (toplevel, toplevel->page_current->
-                                            selection_list, o_current);
+            o_selection_remove (toplevel->page_current->selection_list,
+                                o_current);
             removing_obj = 1;
           }
 
@@ -400,7 +398,7 @@ void o_select_box_search(GschemToplevel *w_current)
   while (iter != NULL) {
     o_current = (OBJECT*) iter->data;
     /* only select visible objects */
-    if (o_is_visible (toplevel, o_current) || toplevel->show_hidden_text) {
+    if (o_is_visible (o_current) || toplevel->show_hidden_text) {
       int cleft, ctop, cright, cbottom;
 
       if ( geda_object_calculate_visible_bounds(toplevel, o_current,
@@ -570,7 +568,7 @@ void o_select_unselect_all(GschemToplevel *w_current)
 
   removed = g_list_copy (geda_list_get_glist (selection));
   for (iter = removed; iter != NULL; iter = g_list_next (iter)) {
-    o_selection_remove (toplevel, selection, (OBJECT *) iter->data);
+    o_selection_remove (selection, (OBJECT *) iter->data);
   }
 
   /* Call hooks */
@@ -602,7 +600,7 @@ o_select_visible_unlocked (GschemToplevel *w_current)
     OBJECT *obj = (OBJECT *) iter->data;
 
     /* Skip invisible objects. */
-    if (!o_is_visible (toplevel, obj) && !toplevel->show_hidden_text)
+    if (!o_is_visible (obj) && !toplevel->show_hidden_text)
       continue;
 
     /* Skip locked objects. */
@@ -614,7 +612,7 @@ o_select_visible_unlocked (GschemToplevel *w_current)
      * w_current->SHIFTKEY and w_current->CONTROLKEY, which may well
      * be set if this function is called via a keystroke
      * (e.g. Ctrl-A). */
-    o_selection_add (toplevel, selection, obj);
+    o_selection_add (selection, obj);
 
     /* Add any attributes of object to selection as well. */
     o_attrib_add_selected (w_current, selection, obj);
@@ -640,7 +638,7 @@ o_select_move_to_place_list(GschemToplevel *w_current)
   GList *selection_copy;
 
   /* remove the old place list if it exists */
-  geda_object_list_delete (toplevel, toplevel->page_current->place_list);
+  geda_object_list_delete (toplevel->page_current->place_list);
   toplevel->page_current->place_list = NULL;
 
   selection = geda_list_get_glist( toplevel->page_current->selection_list );

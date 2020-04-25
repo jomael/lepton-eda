@@ -35,68 +35,6 @@
  *  \par Function Description
  *
  */
-gboolean
-o_text_get_rendered_bounds (void *user_data,
-                            const GedaObject *o_current,
-                            gint *min_x,
-                            gint *min_y,
-                            gint *max_x,
-                            gint *max_y)
-{
-  TOPLEVEL *toplevel;
-  EdaRenderer *renderer;
-  cairo_t *cr;
-  cairo_matrix_t render_mtx;
-  int result, render_flags = 0;
-  double t, l, r, b;
-  GschemToplevel *w_current = (GschemToplevel *) user_data;
-  g_return_val_if_fail ((w_current != NULL), FALSE);
-
-  GschemPageView *page_view = gschem_toplevel_get_current_page_view (w_current);
-  g_return_val_if_fail ((page_view != NULL), FALSE);
-
-  toplevel = gschem_toplevel_get_toplevel (w_current);
-  g_return_val_if_fail ((toplevel != NULL), FALSE);
-
-  cr = gdk_cairo_create (gtk_widget_get_window (GTK_WIDGET(page_view)));
-
-  /* Set up renderer based on configuration in w_current. Note that we
-   * *don't* enable hinting, because if its enabled the calculated
-   * bounds are zoom-level-dependent. */
-  if (toplevel->show_hidden_text)
-    render_flags |= EDA_RENDERER_FLAG_TEXT_HIDDEN;
-  renderer = EDA_RENDERER (g_object_ref (w_current->renderer));
-  g_object_set (G_OBJECT (renderer),
-                "cairo-context", cr,
-                "render-flags", render_flags,
-                NULL);
-
-  /* We need to transform the cairo context to approximate world
-   * coordinates. */
-  cairo_matrix_init (&render_mtx, 1, 0, 0, -1, -1, 1);
-  cairo_set_matrix (cr, &render_mtx);
-
-  /* Use the renderer to calculate text bounds */
-  result = eda_renderer_get_user_bounds (renderer, o_current, &l, &t, &r, &b);
-
-  /* Clean up */
-  eda_renderer_destroy (renderer);
-  cairo_destroy (cr);
-
-  /* Round bounds to nearest integer */
-  *min_x = lrint (fmin (l, r));
-  *min_y = lrint (fmin (t, b));
-  *max_x = lrint (fmax (l, r));
-  *max_y = lrint (fmax (t, b));
-
-  return result;
-}
-
-/*! \todo Finish function documentation!!!
- *  \brief
- *  \par Function Description
- *
- */
 void o_text_prepare_place(GschemToplevel *w_current, char *text, int color, int align, int rotate, int size)
 {
   GschemPageView *page_view = gschem_toplevel_get_current_page_view (w_current);
@@ -107,10 +45,6 @@ void o_text_prepare_place(GschemToplevel *w_current, char *text, int color, int 
     return;
   }
 
-  TOPLEVEL *toplevel = page->toplevel;
-  g_return_if_fail (toplevel != NULL);
-
-
   /* Insert the new object into the buffer at world coordinates (0,0).
    * It will be translated to the mouse coordinates during placement. */
 
@@ -120,14 +54,13 @@ void o_text_prepare_place(GschemToplevel *w_current, char *text, int color, int 
   w_current->last_drawb_mode = LAST_DRAWB_MODE_NONE;
 
   /* remove the old place list if it exists */
-  geda_object_list_delete (toplevel, page->place_list);
+  geda_object_list_delete (page->place_list);
   page->place_list = NULL;
 
   /* here you need to add OBJ_TEXT when it's done */
   page->place_list =
     g_list_append(page->place_list,
-                  geda_text_object_new (toplevel,
-                                        color,
+                  geda_text_object_new (color,
                                         0,
                                         0,
                                         align,
@@ -161,9 +94,7 @@ void o_text_change(GschemToplevel *w_current, OBJECT *object, char *string,
   g_return_if_fail (page_view != NULL);
 
   PAGE *page = gschem_page_view_get_page (page_view);
-  TOPLEVEL *toplevel = page->toplevel;
 
-  g_return_if_fail (toplevel != NULL);
   g_return_if_fail (page != NULL);
 
   if (object == NULL) {
@@ -174,11 +105,11 @@ void o_text_change(GschemToplevel *w_current, OBJECT *object, char *string,
     return;
   }
 
-  o_text_set_string (toplevel, object, string);
+  o_text_set_string (object, string);
 
-  o_set_visibility (toplevel, object, visibility);
+  o_set_visibility (object, visibility);
   object->show_name_value = show;
-  o_text_recreate(toplevel, object);
+  o_text_recreate (object);
 
   /* handle slot= attribute, it's a special case */
   if (object->attached_to != NULL &&

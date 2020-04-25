@@ -1,5 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 2013 Peter Brett <peter@peter-b.co.uk>
+ * Copyright (C) 2013-2015 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +19,7 @@
  */
 
 /*! \file g_builtins.c
- * \brief gschem built-in actions
+ * \brief lepton-schematic built-in actions
  */
 
 #include <config.h>
@@ -54,14 +56,11 @@ static struct BuiltinInfo builtins[] = {
   { "%edit-rotate-90",               0, 0, 0, (SCM (*) ()) g_keys_edit_rotate_90 },
   { "%edit-mirror",                  0, 0, 0, (SCM (*) ()) g_keys_edit_mirror },
   { "%edit-slot",                    0, 0, 0, (SCM (*) ()) g_keys_edit_slot },
-  { "%edit-color",                   0, 0, 0, (SCM (*) ()) g_keys_edit_color },
+  { "%edit-object-properties",       0, 0, 0, (SCM (*) ()) g_keys_edit_object_properties },
   { "%edit-edit",                    0, 0, 0, (SCM (*) ()) g_keys_edit_edit },
   { "%edit-text",                    0, 0, 0, (SCM (*) ()) g_keys_edit_text },
   { "%edit-lock",                    0, 0, 0, (SCM (*) ()) g_keys_edit_lock },
   { "%edit-unlock",                  0, 0, 0, (SCM (*) ()) g_keys_edit_unlock },
-  { "%edit-linetype",                0, 0, 0, (SCM (*) ()) g_keys_edit_linetype },
-  { "%edit-filltype",                0, 0, 0, (SCM (*) ()) g_keys_edit_filltype },
-  { "%edit-pin-type",                0, 0, 0, (SCM (*) ()) g_keys_edit_pin_type },
   { "%edit-translate",               0, 0, 0, (SCM (*) ()) g_keys_edit_translate },
   { "%edit-invoke-macro",            0, 0, 0, (SCM (*) ()) g_keys_edit_invoke_macro },
   { "%edit-embed",                   0, 0, 0, (SCM (*) ()) g_keys_edit_embed },
@@ -134,13 +133,10 @@ static struct BuiltinInfo builtins[] = {
   { "%hierarchy-down-schematic",     0, 0, 0, (SCM (*) ()) g_keys_hierarchy_down_schematic },
   { "%hierarchy-down-symbol",        0, 0, 0, (SCM (*) ()) g_keys_hierarchy_down_symbol },
   { "%hierarchy-up",                 0, 0, 0, (SCM (*) ()) g_keys_hierarchy_up },
-  { "%attributes-attach",            0, 0, 0, (SCM (*) ()) g_keys_attributes_attach },
-  { "%attributes-detach",            0, 0, 0, (SCM (*) ()) g_keys_attributes_detach },
   { "%attributes-show-name",         0, 0, 0, (SCM (*) ()) g_keys_attributes_show_name },
   { "%attributes-show-value",        0, 0, 0, (SCM (*) ()) g_keys_attributes_show_value },
   { "%attributes-show-both",         0, 0, 0, (SCM (*) ()) g_keys_attributes_show_both },
   { "%attributes-visibility-toggle", 0, 0, 0, (SCM (*) ()) g_keys_attributes_visibility_toggle },
-  { "%options-text-size",            0, 0, 0, (SCM (*) ()) g_keys_options_text_size },
   { "%options-snap-size",            0, 0, 0, (SCM (*) ()) g_keys_options_snap_size },
   { "%options-scale-up-snap-size",   0, 0, 0, (SCM (*) ()) g_keys_options_scale_up_snap_size },
   { "%options-scale-down-snap-size", 0, 0, 0, (SCM (*) ()) g_keys_options_scale_down_snap_size },
@@ -152,6 +148,7 @@ static struct BuiltinInfo builtins[] = {
   { "%options-show-log-window",      0, 0, 0, (SCM (*) ()) g_keys_options_show_log_window },
   { "%options-show-coord-window",    0, 0, 0, (SCM (*) ()) g_keys_options_show_coord_window },
   { "%options-select-font",          0, 0, 0, (SCM (*) ()) g_keys_options_select_font },
+  { "%options-draw-grips",           0, 0, 0, (SCM (*) ()) g_keys_options_draw_grips },
   { "%help-about",                   0, 0, 0, (SCM (*) ()) g_keys_help_about },
   { "%help-hotkeys",                 0, 0, 0, (SCM (*) ()) g_keys_help_hotkeys },
   { "%cancel",                       0, 0, 0, (SCM (*) ()) g_keys_cancel },
@@ -159,13 +156,13 @@ static struct BuiltinInfo builtins[] = {
   { NULL, 0, 0, 0, NULL }, /* Custodian */
 };
 
-/*! \brief Create the (gschem core builtins) Scheme module.
+/*! \brief Create the (schematic core builtins) Scheme module.
  * \par Function Description
- * Defines procedures in the (gschem core builtins) module. The module can
- * be accessed using (use-modules (gschem core builtins)).
+ * Defines procedures in the (schematic core builtins) module. The module can
+ * be accessed using (use-modules (schematic core builtins)).
  */
 static void
-init_module_gschem_core_builtins (void *unused)
+init_module_schematic_core_builtins (void *unused)
 {
   int i;
 
@@ -179,18 +176,17 @@ init_module_gschem_core_builtins (void *unused)
 }
 
 /*!
- * \brief Initialise gschem built-in actions.
+ * \brief Initialise lepton-schematic built-in actions.
  * \par Function Description
-
- * Registers the Scheme procedures used to access gschem's built-in
- * editing actions implemented in C.  Should only be called by
- * main_prog().
+ * Registers the Scheme procedures used to access
+ * lepton-schematic's built-in editing actions implemented in C.
+ * Should only be called by main_prog().
  */
 void
 g_init_builtins ()
 {
-  /* Define the (gschem core builtins) module */
-  scm_c_define_module ("gschem core builtins",
-                       (void (*)(void*)) init_module_gschem_core_builtins,
+  /* Define the (schematic core builtins) module */
+  scm_c_define_module ("schematic core builtins",
+                       (void (*)(void*)) init_module_schematic_core_builtins,
                        NULL);
 }

@@ -1,6 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * gattrib -- gEDA component and net attribute manipulation using spreadsheet.
+/* Lepton EDA attribute editor
  * Copyright (C) 2003-2010 Stuart D. Brorson.
+ * Copyright (C) 2003-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +25,7 @@
  * This file holds functions involved in manipulating the OBJECT data
  * structure.  OBJECT is defined in libgeda.  An OBJECT is a graphical
  * primitive normally used in gschem.  Example OBJECTs: some text,
- * a component (complex), a pin, a line, etc.
+ * a component, a pin, a line, etc.
  *
  * The functions herein are functions which I wrote as wrappers to the
  * fcns in libgeda.
@@ -83,7 +84,7 @@ s_object_add_comp_attrib_to_object (TOPLEVEL *toplevel,
                                     gint show_name_value)
 {
   char *name_value_pair;
-
+  g_return_if_fail (o_current != NULL);
 
   /* One last sanity check, then add attrib */
   if (strlen(new_attrib_value) != 0) {
@@ -139,6 +140,7 @@ s_object_add_pin_attrib_to_object (TOPLEVEL *toplevel,
                                    char *new_attrib_value)
 {
   char *name_value_pair;
+  g_return_if_fail (o_current != NULL);
 
   /* One last sanity check */
   if (strlen(new_attrib_value) != 0) {
@@ -191,11 +193,11 @@ void s_object_replace_attrib_in_object(TOPLEVEL *toplevel,
       old_attrib_name = u_basic_breakup_string(old_attrib_text, '=', 0);
 
       if (strcmp(old_attrib_name, new_attrib_name) == 0) {
-	/* create attrib=value text string & stuff it back into toplevel */
+	/* create attrib=value text string */
 	new_attrib_text = g_strconcat(new_attrib_name, "=", new_attrib_value, NULL);
-  o_text_set_string (toplevel, a_current, new_attrib_text);
+        o_text_set_string (a_current, new_attrib_text);
 	if (visibility != LEAVE_VISIBILITY_ALONE)
-	  o_set_visibility (toplevel, a_current, visibility);
+	  o_set_visibility (a_current, visibility);
 	if (show_name_value != LEAVE_NAME_VALUE_ALONE)
 	  a_current->show_name_value = show_name_value;
 	g_free(new_attrib_text);
@@ -213,9 +215,10 @@ void s_object_replace_attrib_in_object(TOPLEVEL *toplevel,
 
   /* if we get here, it's because we have failed to find the attrib on the component.
    * This is an error condition. */
-  fprintf(stderr,
-	 _("In s_object_replace_attrib_in_object, we have failed to find the attrib %1$s on the component.  Exiting . . .\n"),
-	 new_attrib_name);
+  fprintf (stderr, "s_object_replace_attrib_in_object: ");
+  fprintf (stderr,
+          _("Failed to find the attrib %1$s on the component.\n"),
+          new_attrib_name);
   exit(-1);
 }
 
@@ -254,7 +257,8 @@ s_object_remove_attrib_in_object (TOPLEVEL *toplevel,
 	/* We've found the attrib.  Delete it and then return. */
 
 #ifdef DEBUG
-	printf("In s_object_remove_attrib_in_object, removing attrib with name = %1$s\n", old_attrib_name);
+	printf ("s_object_remove_attrib_in_object: ");
+	printf ("Removing attrib with name = %1$s\n", old_attrib_name);
 #endif
 
 	attribute_object = a_current;
@@ -272,9 +276,10 @@ s_object_remove_attrib_in_object (TOPLEVEL *toplevel,
 
   /* if we get here, it's because we have failed to find the attrib on the component.
    * This is an error condition. */
-  fprintf(stderr,
-	 _("In s_object_remove_attrib_in_object, we have failed to find the attrib %1$s on the component.  Exiting . . .\n"),
-	 new_attrib_name);
+  fprintf (stderr, "s_object_remove_attrib_in_object: ");
+  fprintf (stderr,
+           _("Failed to find the attrib %1$s on the component.\n"),
+           new_attrib_name);
   exit(-1);
 }
 
@@ -290,7 +295,7 @@ s_object_remove_attrib_in_object (TOPLEVEL *toplevel,
  * \param text_string
  * \param visibility
  * \param show_name_value
- * \param object
+ * \param o_current
  * \returns pointer to the object
  * \todo Does it need to return OBJECT?
  */
@@ -299,60 +304,46 @@ s_object_attrib_add_attrib_in_object (TOPLEVEL *toplevel,
                                       char *text_string,
                                       int visibility,
                                       int show_name_value,
-                                      OBJECT * object)
+                                      OBJECT * o_current)
 {
   int world_x = -1, world_y = -1;
   int color;
-  int left, right, top, bottom;
-  OBJECT *o_current;
   OBJECT *new_obj;
 
-  o_current = object;
+  g_return_val_if_fail ((o_current != NULL), NULL);
 
   /* creating a toplevel or unattached attribute */
-  if (o_current) {
-    /* get coordinates of where to place the text object */
-    switch (o_current->type) {
-    case (OBJ_COMPLEX):
-      world_x = o_current->complex->x;
-      world_y = o_current->complex->y;
-      color = ATTRIBUTE_COLOR;
-      break;
+  /* get coordinates of where to place the text object */
+  switch (o_current->type) {
+  case (OBJ_COMPONENT):
+    world_x = o_current->component->x;
+    world_y = o_current->component->y;
+    color = ATTRIBUTE_COLOR;
+    break;
 
-    case (OBJ_NET):
-      world_x = o_current->complex->x;
-      world_y = o_current->complex->y;
-      color = ATTRIBUTE_COLOR;
-      break;
+  case (OBJ_NET):
+    world_x = o_current->component->x;
+    world_y = o_current->component->y;
+    color = ATTRIBUTE_COLOR;
+    break;
 
-    default:
-      fprintf(stderr, _("In s_object_attrib_add_attrib_in_object, trying to add attrib to non-complex or non-net!\n"));
-      exit(-1);
-    }
-  } else {    /* This must be a floating attrib, but what is that !?!?!?!?!  */
-    world_get_object_glist_bounds (toplevel,
-                                   s_page_objects (toplevel->page_current),
-                                   &left, &top, &right, &bottom);
-
-    /* this really is the lower left hand corner */
-    world_x = left;
-    world_y = top;
-
-    /* printf("%d %d\n", world_x, world_y); */
-    color = DETACHED_ATTRIBUTE_COLOR;
+  default:
+    fprintf (stderr, "s_object_attrib_add_attrib_in_object: ");
+    fprintf (stderr, _("Trying to add attrib to non-component or non-net!\n"));
+    exit(-1);
   }
 
   /* first create text item */
 #if DEBUG
-  printf("===  In s_object_attrib_add_attrib_in_object, about to attach new text attrib with properties:\n");
-  printf("     color = %d\n", color);
-  printf("     text_string = %s \n", text_string);
-  printf("     visibility = %d \n", visibility);
-  printf("     show_name_value = %d \n", show_name_value);
+  printf ("s_object_attrib_add_attrib_in_object: ");
+  printf ("About to attach new text attrib with properties:\n");
+  printf ("     color = %d\n", color);
+  printf ("     text_string = %s\n", text_string);
+  printf ("     visibility = %d\n", visibility);
+  printf ("     show_name_value = %d\n", show_name_value);
 #endif
 
-  new_obj = geda_text_object_new (toplevel,
-                                  color,
+  new_obj = geda_text_object_new (color,
                                   world_x,
                                   world_y,
                                   LOWER_LEFT,
@@ -361,18 +352,15 @@ s_object_attrib_add_attrib_in_object (TOPLEVEL *toplevel,
                                   DEFAULT_TEXT_SIZE,
                                   visibility,
                                   show_name_value);
-  s_page_append (toplevel, toplevel->page_current, new_obj);
+  s_page_append (toplevel->page_current, new_obj);
 
   /* now toplevel->page_current->object_tail contains new text item */
 
-  /* now attach the attribute to the object (if o_current is not NULL) */
+  /* now attach the attribute to the object */
   /* remember that o_current contains the object to get the attribute */
-  if (o_current) {
-    o_attrib_attach (toplevel, new_obj, o_current, FALSE);
-  }
+  o_attrib_attach (new_obj, o_current, FALSE);
 
-  o_selection_add (toplevel,
-                   toplevel->page_current->selection_list, new_obj);
+  o_selection_add (toplevel->page_current->selection_list, new_obj);
 
 
   toplevel->page_current->CHANGED = 1;
@@ -396,8 +384,8 @@ void
 s_object_delete_text_object_in_object (TOPLEVEL *toplevel,
                                        OBJECT * text_object)
 {
-  s_page_remove (toplevel, toplevel->page_current, text_object);
-  s_delete_object (toplevel, text_object);
+  s_page_remove (toplevel->page_current, text_object);
+  s_delete_object (text_object);
   toplevel->page_current->CHANGED = 1;
 }
 
@@ -413,15 +401,17 @@ int s_object_has_sym_file(OBJECT *object)
 {
   char *filename;
 
-  filename = object->complex_basename;
+  filename = object->component_basename;
   if (filename != NULL) {
 #ifdef DEBUG
-    printf("In s_object_has_sym_file, object has sym file = %s.\n", filename);
+    printf ("s_object_has_sym_file: ");
+    printf ("Object has sym file = %s.\n", filename);
 #endif
     return 0;
   } else {
 #ifdef DEBUG
-    printf("In s_object_has_sym_file, found object with no attached symbol file.\n");
+    printf ("s_object_has_sym_file: ");
+    printf ("Found object with no attached symbol file.\n");
 #endif
     return 1;
   }

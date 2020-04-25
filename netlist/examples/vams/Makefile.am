@@ -1,5 +1,3 @@
-## Process this file with automake to produce Makefile.in
-
 sch_files = \
 	sch/simple_trans.sch \
 	sch/sp_diode.sch \
@@ -19,11 +17,5 @@ sym_files = \
 
 SUBDIRS = vhdl
 
-EXTRA_DIST = README commonrc gnetlistrc gschemrc \
+EXTRA_DIST = README gschemrc lepton.conf generate_netlist.scm \
 	$(sch_files) $(sym_files)
-
-MOSTLYCLEANFILES =  core *.log FILE *.ps *~
-CLEANFILES = core *.log FILE *.ps *~
-DISTCLEANFILES = *.log core FILE *~
-MAINTAINERCLEANFILES = core *.log FILE *.ps *~ Makefile.in
-

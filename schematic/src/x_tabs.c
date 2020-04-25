@@ -1,5 +1,6 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 2018 dmn <graahnul.grom@gmail.com>
+ * Copyright (C) 2018-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,7 +53,7 @@
  * key:         use-tabs
  * group:       schematic.gui
  * type:        boolean
- * default val: false
+ * default val: true
  *
  * 2) Whether to show "close" button on tabs:
  * key:         show-close-button
@@ -66,21 +67,28 @@
  * type:        boolean
  * default val: true
  *
+ * 4) Whether to show tabs tooltips:
+ * key:         show-tooltips
+ * group:       schematic.tabs
+ * type:        boolean
+ * default val: true
+ *
  */
+
+#include "config.h"
 
 #include "gschem.h"
 
 
 
 
-static gboolean
-g_x_tabs_enabled = FALSE;
+static gboolean g_x_tabs_enabled;
 
-static gboolean
-g_x_tabs_show_close_button = TRUE;
+static gboolean g_x_tabs_show_close_button;
 
-static gboolean
-g_x_tabs_show_up_button = TRUE;
+static gboolean g_x_tabs_show_up_button;
+
+static gboolean g_x_tabs_show_tooltips;
 
 
 
@@ -111,7 +119,14 @@ x_tabs_show_up_button()
 
 
 
-/*! \brief Initialize tabbed GUI.
+static gboolean
+x_tabs_show_tooltips()
+{
+  return g_x_tabs_show_tooltips;
+}
+
+
+/*! \brief Initialize tabbed GUI; read configuration
  *  \public
  *
  *  \par Function Description
@@ -120,56 +135,17 @@ x_tabs_show_up_button()
 void
 x_tabs_init()
 {
-  gchar*     cwd = g_get_current_dir();
-  EdaConfig* cfg = eda_config_get_context_for_path (cwd);
-  g_free (cwd);
+  cfg_read_bool ("schematic.gui", "use-tabs",
+                 default_tabs_enabled, &g_x_tabs_enabled);
 
-  if (cfg != NULL)
-  {
-    GError* err = NULL;
+  cfg_read_bool ("schematic.tabs", "show-close-button",
+                 default_tabs_show_close_button, &g_x_tabs_show_close_button);
 
-    /* read config: whether to use tabbed GUI:
-    */
-    gboolean val = eda_config_get_boolean (cfg,
-                                           "schematic.gui",
-                                           "use-tabs",
-                                           &err);
-    if (err == NULL)
-    {
-      g_x_tabs_enabled = val;
-    }
+  cfg_read_bool ("schematic.tabs", "show-up-button",
+                 default_tabs_show_up_button, &g_x_tabs_show_up_button);
 
-    g_clear_error (&err);
-
-
-    /* read config: whether to show "close" button:
-    */
-    val = eda_config_get_boolean (cfg,
-                                  "schematic.tabs",
-                                  "show-close-button",
-                                  &err);
-    if (err == NULL)
-    {
-      g_x_tabs_show_close_button = val;
-    }
-
-    g_clear_error (&err);
-
-
-    /* read config: whether to show "hierarchy up" button:
-    */
-    val = eda_config_get_boolean (cfg,
-                                  "schematic.tabs",
-                                  "show-up-button",
-                                  &err);
-    if (err == NULL)
-    {
-      g_x_tabs_show_up_button = val;
-    }
-
-    g_clear_error (&err);
-  }
-
+  cfg_read_bool ("schematic.tabs", "show-tooltips",
+                 default_tabs_show_tooltips, &g_x_tabs_show_tooltips);
 } /* x_tabs_init() */
 
 
@@ -282,6 +258,28 @@ x_tabs_page_on_sel (GtkNotebook* nbook,
                     GtkWidget*   wtab,
                     guint        ndx,
                     gpointer     data);
+
+static void
+x_tabs_page_on_reordered (GtkNotebook* nbook,
+                          GtkWidget*   wtab,
+                          guint        newindex,
+                          gpointer     data);
+
+
+static gboolean
+x_tabs_hdr_on_mouse_click (GtkWidget* hdr, GdkEvent* e, gpointer data);
+static GtkMenu*
+x_tabs_menu_create (TabInfo* nfo);
+static void
+x_tabs_menu_create_item (GschemToplevel* toplevel,
+                         GtkWidget*      menu,
+                         const gchar*    action_name,
+                         const gchar*    action_label,
+                         const gchar*    icon_name);
+static void
+x_tabs_menu_create_item_separ (GtkWidget* menu);
+static void
+x_tabs_menu_item_on_activate (GtkAction* action, gpointer data);
 
 
 
@@ -408,7 +406,24 @@ x_tabs_dbg_pages_dump (GschemToplevel* w_current)
   printf( " ^^^^^^^^^^^^^^ pages ^^^^^^^^^^^^^^^^^^\n\n" );
 }
 
-#endif
+static void
+x_tabs_dbg_pages_dump_simple (GschemToplevel* w_current)
+{
+  printf( " >> pages:\n" );
+  g_return_if_fail( w_current != NULL );
+
+  for ( GList* node = w_current->toplevel->pages->glist;
+        node != NULL;
+        node = g_list_next( node ) )
+  {
+    PAGE* p = node->data;
+    printf( "    p: [%s]\n", g_path_get_basename( s_page_get_filename(p) ) );
+  }
+
+  printf( "\n" );
+}
+
+#endif /* DEBUG */
 
 
 
@@ -660,6 +675,11 @@ x_tabs_nbook_create (GschemToplevel* w_current, GtkWidget* work_box)
   g_signal_connect (nbook, "switch-page",
                     G_CALLBACK (&x_tabs_page_on_sel), w_current);
 
+  g_signal_connect (nbook,
+                    "page-reordered",
+                    G_CALLBACK (&x_tabs_page_on_reordered),
+                    w_current);
+
 } /* x_tabs_nbook_create() */
 
 
@@ -728,9 +748,6 @@ x_tabs_pview_create (GschemToplevel* w_current,
   gtk_container_add (GTK_CONTAINER (wtab), GTK_WIDGET (pview));
   gtk_widget_show_all (wtab);
 
-  gtk_widget_set_size_request (GTK_WIDGET (pview),
-                               default_width, default_height);
-
   GTK_WIDGET_SET_FLAGS (pview, GTK_CAN_FOCUS);
 
   x_window_setup_draw_events_drawing_area (w_current, pview);
@@ -763,36 +780,43 @@ static GtkWidget*
 x_tabs_hdr_create (TabInfo* nfo)
 {
   g_return_val_if_fail (nfo != NULL, NULL);
+  g_return_val_if_fail (nfo->page_ != NULL, NULL);
 
   GtkWidget* box_hdr        = gtk_hbox_new (FALSE, 0);
   GtkWidget* box_btns_left  = gtk_hbox_new (FALSE, 0);
   GtkWidget* box_lab        = gtk_hbox_new (FALSE, 0);
   GtkWidget* box_btns_right = gtk_hbox_new (FALSE, 0);
 
-  const gboolean show_btn_up    = x_tabs_show_up_button();
-  const gboolean show_btn_close = x_tabs_show_close_button();
 
   /* label:
   */
-  const gchar* fname = NULL;
-  gchar* bname = NULL;
+  const gchar* fname = s_page_get_filename (nfo->page_);
+  g_return_val_if_fail (fname != NULL, NULL);
 
-  if (nfo->page_)
-    fname = s_page_get_filename (nfo->page_);
+  gchar* bname = g_path_get_basename (fname);
+  gchar* lab_txt = NULL;
 
-  if (fname)
-    bname = g_path_get_basename (fname);
+  if (nfo->page_->CHANGED)
+    lab_txt = g_strdup_printf ("* <b>%s</b>", bname);
+  else
+    lab_txt = g_strdup (bname);
 
-  GtkWidget* lab = gtk_label_new (bname);
+  GtkWidget* lab = gtk_label_new (NULL);
+  gtk_label_set_markup (GTK_LABEL (lab), lab_txt);
   gtk_box_pack_start (GTK_BOX (box_lab), lab, TRUE, TRUE, 0);
 
   g_free (bname);
+  g_free (lab_txt);
 
 
   /* tab's tooltip:
   */
-  /* display full path of the schematic file: */
-  gtk_widget_set_tooltip_text (box_hdr, fname);
+  if (x_tabs_show_tooltips())
+  {
+    /* the full path of the schematic file:
+    */
+    gtk_widget_set_tooltip_text (box_hdr, fname);
+  }
 
 
   /* make tab btns smaller => smaller tabs:
@@ -847,7 +871,7 @@ x_tabs_hdr_create (TabInfo* nfo)
   TOPLEVEL* toplevel = gschem_toplevel_get_toplevel (nfo->tl_);
   PAGE* parent = s_hierarchy_find_up_page (toplevel->pages, nfo->page_);
 
-  if (show_btn_up && parent != NULL)
+  if (x_tabs_show_up_button() && parent != NULL)
   {
     const gchar* parent_fname = s_page_get_filename (parent);
     gchar*       parent_bname = NULL;
@@ -877,7 +901,7 @@ x_tabs_hdr_create (TabInfo* nfo)
 
   /* setup "close" btn:
   */
-  if (show_btn_close)
+  if (x_tabs_show_close_button())
   {
     gtk_box_pack_start (GTK_BOX (box_btns_right), btn_close, FALSE, FALSE, 0);
 
@@ -905,7 +929,18 @@ x_tabs_hdr_set (GtkNotebook* nbook, TabInfo* nfo)
   g_return_if_fail (nfo != NULL);
 
   GtkWidget* hdr = x_tabs_hdr_create (nfo);
-  gtk_notebook_set_tab_label (nbook, nfo->wtab_, hdr);
+
+  GtkWidget* ebox = gtk_event_box_new();
+  gtk_event_box_set_visible_window (GTK_EVENT_BOX (ebox), FALSE);
+  gtk_container_add (GTK_CONTAINER (ebox), hdr);
+  gtk_widget_show_all (ebox);
+
+  g_signal_connect (ebox,
+                    "button-press-event",
+                    G_CALLBACK (&x_tabs_hdr_on_mouse_click),
+                    nfo);
+
+  gtk_notebook_set_tab_label (nbook, nfo->wtab_, ebox);
 }
 
 
@@ -1019,7 +1054,7 @@ x_tabs_cancel_all (GschemToplevel* w_current)
   TOPLEVEL* toplevel = gschem_toplevel_get_toplevel (w_current);
   if (toplevel->page_current != NULL)
   {
-    geda_object_list_delete (toplevel, toplevel->page_current->place_list);
+    geda_object_list_delete (toplevel->page_current->place_list);
     toplevel->page_current->place_list = NULL;
   }
 
@@ -1151,6 +1186,8 @@ x_tabs_page_new (GschemToplevel* w_current, PAGE* page)
   GschemPageView* pview = x_tabs_pview_create (w_current, page, &wtab);
   x_tabs_tl_pview_cur_set (w_current, pview);
   gint ndx = x_tabs_nbook_page_add (w_current, page, pview, wtab);
+
+  gtk_notebook_set_tab_reorderable (w_current->xtabs_nbook, wtab, TRUE);
 
   return x_tabs_info_add (w_current, ndx, page, pview, wtab);
 
@@ -1476,4 +1513,155 @@ x_tabs_page_on_sel (GtkNotebook* nbook,
   x_window_set_current_page_impl (w_current, nfo->page_);
 
 } /* x_tabs_page_on_sel() */
+
+
+
+/*! \brief GtkNotebook "page-reordered" signal handler.
+ */
+static void
+x_tabs_page_on_reordered (GtkNotebook* nbook,
+                          GtkWidget*   wtab,
+                          guint        newindex,
+                          gpointer     data)
+{
+  GschemToplevel* w_current = (GschemToplevel*) data;
+  g_return_if_fail (w_current != NULL);
+  g_return_if_fail (w_current->toplevel != NULL);
+  g_return_if_fail (w_current->toplevel->pages != NULL);
+
+  TabInfo* nfo = x_tabs_info_find_by_wtab (w_current->xtabs_info_list, wtab);
+  g_return_if_fail (nfo != NULL);
+
+  GedaPageList* pages = w_current->toplevel->pages;
+  geda_list_move_item (pages, nfo->page_, newindex);
+
+  gtk_widget_grab_focus (GTK_WIDGET (nfo->pview_));
+  page_select_widget_update (w_current);
+
+#ifdef DEBUG
+  x_tabs_dbg_pages_dump_simple( w_current );
+#endif
+
+} /* x_tabs_page_on_reordered() */
+
+
+
+/*! \brief Create popup menu for tab's header.
+ */
+static GtkMenu*
+x_tabs_menu_create (TabInfo* nfo)
+{
+  g_return_val_if_fail (nfo != NULL, NULL);
+
+  GschemToplevel* tl = nfo->tl_;
+  g_return_val_if_fail (tl != NULL, NULL);
+
+  GtkWidget* menu = gtk_menu_new();
+  x_tabs_menu_create_item (tl, menu, "file-new", _("_New"), GTK_STOCK_NEW);
+  x_tabs_menu_create_item (tl, menu, "file-open", _("_Open..."), GTK_STOCK_OPEN);
+  x_tabs_menu_create_item_separ (menu);
+  x_tabs_menu_create_item (tl, menu, "file-save", _("_Save"), GTK_STOCK_SAVE);
+  x_tabs_menu_create_item (tl, menu, "file-save-as", _("Save _As..."), GTK_STOCK_SAVE_AS);
+  x_tabs_menu_create_item_separ (menu);
+  x_tabs_menu_create_item (tl, menu, "page-manager", _("Page _Manager..."), NULL);
+  x_tabs_menu_create_item_separ (menu);
+  x_tabs_menu_create_item (tl, menu, "page-close", _("_Close"), GTK_STOCK_CLOSE);
+
+  gtk_widget_show_all (menu);
+  return GTK_MENU (menu);
+
+} /* x_tabs_menu_create() */
+
+
+
+/*! \brief Tab's header widget "button-press-event" signal handler.
+ *  \todo  Consider switching to clicked tab
+ */
+static gboolean
+x_tabs_hdr_on_mouse_click (GtkWidget* hdr, GdkEvent* e, gpointer data)
+{
+  g_return_val_if_fail (data != NULL, FALSE);
+
+  TabInfo* nfo    = (TabInfo*) data;
+  TabInfo* nfocur = x_tabs_info_cur (nfo->tl_);
+
+  /* show menu for current tab only:
+  */
+  if (nfo != nfocur)
+  {
+    return FALSE;
+  }
+
+#ifdef DEBUG
+  printf( "p: [%s]\n",   g_path_get_basename( s_page_get_filename(nfo->page_) ) );
+  printf( "C: [%s]\n\n", g_path_get_basename( s_page_get_filename(nfocur->page_) ) );
+#endif
+
+  GdkEventButton* ebtn = (GdkEventButton*) e;
+
+  if (ebtn->type == GDK_BUTTON_PRESS && ebtn->button == 3) /* 3: RMB */
+  {
+    GtkMenu* menu = x_tabs_menu_create (nfo);
+    gtk_menu_attach_to_widget (menu, hdr, NULL);
+
+    int etime = gtk_get_current_event_time();
+    gtk_menu_popup (menu, NULL, NULL, NULL, NULL, ebtn->button, etime);
+
+    return TRUE;
+  }
+
+  return FALSE; /* FALSE => propagate the event further */
+
+} /* x_tabs_page_on_mouse_click() */
+
+
+
+/*! \brief "activate" signal handler for context menu item action.
+ */
+static void
+x_tabs_menu_item_on_activate (GtkAction* action, gpointer data)
+{
+  GschemToplevel* toplevel    = (GschemToplevel*) data;
+  const gchar*    action_name = gtk_action_get_name (action);
+
+  g_action_eval_by_name (toplevel, action_name);
+}
+
+
+
+/*! \brief Create and add popup menu item separator.
+ */
+static void
+x_tabs_menu_create_item_separ (GtkWidget* menu)
+{
+  gtk_menu_shell_append (GTK_MENU_SHELL (menu),
+                         gtk_separator_menu_item_new());
+}
+
+
+
+/*! \brief Create and add popup menu item.
+ */
+static void
+x_tabs_menu_create_item (GschemToplevel* toplevel,
+                         GtkWidget*      menu,
+                         const gchar*    action_name,
+                         const gchar*    action_label,
+                         const gchar*    icon_name)
+{
+  GschemAction* action = gschem_action_new (action_name,  /* name */
+                                            action_label, /* label */
+                                            NULL,         /* tooltip */
+                                            icon_name,    /* stock_id */
+                                            NULL);        /* multikey_accel */
+
+  GtkWidget* item = gtk_action_create_menu_item (GTK_ACTION (action));
+  gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+
+  g_signal_connect (action,
+                    "activate",
+                    G_CALLBACK (&x_tabs_menu_item_on_activate),
+                    toplevel);
+
+} /* x_tabs_menu_create_item() */
 

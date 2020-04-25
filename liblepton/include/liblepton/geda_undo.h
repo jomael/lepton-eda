@@ -64,13 +64,10 @@ void
 s_undo_print_all (UNDO *head);
 
 void
-s_undo_destroy_all (TOPLEVEL *toplevel, UNDO *head);
+s_undo_destroy_all (UNDO *head);
 
 void
-s_undo_remove (TOPLEVEL *toplevel, UNDO *head, UNDO *u_tos);
-
-void
-s_undo_remove_rest (TOPLEVEL *toplevel, UNDO *head);
+s_undo_remove_rest (UNDO *head);
 
 int
 s_undo_levels (UNDO *head);
@@ -79,6 +76,6 @@ void
 s_undo_init (PAGE *p_current);
 
 void
-s_undo_free_all (TOPLEVEL *toplevel, PAGE *p_current);
+s_undo_free_all (PAGE *p_current);
 
 G_END_DECLS

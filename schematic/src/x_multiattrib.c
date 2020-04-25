@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2013 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -541,7 +542,7 @@ static void multiattrib_popup_menu (Multiattrib *multiattrib,
  */
 static gboolean is_multiattrib_object (OBJECT *object)
 {
-  if (object->type == OBJ_COMPLEX ||
+  if (object->type == OBJ_COMPONENT ||
       object->type == OBJ_PLACEHOLDER ||
       object->type == OBJ_NET ||
       object->type == OBJ_BUS ||
@@ -615,7 +616,7 @@ multiattrib_action_duplicate_attributes (Multiattrib *multiattrib,
     /* create a new attribute and link it */
     o_attrib_add_attrib (w_current,
                          geda_text_object_get_string (o_attrib),
-                         o_is_visible (w_current->toplevel, o_attrib),
+                         o_is_visible (o_attrib),
                          o_attrib->show_name_value,
                          o_attrib->attached_to);
   }
@@ -643,7 +644,7 @@ multiattrib_action_promote_attributes (Multiattrib *multiattrib,
        iter = g_list_next (iter)) {
     OBJECT *o_attrib = (OBJECT *)iter->data;
 
-    if (o_is_visible (toplevel, o_attrib)) {
+    if (o_is_visible (o_attrib)) {
       /* If the attribute we're promoting is visible, don't clone its location */
       o_attrib_add_attrib (w_current,
                            geda_text_object_get_string (o_attrib),
@@ -652,10 +653,10 @@ multiattrib_action_promote_attributes (Multiattrib *multiattrib,
                            o_attrib->parent);
     } else {
         /* make a copy of the attribute object */
-        o_new = o_object_copy (toplevel, o_attrib);
-        s_page_append (toplevel, toplevel->page_current, o_new);
+        o_new = o_object_copy (o_attrib);
+        s_page_append (toplevel->page_current, o_new);
         /* add the attribute its parent */
-        o_attrib_attach (toplevel, o_new, o_attrib->parent, TRUE);
+        o_attrib_attach (o_new, o_attrib->parent, TRUE);
         /* note: this object is unselected (not added to selection). */
 
         /* Call add-objects-hook */
@@ -722,7 +723,7 @@ multiattrib_action_copy_attribute_to_all (Multiattrib *multiattrib,
       /* Pick the first instance to copy from */
       OBJECT *attrib_to_copy = (OBJECT*) attr_list->data;
 
-      int visibility = o_is_visible (w_current->toplevel, attrib_to_copy)
+      int visibility = o_is_visible (attrib_to_copy)
           ? VISIBLE : INVISIBLE;
 
       /* create a new attribute and link it */
@@ -761,11 +762,18 @@ multiattrib_column_set_data_name (GtkTreeViewColumn *tree_column,
                       COLUMN_PRESENT_IN_ALL, &present_in_all,
                       -1);
 
+  /*
+   * Set "editable" property to TRUE even for inherited attributes.
+   * This is done to allow the user to copy cell contents to clipboard.
+   * For inherited attributes no action will be taken on edit:
+   * multiattrib_callback_edited_name() will just return.
+  */
+
   g_object_set (cell,
                 "text", name,
                 "foreground-gdk", inherited ? &dialog->insensitive_text_color :
                                   (!present_in_all ? &dialog->not_present_in_all_text_color : NULL),
-                "editable", !inherited,
+                "editable", TRUE,
                 NULL);
   g_free (name);
 }
@@ -793,11 +801,18 @@ multiattrib_column_set_data_value (GtkTreeViewColumn *tree_column,
                       COLUMN_IDENTICAL_VALUE, &identical_value,
                       -1);
 
+  /*
+   * Set "editable" property to TRUE even for inherited attributes.
+   * This is done to allow the user to copy cell contents to clipboard.
+   * For inherited attributes no action will be taken on edit:
+   * multiattrib_callback_edited_value() will just return.
+  */
+
   g_object_set (cell,
                 "text", identical_value ? value : _("<various>"),
                 "foreground-gdk", inherited ? &dialog->insensitive_text_color :
                                   (!identical_value ? &dialog->not_identical_value_text_color : NULL),
-                "editable", !inherited,
+                "editable", TRUE,
                 NULL);
   g_free (value);
 }
@@ -912,6 +927,7 @@ multiattrib_callback_edited_name (GtkCellRendererText *cellrenderertext,
   GschemToplevel *w_current;
   gchar *value, *newtext;
   int visibility;
+  int inherited;
 
   model = gtk_tree_view_get_model (multiattrib->treeview);
   w_current = GSCHEM_DIALOG (multiattrib)->w_current;
@@ -919,6 +935,18 @@ multiattrib_callback_edited_name (GtkCellRendererText *cellrenderertext,
   if (!gtk_tree_model_get_iter_from_string (model, &iter, arg1)) {
     return;
   }
+
+
+  /* Do not allow editing of inherited attributes:
+  */
+  gtk_tree_model_get (model, &iter,
+                      COLUMN_INHERITED, &inherited,
+                      -1);
+  if (inherited)
+  {
+    return;
+  }
+
 
   if (g_ascii_strcasecmp (new_name, "") == 0) {
     GtkWidget *dialog = gtk_message_dialog_new (
@@ -951,7 +979,7 @@ multiattrib_callback_edited_name (GtkCellRendererText *cellrenderertext,
        a_iter = g_list_next (a_iter)) {
     o_attrib = (OBJECT*) a_iter->data;
 
-    visibility = o_is_visible (w_current->toplevel, o_attrib)
+    visibility = o_is_visible (o_attrib)
         ? VISIBLE : INVISIBLE;
 
     /* actually modifies the attribute */
@@ -994,6 +1022,7 @@ multiattrib_callback_edited_value (GtkCellRendererText *cell_renderer,
   char *old_value;
   char *newtext;
   int visibility;
+  int inherited;
 
   model = gtk_tree_view_get_model (multiattrib->treeview);
   w_current = GSCHEM_DIALOG (multiattrib)->w_current;
@@ -1001,6 +1030,18 @@ multiattrib_callback_edited_value (GtkCellRendererText *cell_renderer,
   if (!gtk_tree_model_get_iter_from_string (model, &iter, arg1)) {
     return;
   }
+
+
+  /* Do not allow editing of inherited attributes:
+  */
+  gtk_tree_model_get (model, &iter,
+                      COLUMN_INHERITED, &inherited,
+                      -1);
+  if (inherited)
+  {
+    return;
+  }
+
 
   gtk_tree_model_get (model, &iter,
                       COLUMN_NAME, &name,
@@ -1025,7 +1066,7 @@ multiattrib_callback_edited_value (GtkCellRendererText *cell_renderer,
        a_iter = g_list_next (a_iter)) {
     o_attrib = (OBJECT *)a_iter->data;
 
-    visibility = o_is_visible (w_current->toplevel, o_attrib)
+    visibility = o_is_visible (o_attrib)
         ? VISIBLE : INVISIBLE;
 
     /* actually modifies the attribute */
@@ -1087,8 +1128,8 @@ multiattrib_callback_toggled_visible (GtkCellRendererToggle *cell_renderer,
 
     /* actually modifies the attribute */
     o_invalidate (w_current, o_attrib);
-    o_set_visibility (w_current->toplevel, o_attrib, new_visibility ? VISIBLE : INVISIBLE);
-    o_text_recreate (w_current->toplevel, o_attrib);
+    o_set_visibility (o_attrib, new_visibility ? VISIBLE : INVISIBLE);
+    o_text_recreate (o_attrib);
   }
 
   g_object_unref (attr_list);
@@ -1152,7 +1193,7 @@ multiattrib_callback_toggled_show_name (GtkCellRendererToggle *cell_renderer,
 
     /* actually modifies the attribute */
     o_attrib->show_name_value = new_snv;
-    o_text_recreate (w_current->toplevel, o_attrib);
+    o_text_recreate (o_attrib);
   }
 
   g_object_unref (attr_list);
@@ -1216,7 +1257,7 @@ multiattrib_callback_toggled_show_value (GtkCellRendererToggle *cell_renderer,
 
     /* actually modifies the attribute */
     o_attrib->show_name_value = new_snv;
-    o_text_recreate (w_current->toplevel, o_attrib);
+    o_text_recreate (o_attrib);
   }
 
   g_object_unref (attr_list);
@@ -2166,7 +2207,7 @@ multiattrib_init (Multiattrib *multiattrib)
   gtk_box_pack_start (GTK_BOX (attrib_vbox), scrolled_win, TRUE, TRUE, 0);
 
   /* create the show inherited button */
-  show_inherited = gtk_check_button_new_with_label (_("Show inherited attributes"));
+  show_inherited = gtk_check_button_new_with_mnemonic (_("Sho_w inherited attributes"));
   multiattrib->show_inherited = show_inherited;
   gtk_box_pack_start (GTK_BOX (attrib_vbox), show_inherited, FALSE, FALSE, 0);
 
@@ -2193,19 +2234,19 @@ multiattrib_init (Multiattrib *multiattrib)
                                     NULL));
 
   /*   - the name entry: a GtkComboBoxEntry */
-  label = GTK_WIDGET (g_object_new (GTK_TYPE_LABEL,
-                                    /* GtkMisc */
-                                    "xalign", 0.0,
-                                    "yalign", 0.5,
-                                    /* GtkLabel */
-                                    "label",  _("Name:"),
-                                    NULL));
+  label = gtk_label_new_with_mnemonic (_("_Name:"));
+  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+
   combo = GTK_WIDGET (g_object_new (GTK_TYPE_COMBO,
                                     /* GtkCombo */
                                     "value-in-list", FALSE,
                                     NULL));
   multiattrib_init_attrib_names (GTK_COMBO (combo));
   multiattrib->combo_name = GTK_COMBO (combo);
+
+  gtk_label_set_mnemonic_widget (GTK_LABEL (label),
+                                 multiattrib->combo_name->entry);
+
   gtk_table_attach (GTK_TABLE (table), label,
                     0, 1, 0, 1,
                     (GtkAttachOptions) 0,
@@ -2218,13 +2259,9 @@ multiattrib_init (Multiattrib *multiattrib)
                     6, 3);
 
   /*   - the value entry: a GtkEntry */
-  label = GTK_WIDGET (g_object_new (GTK_TYPE_LABEL,
-                                    /* GtkMisc */
-                                    "xalign", 0.0,
-                                    "yalign", 0.5,
-                                    /* GtkLabel */
-                                    "label",  _("Value:"),
-                                    NULL));
+  label = gtk_label_new_with_mnemonic (_("_Value:"));
+  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+
   scrolled_win = GTK_WIDGET (
                              g_object_new (GTK_TYPE_SCROLLED_WINDOW,
                                            /* GtkScrolledWindow */
@@ -2250,6 +2287,9 @@ multiattrib_init (Multiattrib *multiattrib)
                     "grab-focus",
                     G_CALLBACK (multiattrib_callback_value_grab_focus),
                     multiattrib);
+
+  gtk_label_set_mnemonic_widget (GTK_LABEL (label), textview);
+
   /* Save the GTK_STATE_NORMAL color so we can work around GtkTextView's
    * stubborn refusal to draw with GTK_STATE_INSENSITIVE later on */
   style = gtk_widget_get_style (textview);
@@ -2278,11 +2318,9 @@ multiattrib_init (Multiattrib *multiattrib)
                     6, 3);
 
   /*   - the visible status */
-  button = GTK_WIDGET (g_object_new (GTK_TYPE_CHECK_BUTTON,
-                                     /* GtkButton */
-                                     "label", _("Visible"),
-                                     "active", TRUE,
-                                     NULL));
+  button = gtk_check_button_new_with_mnemonic (_("Vi_sible"));
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), TRUE);
+
   multiattrib->button_visible = GTK_CHECK_BUTTON (button);
   gtk_table_attach (GTK_TABLE (table), button,
                     0, 1, 2, 3,
@@ -2422,7 +2460,6 @@ typedef struct {
 static GList *
 object_attributes_to_model_rows (Multiattrib *multiattrib, OBJECT *object)
 {
-  GschemToplevel *w_current = GSCHEM_DIALOG (multiattrib)->w_current;
   GList *model_rows = NULL;
   GList *a_iter;
   GList *object_attribs = o_attrib_return_attribs (object);
@@ -2436,7 +2473,7 @@ object_attributes_to_model_rows (Multiattrib *multiattrib, OBJECT *object)
 
     m_row->inherited = o_attrib_is_inherited (a_current);
     o_attrib_get_name_value (a_current, &m_row->name, &m_row->value);
-    m_row->visibility = o_is_visible (w_current->toplevel, a_current);
+    m_row->visibility = o_is_visible (a_current);
     m_row->show_name_value = a_current->show_name_value;
     m_row->nth_with_name = 0; /* Provisional value until we check below */
 
@@ -2486,7 +2523,6 @@ object_attributes_to_model_rows (Multiattrib *multiattrib, OBJECT *object)
 static GList *
 lone_attributes_to_model_rows (Multiattrib *multiattrib)
 {
-  GschemToplevel *w_current = GSCHEM_DIALOG (multiattrib)->w_current;
   GList *o_iter;
   GList *model_rows = NULL;
 
@@ -2508,7 +2544,7 @@ lone_attributes_to_model_rows (Multiattrib *multiattrib)
     m_row = g_new0 (MODEL_ROW, 1);
     m_row->inherited = o_attrib_is_inherited (object);
     o_attrib_get_name_value (object, &m_row->name, &m_row->value);
-    m_row->visibility = o_is_visible (w_current->toplevel, object);
+    m_row->visibility = o_is_visible (object);
     m_row->show_name_value = object->show_name_value;
     m_row->nth_with_name = 0; /* All selected attributes are treated individually */
 
@@ -2587,7 +2623,7 @@ multiattrib_populate_liststore (Multiattrib *multiattrib,
 static void
 append_dialog_title_extra (GString *title_string,
                            int *num_title_extras,
-                           char *text,
+                           const char *text,
                            ...)
 {
   va_list args;
@@ -2599,7 +2635,7 @@ append_dialog_title_extra (GString *title_string,
 }
 
 static void
-update_dialog_title (Multiattrib *multiattrib, char *complex_title_name)
+update_dialog_title (Multiattrib *multiattrib, const char *component_title_name)
 {
   GString *title_string = g_string_new (_("Edit Attributes"));
   int num_title_extras = 0;
@@ -2615,10 +2651,10 @@ update_dialog_title (Multiattrib *multiattrib, char *complex_title_name)
    *
    * for more information.
    */
-  if (multiattrib->num_complex_in_list > 0) {
+  if (multiattrib->num_comp_in_list > 0) {
     append_dialog_title_extra (title_string, &num_title_extras,
-                               ngettext ("%2$i symbol (%1$s)", "%2$i symbols (%1$s)", multiattrib->num_complex_in_list),
-                               complex_title_name, multiattrib->num_complex_in_list);
+                               ngettext ("%2$i symbol (%1$s)", "%2$i symbols (%1$s)", multiattrib->num_comp_in_list),
+                               component_title_name, multiattrib->num_comp_in_list);
   }
 
   if (multiattrib->num_pins_in_list > 0) {
@@ -2669,13 +2705,13 @@ multiattrib_update (Multiattrib *multiattrib)
   gboolean list_sensitive;
   gboolean add_sensitive;
   GList *model_rows = NULL;
-  char *complex_title_name = NULL;
+  const char *component_title_name = NULL;
 
   show_inherited =
     gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (multiattrib->show_inherited));
 
   multiattrib->total_num_in_list        = 0;
-  multiattrib->num_complex_in_list      = 0;
+  multiattrib->num_comp_in_list      = 0;
   multiattrib->num_pins_in_list         = 0;
   multiattrib->num_nets_in_list         = 0;
   multiattrib->num_buses_in_list        = 0;
@@ -2696,14 +2732,14 @@ multiattrib_update (Multiattrib *multiattrib)
     /* Count the different objects we are editing */
     multiattrib->total_num_in_list++;
 
-    if (object->type == OBJ_COMPLEX ||
+    if (object->type == OBJ_COMPONENT ||
         object->type == OBJ_PLACEHOLDER) {
-      multiattrib->num_complex_in_list++;
+      multiattrib->num_comp_in_list++;
 
-      if (complex_title_name == NULL)
-        complex_title_name = object->complex_basename;
-      else if (strcmp (complex_title_name, object->complex_basename) != 0)
-        complex_title_name = _("<various>");
+      if (component_title_name == NULL)
+        component_title_name = object->component_basename;
+      else if (strcmp (component_title_name, object->component_basename) != 0)
+        component_title_name = _("<various>");
     }
 
     if (object->type == OBJ_PIN)
@@ -2797,7 +2833,7 @@ multiattrib_update (Multiattrib *multiattrib)
   multiattrib_populate_liststore (multiattrib, model_rows);
 
   /* Update window title to describe the objects we are editing. */
-  update_dialog_title (multiattrib, complex_title_name);
+  update_dialog_title (multiattrib, component_title_name);
 
   /* Update sensitivities */
   gtk_widget_set_sensitive (GTK_WIDGET (multiattrib->list_frame), list_sensitive);

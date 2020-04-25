@@ -1,6 +1,6 @@
-/* gEDA - GPL Electronic Design Automation
- * libleptonrenderer - Rendering Lepton EDA schematics with Cairo
- * Copyright (C) 2010-2012 gEDA Contributors (see ChangeLog for details)
+/* libleptonrenderer - Rendering Lepton EDA schematics with Cairo
+ * Copyright (C) 2010-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -79,10 +79,21 @@ static inline gboolean
 EDA_RENDERER_CHECK_FLAG (EdaRenderer *r, int f) {
   return r->priv->flags & f;
 }
+
+
+
+/* EDA_RENDERER_SET_FLAG() function is currently unused.
+ * Comment it out to suppress compiler warnings.
+
 static inline void
 EDA_RENDERER_SET_FLAG (EdaRenderer *r, int f, gboolean e) {
   if (e) { r->priv->flags |= f; } else { r->priv->flags &= ~f; }
 }
+
+*/
+
+
+
 static inline unsigned int
 EDA_RENDERER_CAIRO_FLAGS (EdaRenderer *r) {
   return EDA_RENDERER_CHECK_FLAG (r, FLAG_HINTING) ? EDA_CAIRO_ENABLE_HINTS : 0;
@@ -92,8 +103,14 @@ EDA_RENDERER_STROKE_WIDTH (EdaRenderer *r, double width) {
   /* For now, the minimum line width possible is half the net width. */
   return fmax (width, NET_WIDTH / 2);
 }
+/* The same as above, but returns 0 if width is 0. Especially
+   added to allow (filled) paths with zero width line. */
+static inline double
+EDA_RENDERER_STROKE_WIDTH0 (EdaRenderer *r, double width) {
+  return (width == 0) ? 0 : EDA_RENDERER_STROKE_WIDTH (r, width);
+}
 
-#define DEFAULT_FONT_NAME "Arial"
+#define DEFAULT_FONT_NAME "Sans"
 #define GRIP_STROKE_COLOR SELECT_COLOR
 #define GRIP_FILL_COLOR BACKGROUND_COLOR
 #define TEXT_MARKER_SIZE 10
@@ -132,7 +149,7 @@ static int eda_renderer_prepare_text (EdaRenderer *renderer, const GedaObject *o
 static void eda_renderer_calc_text_position (EdaRenderer *renderer, const GedaObject *object,
                                              int descent, double *x, double *y);
 static void eda_renderer_draw_picture (EdaRenderer *renderer, OBJECT *object);
-static void eda_renderer_draw_complex (EdaRenderer *renderer, OBJECT *object);
+static void eda_renderer_draw_component (EdaRenderer *renderer, OBJECT *object);
 
 static void eda_renderer_default_draw_grips (EdaRenderer *renderer, OBJECT *object);
 static void eda_renderer_draw_grips_list (EdaRenderer *renderer, GList *objects) G_GNUC_UNUSED;
@@ -165,7 +182,7 @@ eda_renderer_get_text_user_bounds (EdaRenderer *renderer,
                                    double *right,
                                    double *bottom);
 
-G_DEFINE_TYPE (EdaRenderer, eda_renderer, G_TYPE_OBJECT)
+G_DEFINE_TYPE_WITH_PRIVATE (EdaRenderer, eda_renderer, G_TYPE_OBJECT);
 
 GType
 eda_renderer_flags_get_type ()
@@ -191,8 +208,6 @@ eda_renderer_class_init (EdaRendererClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GParamFlags param_flags;
-
-  g_type_class_add_private (gobject_class, sizeof (EdaRendererPrivate));
 
   /* Register functions with base class */
   gobject_class->constructor = eda_renderer_constructor;
@@ -258,9 +273,8 @@ eda_renderer_class_init (EdaRendererClass *klass)
 static void
 eda_renderer_init (EdaRenderer *renderer)
 {
-  renderer->priv = G_TYPE_INSTANCE_GET_PRIVATE (renderer,
-                                                EDA_TYPE_RENDERER,
-                                                EdaRendererPrivate);
+  renderer->priv =
+    (EdaRendererPrivate*) eda_renderer_get_instance_private (renderer);
 
   /* Set some sensible default options */
   renderer->priv->font_name = g_strdup (DEFAULT_FONT_NAME);
@@ -508,8 +522,8 @@ eda_renderer_default_draw (EdaRenderer *renderer, OBJECT *object)
   case OBJ_TEXT:        draw_func = eda_renderer_draw_text; break;
   case OBJ_PICTURE:     draw_func = eda_renderer_draw_picture; break;
 
-  case OBJ_COMPLEX:
-  case OBJ_PLACEHOLDER: draw_func = eda_renderer_draw_complex; break;
+  case OBJ_COMPONENT:
+  case OBJ_PLACEHOLDER: draw_func = eda_renderer_draw_component; break;
 
   default:
     g_return_if_reached ();
@@ -551,8 +565,8 @@ eda_renderer_is_drawable (EdaRenderer *renderer, OBJECT *object)
 {
   int color = geda_object_get_drawing_color (object);
 
-  /* Always attempt to draw complex objects */
-  if ((object->type == OBJ_COMPLEX) || (object->type == OBJ_PLACEHOLDER)) {
+  /* Always attempt to draw component objects */
+  if ((object->type == OBJ_COMPONENT) || (object->type == OBJ_PLACEHOLDER)) {
     return TRUE;
   }
   return eda_renderer_is_drawable_color (renderer, color, TRUE);
@@ -623,10 +637,10 @@ eda_renderer_draw_hatch (EdaRenderer *renderer, OBJECT *object)
 }
 
 static void
-eda_renderer_draw_complex (EdaRenderer *renderer, OBJECT *object)
+eda_renderer_draw_component (EdaRenderer *renderer, OBJECT *object)
 {
   /* Recurse */
-  eda_renderer_draw_list (renderer, object->complex->prim_objs);
+  eda_renderer_draw_list (renderer, object->component->prim_objs);
 }
 
 static void
@@ -763,7 +777,7 @@ eda_renderer_draw_path (EdaRenderer *renderer, OBJECT *object)
   if (fill_solid) cairo_fill_preserve (renderer->priv->cr);
   eda_cairo_stroke (renderer->priv->cr, EDA_RENDERER_CAIRO_FLAGS (renderer),
                     object->line_type, object->line_end,
-                    EDA_RENDERER_STROKE_WIDTH (renderer, object->line_width),
+                    EDA_RENDERER_STROKE_WIDTH0 (renderer, object->line_width),
                     object->line_length, object->line_space);
 }
 
@@ -1035,8 +1049,8 @@ eda_renderer_draw_picture (EdaRenderer *renderer, OBJECT *object)
   cairo_translate (renderer->priv->cr,
                    object->picture->upper_x, object->picture->upper_y);
   cairo_scale (renderer->priv->cr,
-               fabs (object->picture->upper_x - object->picture->lower_x) / orig_width,
-               - fabs (object->picture->upper_y - object->picture->lower_y) / orig_height);
+               abs (object->picture->upper_x - object->picture->lower_x) / orig_width,
+               - abs (object->picture->upper_y - object->picture->lower_y) / orig_height);
 
   /* Evil magic translates picture origin to the right position for a given rotation */
   switch (object->picture->angle) {
@@ -1136,7 +1150,7 @@ eda_renderer_default_draw_grips (EdaRenderer *renderer, OBJECT *object)
         object->picture->upper_x, object->picture->lower_y,
         object->picture->lower_x, object->picture->lower_y);
     break;
-  case OBJ_COMPLEX:
+  case OBJ_COMPONENT:
   case OBJ_PLACEHOLDER:
     /* No grips */
     break;
@@ -1339,10 +1353,10 @@ eda_renderer_default_draw_cues (EdaRenderer *renderer, OBJECT *object)
   case OBJ_TEXT:
   case OBJ_PICTURE:
     break;
-  case OBJ_COMPLEX:
+  case OBJ_COMPONENT:
   case OBJ_PLACEHOLDER:
     /* Recurse */
-    eda_renderer_draw_cues_list (renderer, object->complex->prim_objs);
+    eda_renderer_draw_cues_list (renderer, object->component->prim_objs);
     break;
   case OBJ_NET:
   case OBJ_BUS:
@@ -1499,7 +1513,7 @@ eda_renderer_default_get_user_bounds (EdaRenderer *renderer,
   case OBJ_CIRCLE:
   case OBJ_PATH:
   case OBJ_PICTURE:
-  case OBJ_COMPLEX:
+  case OBJ_COMPONENT:
   case OBJ_PLACEHOLDER:
   case OBJ_NET:
   case OBJ_BUS:

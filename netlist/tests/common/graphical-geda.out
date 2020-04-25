@@ -1,9 +1,15 @@
 START header
 
 gEDA's netlist format
-Created specifically for testing of gnetlist
+(Initially created for testing of gnetlist)
 
 END header
+
+START graphical symbols
+
+C1
+
+END graphical symbols
 
 START components
 
@@ -12,6 +18,8 @@ R2 device=RESISTOR
 R3 device=RESISTOR
 
 END components
+
+No "no-connect" nets found
 
 START renamed-nets
 

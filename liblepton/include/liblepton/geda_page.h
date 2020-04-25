@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2017 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2017 gEDA Contributors
+ * Copyright (C) 2017-2019 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,7 +55,6 @@ struct st_page
   int page_control;
 
   /* backup variables */
-  GTimeVal last_load_or_save_time;
   char saved_since_first_loaded;
   gint ops_since_last_backup;
   gchar do_autosave_backup;
@@ -92,6 +91,9 @@ PAGE*
 s_page_search (TOPLEVEL *toplevel, const gchar *filename);
 
 PAGE*
+s_page_search_by_basename (TOPLEVEL *toplevel, const gchar *filename);
+
+PAGE*
 s_page_search_by_page_id (GedaPageList *list, int pid);
 
 void
@@ -113,19 +115,23 @@ gint
 s_page_autosave (TOPLEVEL *toplevel);
 
 void
-s_page_append (TOPLEVEL *toplevel, PAGE *page, OBJECT *object);
+s_page_append (PAGE *page,
+               OBJECT *object);
 
 void
-s_page_append_list (TOPLEVEL *toplevel, PAGE *page, GList *obj_list);
+s_page_append_list (PAGE *page,
+                    GList *obj_list);
 
 void
-s_page_remove (TOPLEVEL *toplevel, PAGE *page, OBJECT *object);
+s_page_remove (PAGE *page, OBJECT *object);
 
 void
-s_page_replace (TOPLEVEL *toplevel, PAGE *page, OBJECT *object1, OBJECT *object2);
+s_page_replace (PAGE *page,
+                OBJECT *object1,
+                OBJECT *object2);
 
 void
-s_page_delete_objects (TOPLEVEL *toplevel, PAGE *page);
+s_page_delete_objects (PAGE *page);
 
 const GList*
 s_page_objects (PAGE *page);

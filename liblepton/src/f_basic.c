@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2014 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@
 # endif
 
 #include "libgeda_priv.h"
+
 
 /*! \brief Get the autosave filename for a file
  *  \par Function description
@@ -284,11 +285,11 @@ int f_open_flags(TOPLEVEL *toplevel, PAGE *page,
    * the RC file, it's time to read in the file. */
   if (load_backup_file == 1) {
     /* Load the backup file */
-    s_page_append_list (toplevel, page,
+    s_page_append_list (page,
                         o_read (toplevel, NULL, backup_filename, &tmp_err));
   } else {
     /* Load the original file */
-    s_page_append_list (toplevel, page,
+    s_page_append_list (page,
                         o_read (toplevel, NULL, full_filename, &tmp_err));
   }
 
@@ -343,13 +344,15 @@ void f_close(TOPLEVEL *toplevel)
  *  \bug g_access introduces a race condition in certain cases, but
  *  solves bug #698565 in the normal use-case
  *
- *  \param [in,out] toplevel  The TOPLEVEL object containing the schematic.
  *  \param [in]      filename  The file name to save the schematic to.
  *  \param [in,out] err       #GError structure for error reporting, or
  *                            NULL to disable error reporting
  *  \return 1 on success, 0 on failure.
  */
-int f_save(TOPLEVEL *toplevel, PAGE *page, const char *filename, GError **err)
+int
+f_save (PAGE *page,
+        const char *filename,
+        GError **err)
 {
   gchar *backup_filename;
   gchar *real_filename;
@@ -358,6 +361,10 @@ int f_save(TOPLEVEL *toplevel, PAGE *page, const char *filename, GError **err)
   mode_t saved_umask, mask;
   struct stat st;
   GError *tmp_err = NULL;
+  gboolean make_backup_files;
+
+  cfg_read_bool ("schematic.backup", "create-files",
+                 default_make_backup_files, &make_backup_files);
 
   /* Get the real filename and file permissions */
   real_filename = follow_symlinks (filename, &tmp_err);
@@ -384,7 +391,7 @@ int f_save(TOPLEVEL *toplevel, PAGE *page, const char *filename, GError **err)
 
   /* Do a backup if it's not an undo file backup and it was never saved.
    * Only do a backup if backup files are enabled */
-  if (page->saved_since_first_loaded == 0 && toplevel->make_backup_files == TRUE) {
+  if (page->saved_since_first_loaded == 0 && make_backup_files == TRUE) {
     if ( (g_file_test (real_filename, G_FILE_TEST_EXISTS)) && 
 	 (!g_file_test(real_filename, G_FILE_TEST_IS_DIR)) )
     {
@@ -447,12 +454,11 @@ int f_save(TOPLEVEL *toplevel, PAGE *page, const char *filename, GError **err)
   g_free (dirname);
   g_free (only_filename);
   
-  if (o_save (toplevel, s_page_objects (page), real_filename, &tmp_err)) {
+  if (o_save (s_page_objects (page), real_filename, &tmp_err)) {
 
     page->saved_since_first_loaded = 1;
 
     /* Reset the last saved timer */
-    g_get_current_time (&page->last_load_or_save_time);
     page->ops_since_last_backup = 0;
     page->do_autosave_backup = 0;
 
@@ -601,7 +607,7 @@ char *follow_symlinks (const gchar *filename, GError **err)
 
   /* Too many symlinks */
   g_set_error (err, G_FILE_ERROR, G_FILE_ERROR_LOOP,
-               _("%s: %s"), g_strerror (EMLINK), followed_filename);
+               "%s: %s", g_strerror (EMLINK), followed_filename);
   g_free (followed_filename);
   return NULL;
 

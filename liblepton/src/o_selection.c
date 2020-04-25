@@ -41,15 +41,16 @@ SELECTION *o_selection_new( void )
  *  object visually selected.
  *  Skip objects that are already selected.
  *
- *  \param [in] toplevel   The TOPLEVEL object
  *  \param [in] selection  Pointer to the selection list
  *  \param [in] o_selected Object to select.
  */
-void o_selection_add (TOPLEVEL *toplevel, SELECTION *selection, OBJECT *o_selected)
+void
+o_selection_add (SELECTION *selection,
+                 OBJECT *o_selected)
 {
   if (o_selected->selected == FALSE)
   {
-    o_selection_select (toplevel, o_selected);
+    o_selection_select (o_selected);
     geda_list_add( (GedaList *)selection, o_selected );
   }
 }
@@ -60,11 +61,12 @@ void o_selection_add (TOPLEVEL *toplevel, SELECTION *selection, OBJECT *o_select
  *  It's ok to call this function with an object which is not necessarily
  *  selected.
  *
- *  \param [in] toplevel   The TOPLEVEL object
  *  \param [in] selection  Pointer to the selection list
  *  \param [in] o_selected Object to unselect and remove from the list.
  */
-void o_selection_remove (TOPLEVEL *toplevel, SELECTION *selection, OBJECT *o_selected)
+void
+o_selection_remove (SELECTION *selection,
+                    OBJECT *o_selected)
 {
   if (o_selected == NULL) {
     fprintf(stderr, "Got NULL for o_selected in o_selection_remove\n");
@@ -72,7 +74,7 @@ void o_selection_remove (TOPLEVEL *toplevel, SELECTION *selection, OBJECT *o_sel
   }
 
   if (g_list_find( geda_list_get_glist( selection ), o_selected ) != NULL) {
-    o_selection_unselect (toplevel, o_selected);
+    o_selection_unselect (o_selected);
     geda_list_remove( (GedaList *)selection, o_selected );
   }
 }
@@ -104,17 +106,17 @@ void o_selection_print_all(const SELECTION *selection)
  *  \par Sets the select flag, saves the color, and then selects the 
  *  given object
  *
- *  \param [in] toplevel  The TOPLEVEL object
  *  \param [in] object    Object to select.
  */
-void o_selection_select(TOPLEVEL *toplevel, OBJECT *object)
+void
+o_selection_select (OBJECT *object)
 {
   if (object->selected == TRUE)
     return;
 
-  o_emit_pre_change_notify (toplevel, object);
+  o_emit_pre_change_notify (object);
   object->selected = TRUE;
-  o_emit_change_notify (toplevel, object);
+  o_emit_change_notify (object);
 }
 
 /*! \brief Unselects the given object.
@@ -122,16 +124,16 @@ void o_selection_select(TOPLEVEL *toplevel, OBJECT *object)
  *  given object.
  *  This function should not be called by anybody outside of this file.
  *
- *  \param [in] toplevel  The TOPLEVEL object
  *  \param [in] object    Object to unselect.
  */
-void o_selection_unselect (TOPLEVEL *toplevel, OBJECT *object)
+void
+o_selection_unselect (OBJECT *object)
 {
   if (object->selected == FALSE)
     return;
 
-  o_emit_pre_change_notify (toplevel, object);
+  o_emit_pre_change_notify (object);
   object->selected = FALSE;
-  o_emit_change_notify (toplevel, object);
+  o_emit_change_notify (object);
 }
 

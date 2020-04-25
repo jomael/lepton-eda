@@ -61,6 +61,10 @@ Size the output for a particular paper size.  The \fINAME\fR should be
 a PWG 5101.1-2002 paper name.  For example, valid values include
 `iso_a4', `na_letter', or `na_d'.
 .TP 8
+\fB-P\fR, \fB--paper-names\fR
+Print paper size names suitable to pass to the \fB--paper\fR option
+and exit.
+.TP 8
 \fB-l\fR, \fB--layout\fR=(\fBauto\fR | \fBlandscape\fR | \fBportrait\fR)
 When using a paper size, set the orientation of the output.  If `auto'
 layout is used, the orientation that best fits the drawing will be
@@ -150,6 +154,10 @@ Select the user configuration store.
 \fB-s\fR, \fB--system\fR
 Select the system configuration store.  Depending on user permissions,
 the system configuration store may be read-only.
+.TP 8
+\fB-c\fR, \fB--cache\fR
+Select the program-specific configuration store (CACHE configuration context,
+associated with $XDG_CACHE_HOME/lepton-eda/gui.conf configuration file).
 
 .SH "SCHEME PROCESSING"
 .B lepton-cli shell
@@ -180,15 +188,6 @@ Evaluate Scheme source code from \fIFILE\fR.
 .PP
 The \fB-s\fR, \fB-c\fR and \fB--\fR switches stop argument processing
 and pass all the remaining arguments as the value of `(command-line)'.
-
-.SH ENVIRONMENT
-.TP 8
-.B GEDADATA
-specifies the search directory for Scheme and rc files.  The default
-is `${prefix}/share/lepton-eda'.
-.TP 8
-.B GEDADATARC
-specifies the search directory for rc files.  The default is `$GEDADATA'.
 
 .SH AUTHORS
 See the `AUTHORS' file included with this program.

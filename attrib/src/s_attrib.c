@@ -1,6 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * gattrib -- gEDA component and net attribute manipulation using spreadsheet.
+/* Lepton EDA attribute editor
  * Copyright (C) 2003-2010 Stuart D. Brorson.
+ * Copyright (C) 2003-2013 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -98,18 +99,23 @@ char *s_attrib_get_refdes(OBJECT *object)
   if (!temp_uref) {
     temp_uref = o_attrib_search_object_attribs_by_name (object, "uref", 0); // deprecated
     if (temp_uref) {
-      printf(_("WARNING: Found uref=%1$s, uref= is deprecated, please use refdes=\n"), temp_uref);
+      fprintf (stderr, _("WARNING: "));
+      fprintf (stderr,
+               _("Found uref=%1$s, uref= is deprecated, please use refdes=\n"),
+               temp_uref);
     } else {        /* didn't find refdes.  Report error to log. */
 #ifdef DEBUG
-      printf("In s_attrib_get_refdes, found non-graphical component with no refdes.\n");
-      printf(". . . . complex_basename = %s.\n", object->complex_basename);
+      printf ("s_attrib_get_refdes: ");
+      printf ("Found non-graphical component with no refdes: component_basename = %s\n",
+              object->component_basename);
 #endif
       return NULL;
     } 
   }
 
 #ifdef DEBUG
-  printf("In s_attrib_get_refdes, found component with refdes %s.\n", temp_uref);
+  printf ("s_attrib_get_refdes: ");
+  printf ("Found component with refdes %s.\n", temp_uref);
 #endif   
   
   /*------- Now append .slot to refdes if part is slotted -------- */
@@ -120,13 +126,13 @@ char *s_attrib_get_refdes(OBJECT *object)
 				    append slot number to refdes. */
     slot_value = s_slot_search_slot (object, &slot_text_object);
 #if DEBUG
-    printf(". . .  , found slotted component with slot = %s\n", slot_value);
+    printf ("  Found slotted component with slot = %s\n", slot_value);
 #endif
     temp_uref = g_strconcat(temp_uref, ".", slot_value, NULL);
   }
 
 #ifdef DEBUG
-  printf(". . . .   returning refdes %s.\n", temp_uref);
+  printf ("  Return refdes %s.\n", temp_uref);
 #endif   
   
   return temp_uref;

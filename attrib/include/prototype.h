@@ -21,14 +21,6 @@ STRING_LIST *listsort(STRING_LIST *list, int is_circular, int is_double);
 void f_export_components(gchar *filename);
 
 
-/* ------------- g_register.c ------------- */
-void g_register_funcs(void);
-SCM g_quit(void);
-
-
-/* ------------- g_rc.c ------------- */
-SCM g_rc_gattrib_version(SCM version);
-
 /* ------------- s_attrib.c ------------- */
 int s_attrib_name_in_list(STRING_LIST *name_value_list, char *name);
 char *s_attrib_get_refdes(OBJECT *object);
@@ -163,7 +155,7 @@ void x_dialog_delattrib();
 void x_dialog_missing_sym();
 void x_dialog_unsaved_data();
 void x_dialog_unimplemented_feature();
-void x_dialog_fatal_error(gchar *string, gint return_code);
+void x_dialog_fatal_error(const gchar *string, gint return_code);
 void x_dialog_about_dialog();
 void x_dialog_export_file();
 

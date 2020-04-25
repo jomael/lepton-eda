@@ -1,20 +1,5 @@
 /* g_rc.c */
-int vstbl_lookup_str(const vstbl_entry *table, int size, const char *str);
-int vstbl_get_val(const vstbl_entry *table, int index);
-SCM g_rc_component_library(SCM path, SCM name);
-SCM g_rc_component_library_command (SCM listcmd, SCM getcmd, SCM name);
-SCM g_rc_component_library_funcs (SCM listfunc, SCM getfunc, SCM name);
-SCM g_rc_reset_component_library(void);
-SCM g_rc_bitmap_directory(SCM path);
-SCM g_rc_scheme_directory(SCM path);
-SCM g_rc_bus_ripper_symname(SCM scmsymname);
-SCM g_rc_map_font_character_to_file(SCM character_param, SCM file_param);
-SCM g_rc_attribute_promotion(SCM mode);
-SCM g_rc_promote_invisible(SCM mode);
-SCM g_rc_keep_invisible(SCM mode);
-SCM g_rc_always_promote_attributes(SCM scmsymname);
-SCM g_rc_make_backup_files(SCM mode);
-SCM g_rc_print_color_map (SCM scm_map);
+SCM scheme_directory(SCM s_path);
 
 /* g_register.c */
 void g_register_libgeda_funcs(void);
@@ -35,14 +20,13 @@ GList *o_read_attribs(TOPLEVEL *toplevel,
                       unsigned int fileformat_ver, GError **err);
 OBJECT *o_attrib_find_attrib_by_name (const GList *list, const char *name, int count);
 
-/* o_basic.c */
-void o_bounds_invalidate(TOPLEVEL *toplevel, OBJECT *object);
-void o_emit_pre_change_notify(TOPLEVEL *toplevel, OBJECT *object);
-void o_emit_change_notify(TOPLEVEL *toplevel, OBJECT *object);
+/* geda_object.c */
+void o_emit_pre_change_notify (OBJECT *object);
+void o_emit_change_notify (OBJECT *object);
 
 /* o_selection.c */
-void o_selection_select(TOPLEVEL *toplevel, OBJECT *object);
-void o_selection_unselect(TOPLEVEL *toplevel, OBJECT *object);
+void o_selection_select (OBJECT *object);
+void o_selection_unselect (OBJECT *object);
 
 /* s_clib.c */
 void s_clib_init (void);
@@ -50,7 +34,7 @@ void s_clib_init (void);
 /* s_conn.c */
 CONN *s_conn_return_new(OBJECT *other_object, int type, int x, int y, int whichone, int other_whichone);
 int s_conn_uniq(GList *conn_list, CONN *input_conn);
-int s_conn_remove_other(TOPLEVEL *toplevel, OBJECT *other_object, OBJECT *to_remove);
+int s_conn_remove_other (OBJECT *other_object, OBJECT *to_remove);
 OBJECT *s_conn_check_midpoint(OBJECT *o_current, int x, int y);
 void s_conn_print(GList *conn_list);
 void s_conn_add_object(PAGE *page, OBJECT *object);

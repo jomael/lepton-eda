@@ -1,7 +1,8 @@
-/* gEDA - GPL Electronic Design Automation
- * gattrib -- gEDA component and net attribute manipulation using spreadsheet.
+/* Lepton EDA attribute editor
  * Copyright (C) 2003-2010 Stuart D. Brorson.
  * Copyright (C) 2016 Peter Brett <peter@peter-b.co.uk>
+ * Copyright (C) 2003-2016 gEDA Contributors
+ * Copyright (C) 2017-2019 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -116,7 +117,26 @@ x_window_init()
    * it.  The memory for the actual sheet cells is allocated later,
    * when gtk_sheet_new is invoked, I think.  */
   sheets = g_new0 (GtkSheet*, NUM_SHEETS);
-}
+
+
+  /* Restore main window's geometry:
+  */
+  EdaConfig* cfg = eda_config_get_cache_context();
+
+  gint x = eda_config_get_int (cfg, "attrib.window-geometry", "x", NULL);
+  gint y = eda_config_get_int (cfg, "attrib.window-geometry", "y", NULL);
+
+  gtk_window_move (GTK_WINDOW (window), x, y);
+
+  gint width  = eda_config_get_int (cfg, "attrib.window-geometry", "width",  NULL);
+  gint height = eda_config_get_int (cfg, "attrib.window-geometry", "height", NULL);
+
+  if (width > 0 && height > 0)
+  {
+    gtk_window_resize (GTK_WINDOW (window), width, height);
+  }
+
+} /* x_window_init() */
 
 
 /*------------------------------------------------------------------
@@ -212,6 +232,43 @@ menu_edit_delattrib()
   x_dialog_delattrib();
 }
 
+
+/*!
+ * The main menu description
+ */
+static const gchar menu[] =
+  "<menubar>"
+    "<menu action='file'>"
+      "<!-- <menuitem action='file-open' / > -->"
+      "<menuitem action='file-save' />"
+      "<menuitem action='file-export-csv' />"
+      "<separator/>"
+      "<!-- < menuitem action='file-print' / > -->"
+      "<!-- < separator / > -->"
+      "<menuitem action='file-quit' />"
+    "</menu>"
+
+    "<menu action='edit'>"
+      "<menuitem action='edit-add-attrib' />"
+      "<menuitem action='edit-delete-attrib' />"
+      "<!-- < menuitem action='edit-find-attrib' / > -->"
+      "<!-- < menuitem action='edit-search-replace-attrib-value' / > -->"
+      "<!-- < menuitem action='edit-search-for-refdes' / > -->"
+    "</menu>"
+
+    "<menu action='visibility'>"
+      "<menuitem action='visibility-invisible' />"
+      "<menuitem action='visibility-name-only' />"
+      "<menuitem action='visibility-value-only' />"
+      "<menuitem action='visibility-name-value' />"
+    "</menu>"
+
+    "<menu action='help'>"
+      "<menuitem action='help-about' />"
+    "</menu>"
+  "</menubar>";
+
+
 /*!
  * The Gtk action table
  */
@@ -253,8 +310,8 @@ static const GtkActionEntry actions[] = {
  *  First, the GtkActionGroup object is created and filled with
  *  entries of type GtkActionEntry (each entry specifies a single
  *  action, such as opening a file). Then the GtkUIManager object
- *  is created and used to load menus.xml file with the menu
- *  description. Finally, the GtkAccelGroup is added to the
+ *  is created and used to load the menu description.
+ *  Finally, the GtkAccelGroup is added to the
  *  main window to enable keyboard accelerators and a pointer
  *  to the menu bar is retrieved from the GtkUIManager object.
  * \param window Window to add the menubar to
@@ -275,32 +332,13 @@ x_window_create_menu(GtkWindow *window, GtkWidget **menubar)
   ui = gtk_ui_manager_new();
 
   gtk_ui_manager_insert_action_group(ui, action_group, 0);
+  gtk_ui_manager_add_ui_from_string (ui, menu, -1, &error);
 
-	/* Load the menu path from the system data path */
-	gchar *menu_file = NULL;
-	const gchar * const *sys_dirs = eda_get_system_data_dirs();
-	for (gint i = 0; sys_dirs[i]; ++i) {
-		if (menu_file) {
-			g_free(menu_file);
-			menu_file = NULL;
-		}
-
-		menu_file = g_build_filename(sys_dirs[i],
-		                             "gattrib-menus.xml", NULL);
-
-		if (g_file_test(menu_file, G_FILE_TEST_IS_REGULAR)) {
-			break;
-		}
-	}
-
-  gtk_ui_manager_add_ui_from_file(ui, menu_file, &error);
   if(error != NULL) {
     /* An error occured, terminate */
-    fprintf(stderr, _("Error loading %1$s:\n%2$s\n"), menu_file, error->message);
+    fprintf(stderr, _("Error loading menu: %1$s\n"), error->message);
     exit(1);
   }
-
-  g_free(menu_file);
 
   gtk_window_add_accel_group (window, gtk_ui_manager_get_accel_group(ui));
 
@@ -328,7 +366,8 @@ x_window_add_items()
 {
   gint i, j;
   gint num_rows, num_cols;
-  gchar *text, *error_string;
+  gchar *text;
+  const gchar *error_string;
   gint visibility, show_name_value;
   
   /* Do these sanity check to prevent later segfaults */

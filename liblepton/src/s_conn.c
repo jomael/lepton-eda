@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2015 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -106,18 +106,19 @@ int s_conn_uniq(GList * conn_list, CONN * input_conn)
  *  \par Function Description
  *  This function removes the OBJECT <b>to_remove</b> from the connection
  *  list of the OBJECT <b>other_object</b>.
- *  \param toplevel (currently not used)
+ *
  *  \param other_object OBJECT from that the to_remove OBJECT needs to be removed
  *  \param to_remove OBJECT to remove
  *  \return TRUE if a connection has been deleted, FALSE otherwise
  */
-int s_conn_remove_other (TOPLEVEL *toplevel, OBJECT *other_object,
-                         OBJECT *to_remove)
+int
+s_conn_remove_other (OBJECT *other_object,
+                     OBJECT *to_remove)
 {
     GList *c_current = NULL;
     CONN *conn = NULL;
 
-    o_emit_pre_change_notify (toplevel, other_object);
+    o_emit_pre_change_notify (other_object);
 
     c_current = other_object->conn_list;
     while (c_current != NULL) {
@@ -153,7 +154,7 @@ int s_conn_remove_other (TOPLEVEL *toplevel, OBJECT *other_object,
 	c_current = g_list_next(c_current);
     }
 
-    o_emit_change_notify (toplevel, other_object);
+    o_emit_change_notify (other_object);
 
     return (FALSE);
 }
@@ -162,11 +163,11 @@ int s_conn_remove_other (TOPLEVEL *toplevel, OBJECT *other_object,
  *  \par Function Description
  *  This function removes all connections from and to the OBJECT
  *  <b>to_remove</b>.
- *  \param toplevel  The TOPLEVEL structure
+ *
  *  \param to_remove OBJECT to unconnected from all other objects
  */
 void
-s_conn_remove_object_connections (TOPLEVEL *toplevel, OBJECT *to_remove)
+s_conn_remove_object_connections (OBJECT *to_remove)
 {
   GList *c_iter;
   CONN *conn;
@@ -184,7 +185,7 @@ s_conn_remove_object_connections (TOPLEVEL *toplevel, OBJECT *to_remove)
 
         /* keep calling this till it returns false (all refs removed) */
         /* there is NO body to this while loop */
-        while (s_conn_remove_other (toplevel, conn->other_object, to_remove));
+        while (s_conn_remove_other (conn->other_object, to_remove));
 
         c_iter->data = NULL;
         g_free (conn);
@@ -194,11 +195,11 @@ s_conn_remove_object_connections (TOPLEVEL *toplevel, OBJECT *to_remove)
       to_remove->conn_list = NULL;
       break;
 
-    case OBJ_COMPLEX:
+    case OBJ_COMPONENT:
     case OBJ_PLACEHOLDER:
-      for (iter = to_remove->complex->prim_objs; iter != NULL; iter = g_list_next (iter)) {
+      for (iter = to_remove->component->prim_objs; iter != NULL; iter = g_list_next (iter)) {
         o_current = (OBJECT*) iter->data;
-        s_conn_remove_object_connections (toplevel, o_current);
+        s_conn_remove_object_connections (o_current);
       }
       break;
   }
@@ -339,13 +340,9 @@ static void s_conn_update_line_object (PAGE* page, OBJECT *object)
   OBJECT *other_object;
   OBJECT *found;
   int j, k;
-  OBJECT *complex, *other_complex;
-  TOPLEVEL *toplevel;
+  OBJECT *component, *other_component;
 
-  toplevel = page->toplevel;
-  g_return_if_fail (toplevel != NULL);
-
-  complex = o_get_parent (toplevel, object);
+  component = o_get_parent (object);
 
   /* loop over all connectible objects */
   for (object_list = page->connectible_list;
@@ -356,25 +353,25 @@ static void s_conn_update_line_object (PAGE* page, OBJECT *object)
     if (object == other_object)
       continue;
 
-    other_complex = o_get_parent (toplevel, other_object);
+    other_component = o_get_parent (other_object);
 
     /* An object inside a symbol can only be connected up to another
      * object if they are (a) both inside the same object, or (b)
      * the object inside a symbol is a pin. */
 
     /* 1. Both objects are inside a symbol */
-    if (complex && other_complex) {
+    if (component && other_component) {
       /* If inside different symbols, both must be pins to connect. */
-      if (complex != other_complex
+      if (component != other_component
           && (object->type != OBJ_PIN || other_object->type != OBJ_PIN)) {
         continue;
       }
 
     /* 2. Updating object is inside a symbol, but other object is not. */
-    } else if (complex && !other_complex) {
+    } else if (component && !other_component) {
       if (object->type != OBJ_PIN) continue;
     /* 3. Updating object not inside symbol, but other object is. */
-    } else if (!complex && other_complex) {
+    } else if (!component && other_component) {
       if (other_object->type != OBJ_PIN) continue;
     }
 
@@ -399,7 +396,7 @@ static void s_conn_update_line_object (PAGE* page, OBJECT *object)
             object->line->y[j] == other_object->line->y[k] &&
             check_direct_compat (object, other_object)) {
 
-          o_emit_pre_change_notify (toplevel, other_object);
+          o_emit_pre_change_notify (other_object);
 
           add_connection (object, other_object, CONN_ENDPOINT,
                           other_object->line->x[k],
@@ -409,7 +406,7 @@ static void s_conn_update_line_object (PAGE* page, OBJECT *object)
                           object->line->x[j],
                           object->line->y[j], k, j);
 
-          o_emit_change_notify (toplevel, other_object);
+          o_emit_change_notify (other_object);
         }
       }
     }
@@ -500,9 +497,9 @@ void s_conn_update_object (PAGE* page, OBJECT *object)
       s_conn_update_line_object (page, object);
       break;
 
-    case OBJ_COMPLEX:
+    case OBJ_COMPONENT:
     case OBJ_PLACEHOLDER:
-      s_conn_update_glist (page, object->complex->prim_objs);
+      s_conn_update_glist (page, object->component->prim_objs);
       break;
   }
 }
@@ -602,7 +599,7 @@ static GList *s_conn_return_glist_others (GList *input_list, GList *obj_list)
  *
  *  \par Function Description
  *  This function gets all other_object from the connection list of the current object.
- *  COMPLEX objects are entered, and their prim_objs processed. If an <b>input_list</b>
+ *  Component objects are entered, and their prim_objs processed. If an <b>input_list</b>
  *  is given, the other objects are appended to that list.
  *
  *  \param [in] input_list   GList of OBJECT's
@@ -634,10 +631,10 @@ GList *s_conn_return_others(GList *input_list, OBJECT *object)
       }
       break;
 
-    case OBJ_COMPLEX:
+    case OBJ_COMPONENT:
     case OBJ_PLACEHOLDER:
       return_list = s_conn_return_glist_others (return_list,
-                                                object->complex->prim_objs);
+                                                object->component->prim_objs);
       break;
   }
 
@@ -686,9 +683,9 @@ void s_conn_add_object (PAGE *page, OBJECT *object)
       s_conn_add_line_object (page, object);
       break;
 
-  case OBJ_COMPLEX:
+  case OBJ_COMPONENT:
   case OBJ_PLACEHOLDER:
-    for (iter = object->complex->prim_objs;
+    for (iter = object->component->prim_objs;
          iter != NULL;
          iter = g_list_next (iter)) {
       s_conn_add_object (page, (OBJECT*) iter->data);
@@ -709,8 +706,8 @@ void s_conn_remove_object(PAGE* page, OBJECT *object)
   }
 
   /* Correctly deal with compound objects */
-  if (object->type == OBJ_COMPLEX || object->type == OBJ_PLACEHOLDER) {
-    for (iter = object->complex->prim_objs;
+  if (object->type == OBJ_COMPONENT || object->type == OBJ_PLACEHOLDER) {
+    for (iter = object->component->prim_objs;
          iter != NULL;
          iter = g_list_next (iter)) {
       s_conn_remove_object (page, (OBJECT*) iter->data);

@@ -1,9 +1,6 @@
-.\" $Id$
-.\"
 .\" Example documentation for "No connection"
 .\" don't take it too seriously ;-)"
 .\"
-.so geda.pic
 .SH
 No Connection Short Form Data Sheet
 .\"

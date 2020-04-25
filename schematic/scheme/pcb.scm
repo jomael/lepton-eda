@@ -1,6 +1,8 @@
 ;; -*- Scheme -*-
 ;;
 ;; Copyright (C) 2006-2010 Dan McMahill
+;; Copyright (C) 2006-2011 gEDA Contributors
+;; Copyright (C) 2019-2020 Lepton EDA Contributors
 ;;
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -53,7 +55,7 @@
 (use-modules (ice-9 popen))
 
 (gschem-log "Loading the PCB major mode\n")
-(gschem-log "PCB-mode version $Id$\n")
+;; (gschem-log "PCB-mode version $Id$\n")
 (gschem-log "The PCB major mode is incomplete and considered experimental at this time\n")
 
 ;; These may be changed by the user in their gafrc files (FIXME -- make this
@@ -214,7 +216,7 @@
 (define (pcb:about)
   (gschem-msg (string-append
 	       "This is the pcb major mode for gschem\n"
-	       "pcb.scm version $Id$\n"
+	       ;; "pcb.scm version $Id$\n"
 	       "***** WARNING *****\n"
 	       "This is highly experimental\n"
 	       "You should save your work often\n"
@@ -263,7 +265,7 @@
 )
 
 (define (pcb:load-project)
-  (let ((f nil))
+  (let ((f #f))
     (gschem-msg "This menu choice does not really do anything yet other than select a file\n")
 
     (set! f (gschem-filesel "Select Project File" pcb:project-file-name  'open 'must_exist))
@@ -272,7 +274,7 @@
 )
 
 (define (pcb:save-project)
-  (let ((f def nil))
+  (let ((f #f))
     (gschem-msg "This menu choice does not really do anything yet other than select a file\n")
 
     (set! f (gschem-filesel "Save Project File As" pcb:project-file-name 'save 'may_exist))

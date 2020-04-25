@@ -1,5 +1,3 @@
-## Process this file with automake to produce Makefile.in
-
 EXTRA_DIST = \
 	adders_1.sch \
 	cmos-invert.sch \
@@ -16,8 +14,3 @@ EXTRA_DIST = \
 	multiplex_1.sch \
 	stack_1.sch \
 	README.agile
-
-MOSTLYCLEANFILES =  core *.log FILE *.ps *~
-CLEANFILES = core *.log FILE *.ps *~
-DISTCLEANFILES = *.log core FILE *~
-MAINTAINERCLEANFILES = core *.log FILE *.ps *~ Makefile.in

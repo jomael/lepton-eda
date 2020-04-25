@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2013 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -248,7 +249,7 @@ assign_store (GschemFindTextState *state, GSList *objects, gboolean filter_text)
     if (filter_text) {
       str = geda_text_object_get_string (object);
     } else {
-      str = scm_to_utf8_string (scm_call_1 (scm_c_public_ref ("gschem symbol check",
+      str = scm_to_utf8_string (scm_call_1 (scm_c_public_ref ("schematic symbol check",
                                                               "object-blaming-info"),
                                             edascm_from_object (object)));
     }
@@ -423,7 +424,7 @@ find_objects_using_pattern (GSList *pages, const char *text)
         continue;
       }
 
-      if (!(o_is_visible (page->toplevel, object) || page->toplevel->show_hidden_text)) {
+      if (!(o_is_visible (object) || page->toplevel->show_hidden_text)) {
         continue;
       }
 
@@ -500,7 +501,7 @@ find_objects_using_regex (GSList *pages, const char *text, GError **error)
         continue;
       }
 
-      if (!(o_is_visible (page->toplevel, object) || page->toplevel->show_hidden_text)) {
+      if (!(o_is_visible (object) || page->toplevel->show_hidden_text)) {
         continue;
       }
 
@@ -565,7 +566,7 @@ find_objects_using_substring (GSList *pages, const char *text)
         continue;
       }
 
-      if (!(o_is_visible (page->toplevel, object) || page->toplevel->show_hidden_text)) {
+      if (!(o_is_visible (object) || page->toplevel->show_hidden_text)) {
         continue;
       }
 
@@ -630,7 +631,7 @@ find_objects_using_check (GSList *pages)
   TOPLEVEL *toplevel = page->toplevel;
   scm_dynwind_begin ((scm_t_dynwind_flags) 0);
   edascm_dynwind_toplevel (toplevel);
-  GSList *objects = scm_to_gslist (scm_call_0 (scm_c_public_ref ("gschem symbol check",
+  GSList *objects = scm_to_gslist (scm_call_0 (scm_c_public_ref ("schematic symbol check",
                                                                  "check-symbol")));
   scm_dynwind_end ();
   return objects;
@@ -732,7 +733,7 @@ get_subpages (PAGE *page)
       continue;
     }
 
-    if (object->type != OBJ_COMPLEX) {
+    if (object->type != OBJ_COMPONENT) {
       continue;
     }
 

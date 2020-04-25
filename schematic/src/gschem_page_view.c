@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2019 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -417,8 +418,19 @@ gschem_page_view_get_page_geometry (GschemPageView *view)
                                        s_page_objects (page));
   }
   else {
+
+    int right = gschem_page_geometry_get_viewport_right (geometry);
+    int left = gschem_page_geometry_get_viewport_left (geometry);
+    double val1 = fabs ((double) (right - left) / screen_width);
+
+    int top = gschem_page_geometry_get_viewport_top (geometry);
+    int bottom = gschem_page_geometry_get_viewport_bottom (geometry);
+    double val2 = fabs ((double) (top - bottom) / screen_height);
+
+    double scale = MAX (val1, val2);
+
     gschem_page_geometry_set_values (geometry,
-                                     MAX (abs ((double)(gschem_page_geometry_get_viewport_right (geometry) - gschem_page_geometry_get_viewport_left (geometry)) / screen_width), (abs ((double)(gschem_page_geometry_get_viewport_top (geometry) - gschem_page_geometry_get_viewport_bottom (geometry)) / screen_height))),
+                                     scale,
                                      screen_width,
                                      screen_height,
                                      gschem_page_geometry_get_viewport_left (geometry),
@@ -514,7 +526,7 @@ gschem_page_view_invalidate_object (GschemPageView *view, OBJECT *object)
   g_return_if_fail (object != NULL);
   g_return_if_fail (view != NULL);
 
-  if (!GTK_WIDGET_REALIZED (GTK_WIDGET (view))) {
+  if (!gtk_widget_get_realized (GTK_WIDGET (view))) {
     return;
   }
 
@@ -596,10 +608,10 @@ gschem_page_view_invalidate_screen_rect (GschemPageView *view, int left, int top
 void
 gschem_page_view_invalidate_world_rect (GschemPageView *view, int left, int top, int right, int bottom)
 {
-  int screen_bottom;
-  int screen_right;
-  int screen_left;
-  int screen_top;
+  int screen_bottom = 0;
+  int screen_right = 0;
+  int screen_left = 0;
+  int screen_top = 0;
 
   g_return_if_fail (view != NULL);
 
@@ -1100,10 +1112,10 @@ gschem_page_view_update_hadjustment (GschemPageView *view)
   if (view->hadjustment != NULL && geometry != NULL) {
 
     gtk_adjustment_set_page_increment (view->hadjustment,
-                                       fabs (geometry->viewport_right - geometry->viewport_left) - 100.0);
+                                       abs (geometry->viewport_right - geometry->viewport_left) - 100.0);
 
     gtk_adjustment_set_page_size (view->hadjustment,
-                                  fabs (geometry->viewport_right - geometry->viewport_left));
+                                  abs (geometry->viewport_right - geometry->viewport_left));
 
     gtk_adjustment_set_value (view->hadjustment,
                                geometry->viewport_left);
@@ -1145,10 +1157,10 @@ gschem_page_view_update_vadjustment (GschemPageView *view)
   if (view->vadjustment != NULL && geometry != NULL) {
 
     gtk_adjustment_set_page_increment(view->vadjustment,
-                                      fabs (geometry->viewport_bottom - geometry->viewport_top) - 100.0);
+                                      abs (geometry->viewport_bottom - geometry->viewport_top) - 100.0);
 
     gtk_adjustment_set_page_size (view->vadjustment,
-                                  fabs (geometry->viewport_bottom - geometry->viewport_top));
+                                  abs (geometry->viewport_bottom - geometry->viewport_top));
 
     gtk_adjustment_set_value(view->vadjustment,
                              geometry->world_bottom - geometry->viewport_bottom);
@@ -1307,7 +1319,7 @@ gschem_page_view_zoom_object (GschemPageView *view, OBJECT *object)
   int x[2];
   int y[2];
   int viewport_center_x, viewport_center_y, viewport_width, viewport_height;
-  double k;
+  double scale;
 
   g_return_if_fail (view != NULL);
   GschemPageGeometry *geometry = gschem_page_view_get_page_geometry (view);
@@ -1331,13 +1343,22 @@ gschem_page_view_zoom_object (GschemPageView *view, OBJECT *object)
     /* this number configurable */
     viewport_center_x = (x[1] + x[0]) / 2;
     viewport_center_y = (y[1] + y[0]) / 2;
-    /* .5 is scale to show really small objects like zero-sized pins */
-    k = ((y[1] - y[0]) / 50 || (x[1] - x[0]) / 50 || .5);
-    viewport_height = geometry->screen_height * k;
-    viewport_width  = geometry->screen_width  * k;
+
+    /* .5 is scale to show really small objects like zero-sized pins:
+    */
+    scale = (y[1] - y[0]) / 50;
+
+    if (scale == 0)
+      scale = (x[1] - x[0]) / 50;
+
+    if (scale == 0)
+      scale = .5;
+
+    viewport_height = geometry->screen_height * scale;
+    viewport_width  = geometry->screen_width  * scale;
 
     gschem_page_geometry_set_values (geometry,
-                                     k,
+                                     scale,
                                      geometry->screen_width,
                                      geometry->screen_height,
                                      viewport_center_x - viewport_width / 2,

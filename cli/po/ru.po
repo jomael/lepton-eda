@@ -1,26 +1,26 @@
-# Russian translation for gEDA gaf
+# Russian translation for lepton-cli
 # Copyright (c) 2012-2014 gEDA Developers
-# Copyright (c) Sergey Alyoshin <alyoshin.s@gmail.com>, 2012.
-# Copyright (c) Vladimir Zhbanov <vzhbanov@gmail.com>, 2014.
+# Copyright (c) 2012 Sergey Alyoshin <alyoshin.s@gmail.com>
+# Copyright (c) 2014, 2020 Vladimir Zhbanov <vzhbanov@gmail.com>
 #
-# This file is distributed under the same license as the gEDA gaf package.
+# This file is distributed under the same license as the lepton-eda
+# package.
 #
 # Переводчикам: см. примечания в liblepton/po/ru.po
 msgid ""
 msgstr ""
-"Project-Id-Version: gaf_ru\n"
+"Project-Id-Version: lepton-eda\n"
 "Report-Msgid-Bugs-To: https://github.com/lepton-eda/lepton-eda/issues\n"
-"POT-Creation-Date: 2018-08-12 12:30+0300\n"
-"PO-Revision-Date: 2014-03-08 20:49+0400\n"
+"POT-Creation-Date: 2020-02-27 08:44+0300\n"
+"PO-Revision-Date: 2020-03-20 20:29+0300\n"
 "Last-Translator: Vladimir Zhbanov <vzhbanov@gmail.com>\n"
-"Language-Team: geda-user@delorie.com\n"
+"Language-Team: Russian\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: cli/lepton-cli.c:66
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: lepton-cli [OPTION...] COMMAND [ARGS ...]\n"
 "\n"
@@ -32,88 +32,70 @@ msgid ""
 "  -V, --version  display version information and exit\n"
 "\n"
 "Commonly-used commands (type `lepton-cli <cmd> --help' for usage):\n"
-"  shell          Scheme REPL for interactive gEDA data processing\n"
-"  config         Edit gEDA configuration\n"
-"  export         Export gEDA files in various image formats.\n"
+"  shell          Scheme REPL for interactive Lepton EDA data processing\n"
+"  config         Edit Lepton EDA configuration\n"
+"  export         Export Lepton EDA files in various image formats.\n"
 "\n"
-"Please report bugs to %1$s.\n"
+"Report bugs at <%1$s>\n"
+"Lepton EDA homepage: <%2$s>\n"
 msgstr ""
-"Использование: gaf [КЛЮЧ...] КОМАНДА [АРГУМЕНТЫ...]\n"
+"Использование: lepton-cli [КЛЮЧ...] КОМАНДА [АРГУМЕНТЫ...]\n"
 "\n"
-"Утилита командной строки gEDA/gaf.\n"
+"Утилита командной строки Lepton EDA.\n"
 "\n"
 "Общие ключи:\n"
 "  --no-rcfiles   запрет загрузки файлов gafrc\n"
 "  -h, --help     справка об использовании и выход\n"
-"  -V, --version  вывод версии утилиты и выход\n"
+"  -V, --version  вывод версии и выход\n"
 "\n"
-"Команды (для справки по использованию наберите «gaf <команда> --help»):\n"
+"Команды (для справки по использованию наберите «lepton-cli <команда> --"
+"help»):\n"
 "  shell          командная оболочка Scheme для интерактивной обработки\n"
-"                 данных gEDA;\n"
-"  config         редактирование настроек gEDA;\n"
-"  export         экспорт файлов gEDA в различные форматы изображений.\n"
+"                 данных Lepton EDA;\n"
+"  config         изменение настроек Lepton EDA;\n"
+"  export         экспорт файлов Lepton EDA в различные форматы изображений.\n"
 "\n"
-"Сообщайте об ошибках по адресу: %s\n"
+"Страница для отчётов об ошибках: %1$s\n"
+"Домашняя страница Lepton EDA: %2$s\n"
 
-#: cli/lepton-cli.c:89
-#, fuzzy, c-format
-msgid ""
-"Lepton EDA %1$s (g%2$.7s)\n"
-"Copyright (C) 1998-2017 gEDA developers\n"
-"Copyright (C) 2017 Lepton EDA developers\n"
-"This is free software, and you are welcome to redistribute it under\n"
-"certain conditions. For details, see the file `COPYING', which is\n"
-"included in the gEDA distribution.\n"
-"There is NO WARRANTY, to the extent permitted by law.\n"
-msgstr ""
-"gEDA/gaf %s (g%.7s)\n"
-"Copyright (C) 1998-2012 разработчики gEDA\n"
-"Это свободное программное обеспечение, и вы можете его распространять\n"
-"на определённых условиях. Подробности см. в файле COPYING в дистрибутиве\n"
-"gEDA. Нет НИКАКИХ ГАРАНТИЙ в рамках, допустимых имеющимся "
-"законодательством.\n"
-
-#: cli/lepton-cli.c:138
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "\n"
 "Run `lepton-cli --help' for more information.\n"
 msgstr ""
 "\n"
-"Подробности см. в выводе команды «gaf config --help».\n"
+"Подробности см. в выводе команды «lepton-cli config --help».\n"
 
-#: cli/lepton-cli.c:150
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "ERROR: You must specify a command to run.\n"
 "\n"
 "Run `lepton-cli --help' for more information.\n"
 msgstr ""
-"ОШИБКА: укажите команду для выполнения.\n"
+"ОШИБКА: Необходимо указать команду для выполнения.\n"
 "\n"
-"Подробности см. в выводе команды «gaf --help».\n"
+"Подробности см. в выводе команды «lepton-cli --help».\n"
 
-#: cli/lepton-cli.c:168
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "ERROR: Unrecognised command `%1$s'.\n"
 "\n"
 "Run `lepton-cli --help' for more information.\n"
 msgstr ""
-"ОШИБКА: неизвестная команда «%s».\n"
+"ОШИБКА: Неизвестная команда «%1$s».\n"
 "\n"
-"Подробности см. в выводе команды «gaf --help».\n"
+"Подробности см. в выводе команды «lepton-cli --help».\n"
 
-#: cli/config.c:47
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: lepton-cli config [OPTION] [GROUP KEY [VALUE]]\n"
 "\n"
-"View and modify gEDA configuration.\n"
+"View and modify Lepton EDA configuration.\n"
 "\n"
 "  -p, --project[=PATH]  select project configuration [PATH=.]\n"
 "  -u, --user     select user configuration\n"
 "  -s, --system   select system configuration\n"
+"  -c, --cache    select cache configuration\n"
 "  -h, --help     display usage information and exit\n"
 "\n"
 "If GROUP and KEY are specified, retrieves the value of that\n"
@@ -123,86 +105,75 @@ msgid ""
 "store for the current directory). If no GROUP and KEY were provided,\n"
 "outputs the filename of the selected configuration store.\n"
 "\n"
-"Please report bugs to %1$s.\n"
+"Report bugs at <%1$s>\n"
+"Lepton EDA homepage: <%2$s>\n"
 msgstr ""
-"Использование: gaf config [КЛЮЧ] [ГРУППА КЛЮЧЕВОЕ_СЛОВО [ЗНАЧЕНИЕ]]\n"
+"Использование: lepton-cli config [КЛЮЧ] [ГРУППА ПАРАМЕТР [ЗНАЧЕНИЕ]]\n"
 "\n"
-"Просмотр и изменение настроек gEDA.\n"
+"Просмотр и изменение настроек Lepton EDA.\n"
 "\n"
-"  -p, --project[=ПУТЬ]  выбрать работу с настройками проекта [ПУТЬ=.]\n"
-"  -u, --user     выбрать работу с пользовательскими настройками\n"
-"  -s, --system   выбрать работу с системными настройками\n"
-"  -h, --help     показать информацию об использовании и выйти\n"
+"  -p, --project[=ПУТЬ]  выбор настроек проекта [ПУТЬ=.]\n"
+"  -u, --user     выбор пользовательских настроек\n"
+"  -s, --system   выбор системных настроек\n"
+"  -h, --help     информация об использовании и выход\n"
 "\n"
-"Если указаны ГРУППА и КЛЮЧЕВОЕ_СЛОВО, выдаётся значение этого\n"
-"параметра. Если указано ЗНАЧЕНИЕ, в него устанавливается значение\n"
-"этого параметра. Ключи -p, -u и -s могут использоваться для выбора\n"
+"Если указаны ГРУППА и ПАРАМЕТР, выдаётся значение указанного\n"
+"параметра. Если указано ЗНАЧЕНИЕ, параметру присваивается заданное\n"
+"значение. Ключи -p, -u и -s могут использоваться для выбора\n"
 "хранилища настроек (по умолчанию это хранилище настроек проекта в\n"
-"текущем каталоге). Если не указаны ни ГРУППА, ни КЛЮЧЕВОЕ_СЛОВО,\n"
+"текущем каталоге). Если не указаны ни ГРУППА, ни ПАРАМЕТР,\n"
 "выводится имя файла выбранного хранилища настроек.\n"
 "\n"
-"Сообщайте об ошибках по адресу: %s.\n"
+"Страница для отчётов об ошибках: %1$s\n"
+"Домашняя страница Lepton EDA: %2$s\n"
 
-#: cli/config.c:68
-#, fuzzy
 msgid ""
 "\n"
 "Run `lepton-cli config --help' for more information.\n"
 msgstr ""
 "\n"
-"Подробности см. в выводе команды «gaf config --help».\n"
+"Подробности см. в выводе команды «lepton-cli config --help».\n"
 
-#: cli/config.c:69
 msgid "ERROR: You may only specify a single configuration store.\n"
 msgstr "ОШИБКА: можно указать только одно хранилище настроек.\n"
 
 #. TRANSLATORS: The first string is the filename, the second is
 #. * the detailed error message
-#: cli/config.c:160
-#, fuzzy, c-format
+#, c-format
 msgid "WARNING: Could not load '%1$s': %2$s.\n"
-msgstr "ВНИМАНИЕ: не удалось загрузить «%s»: %s.\n"
+msgstr "ВНИМАНИЕ: Не удалось загрузить «%1$s»: %2$s.\n"
 
-#: cli/config.c:172
 #, c-format
 msgid "ERROR: You must specify both configuration group and key.\n"
-msgstr "ОШИБКА: необходимо указать и группу настроек, и ключевое слово.\n"
+msgstr "ОШИБКА: Необходимо указать и группу настроек, и параметр.\n"
 
-#: cli/config.c:184 cli/config.c:198
-#, fuzzy, c-format
+#, c-format
 msgid "ERROR: %1$s.\n"
-msgstr "ОШИБКА: %s.\n"
+msgstr "ОШИБКА: %1$s.\n"
 
-#: cli/export.c:152
-#, fuzzy, c-format
+#, c-format
 msgid "ERROR: Bad argument '%1$s' to %2$s option.\n"
-msgstr "ОШИБКА: Недопустимый аргумент «%s» для опции «%s».\n"
+msgstr "ОШИБКА: Недопустимый аргумент «%1$s» для опции «%2$s».\n"
 
-#: cli/export.c:153
-#, fuzzy
 msgid ""
 "\n"
 "Run `lepton-cli export --help' for more information.\n"
 msgstr ""
 "\n"
-"Подробности см. в выводе команды «gaf export --help».\n"
+"Подробности см. в выводе команды «lepton-cli export --help».\n"
 
-#: cli/export.c:193
-#, fuzzy, c-format
+#, c-format
 msgid "ERROR: Cannot infer output format from filename '%1$s'.\n"
-msgstr "ОШИБКА: не удалось определить формат выходного файла «%s».\n"
+msgstr "ОШИБКА: Не удалось определить формат выходного файла для «%1$s».\n"
 
-#: cli/export.c:210
-#, fuzzy, c-format
+#, c-format
 msgid "ERROR: Cannot find supported format for filename '%1$s'.\n"
-msgstr "ОШИБКА: не удалось найти поддерживаемый формат для файла «%s».\n"
+msgstr "ОШИБКА: Не удалось найти поддерживаемый формат для файла «%1$s».\n"
 
-#: cli/export.c:215
-#, fuzzy, c-format
+#, c-format
 msgid "ERROR: Unsupported output format '%1$s'.\n"
-msgstr "ОШИБКА: вывод в формате «%s» не поддерживается.\n"
+msgstr "ОШИБКА: Вывод в формате «%1$s» не поддерживается.\n"
 
-#: cli/export.c:227
 #, c-format
 msgid "ERROR: Selected output format does not support multipage output\n"
 msgstr ""
@@ -211,57 +182,54 @@ msgstr ""
 
 #. TRANSLATORS: The first string is the filename, the second
 #. * is the detailed error message
-#: cli/export.c:241
-#, fuzzy, c-format
+#, c-format
 msgid "ERROR: Failed to load '%1$s': %2$s\n"
-msgstr "ОШИБКА: не удалось загрузить «%s»: %s.\n"
+msgstr "ОШИБКА: Не удалось загрузить «%1$s»: %2$s\n"
 
-#: cli/export.c:247
-#, fuzzy, c-format
+#, c-format
 msgid "ERROR: Failed to change directory to '%1$s': %2$s\n"
-msgstr "ОШИБКА: Не удалось изменить каталог на «%s»: %s.\n"
+msgstr "ОШИБКА: Не удалось изменить каталог на «%1$s»: %2$s\n"
 
-#: cli/export.c:329
 #, c-format
 msgid "ERROR: %s.\n"
 msgstr "ОШИБКА: %s.\n"
 
-#: cli/export.c:962
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: lepton-cli export [OPTION ...] -o OUTPUT [--] FILE ...\n"
 "\n"
-"Export gEDA files in various image formats.\n"
+"Export Lepton EDA files in various image formats.\n"
 "\n"
-"  -f, --format=TYPE      output format (normally autodetected)\n"
-"  -o, --output=OUTPUT    output filename\n"
-"  -p, --paper=NAME       select paper size by name\n"
-"  -s, --size=WIDTH;HEIGHT  specify exact paper size\n"
-"  -k, --scale=FACTOR     specify output scale factor\n"
-"  -l, --layout=ORIENT    page orientation\n"
-"  -m, --margins=TOP;LEFT;BOTTOM;RIGHT\n"
-"                           set page margins\n"
-"  -a, --align=HALIGN;VALIGN\n"
-"                           set alignment of drawing within page\n"
-"  -d, --dpi=DPI          pixels-per-inch for raster outputs\n"
-"  -c, --color            enable color output\n"
-"  --no-color             disable color output\n"
-"  -F, --font=NAME        set font family for printing text\n"
-"  -h, --help     display usage information and exit\n"
+"  -f, --format=TYPE                    output format (normally "
+"autodetected)\n"
+"  -o, --output=OUTPUT                  output filename\n"
+"  -p, --paper=NAME                     select paper size by name\n"
+"  -P, --paper-names                    list paper size names and exit\n"
+"  -s, --size=WIDTH;HEIGHT              specify exact paper size\n"
+"  -k, --scale=FACTOR                   specify output scale factor\n"
+"  -l, --layout=ORIENT                  page orientation\n"
+"  -m, --margins=TOP;LEFT;BOTTOM;RIGHT  set page margins\n"
+"  -a, --align=HALIGN;VALIGN            set alignment of drawing within page\n"
+"  -d, --dpi=DPI                        pixels-per-inch for raster outputs\n"
+"  -c, --color                          enable color output\n"
+"  --no-color                           disable color output\n"
+"  -F, --font=NAME                      set font family for printing text\n"
+"  -h, --help                           display usage information and exit\n"
 "\n"
-"Please report bugs to %1$s.\n"
+"Report bugs at <%1$s>\n"
+"Lepton EDA homepage: <%2$s>\n"
 msgstr ""
-"Использование: gaf export [КЛЮЧ ...] -o ВЫХОДНОЙ_ФАЙЛ [--] ФАЙЛ ...\n"
+"Использование: lepton-cli export [КЛЮЧ ...] -o ВЫХОДНОЙ_ФАЙЛ [--] ФАЙЛ ...\n"
 "\n"
-"Экспорт файлов gEDA в различные форматы изображений.\n"
+"Экспорт файлов Lepton EDA в различные форматы изображений.\n"
 "\n"
 "  -f, --format=ТИП            выходной формат (обычно\n"
 "                              определяется автоматически)\n"
 "  -o, --output=ВЫХОДНОЙ_ФАЙЛ  имя выходного файла\n"
-"  -p, --paper=ФОРМАТ          выбор формата по его названию\n"
-"  -s, --size=ШИРИНА;ВЫСОТА    задание точных размеров бумаги\n"
+"  -p, --paper=ФОРМАТ          выбор формата страницы по названию\n"
+"  -s, --size=ШИРИНА;ВЫСОТА    задание точных размеров изображения\n"
 "  -k, --scale=КОЭФФИЦИЕНТ     задание коэффициента\n"
-"                              масштабирования выхода\n"
+"                              масштабирования вывода\n"
 "  -l, --layout=ОРИЕНТАЦИЯ     ориентация страницы\n"
 "  -m, --margins=СВЕРХУ;СЛЕВА;СНИЗУ;СПРАВА\n"
 "                              установка полей страницы\n"
@@ -275,24 +243,22 @@ msgstr ""
 "  -F, --font=ИМЯ_ШРИФТА       имя шрифта для вывода текста\n"
 "  -h, --help                  справка по использованию и выход\n"
 "\n"
-"Отчёты об ошибках отправляйте по адресу %s.\n"
+"Страница для отчётов об ошибках: %1$s\n"
+"Домашняя страница Lepton EDA: %2$s\n"
 
-#: cli/export.c:1141
 #, c-format
 msgid "ERROR: You must specify at least one input filename.\n"
 msgstr "ОШИБКА: необходимо задать имя хотя бы одного входного файла.\n"
 
-#: cli/export.c:1150
 #, c-format
 msgid "ERROR: You must specify an output filename.\n"
 msgstr "ОШИБКА: необходимо задать имя выходного файла.\n"
 
-#: cli/shell.c:46
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: lepton-cli shell [OPTION ...]\n"
 "\n"
-"Shell for interactive processing of gEDA data using Scheme.\n"
+"Shell for interactive processing of Lepton EDA data using Scheme.\n"
 "\n"
 "  -s FILE        load Scheme source code from FILE, and exit\n"
 "  -c EXPR        evaluate Scheme expression EXPR, and exit\n"
@@ -305,40 +271,34 @@ msgid ""
 "  -l FILE        load Scheme source code from FILE\n"
 "  -h, --help     display usage information and exit\n"
 "\n"
-"Please report bugs to %1$s.\n"
+"Report bugs at <%1$s>\n"
+"Lepton EDA homepage: <%2$s>\n"
 msgstr ""
-"Использование: gaf shell [КЛЮЧ ...]\n"
+"Использование: lepton-cli shell [КЛЮЧ ...]\n"
 "\n"
 "Командная оболочка интерпретатора Scheme для интерактивной работы\n"
-"с данными gEDA.\n"
+"с данными Lepton EDA.\n"
 "\n"
-"  -s ФАЙЛ        загрузить исходный код Scheme из ФАЙЛА и выйти\n"
-"  -c ВЫРАЖЕНИЕ   вычислить ВЫРАЖЕНИЕ Scheme и выйти\n"
-"  --             прекратить сканирование аргументов; перейти в\n"
-"                 интерактивный режим\n"
+"  -s ФАЙЛ      загрузка исходного кода Scheme из ФАЙЛА и выход\n"
+"  -c ВЫРАЖЕНИЕ вычисление ВЫРАЖЕНИЯ Scheme и выход\n"
+"  --           прекращение сканирования аргументов; запуск в\n"
+"               интерактивном режиме\n"
 "\n"
-"При задании указанных выше ключей обработка аргументов\n"
+"При задании вышеуказанных ключей обработка аргументов\n"
 "прекращается, все оставшиеся аргументы передаются как значение\n"
-"в виде (строка-команды).\n"
+"функции (command-line).\n"
 "\n"
-"  -L КАТАЛОГ     добавить КАТАЛОГ в начало пути загрузки Scheme\n"
-"  -l ФАЙЛ        загрузить исходный код Scheme из ФАЙЛА\n"
-"  -h, --help     вывести справку по использованию и выйти\n"
+"  -L КАТАЛОГ   добавление КАТАЛОГА первым в список путей загрузки Scheme\n"
+"  -l ФАЙЛ      загрузка исходного кода Scheme из ФАЙЛА\n"
+"  -h, --help   вывод справки по использованию и выход\n"
 "\n"
-"Отчёты об ошибках отправляйте по адресу %s.\n"
+"Страница для отчётов об ошибках: %1$s\n"
+"Домашняя страница Lepton EDA: %2$s\n"
 
-#: cli/shell.c:102
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "\n"
 "Run `lepton-cli shell --help' for more information.\n"
 msgstr ""
 "\n"
-"Подробности см. в выводе команды «gaf shell --help».\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Run `gaf --help' for more information.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Подробности см. в выводе команды «gaf --help».\n"
+"Подробности см. в выводе команды «lepton-cli shell --help».\n"

@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -246,13 +246,11 @@ geda_bus_object_get_position (const GedaObject *object, gint *x, gint *y)
  *
  *  On failure, this function sets the bounds to empty.
  *
- *  \param [in]  toplevel Unused
  *  \param [in]  object   The bus object
  *  \param [out] bounds   The bounds of the bus
  */
 void
-geda_bus_object_calculate_bounds (TOPLEVEL *toplevel,
-                                  const GedaObject *object,
+geda_bus_object_calculate_bounds (const GedaObject *object,
                                   GedaBounds *bounds)
 {
   gint expand;
@@ -275,7 +273,6 @@ geda_bus_object_calculate_bounds (TOPLEVEL *toplevel,
  *  \par Function Description
  *  This function creates and returns a new bus object.
  *
- *  \param [in]     toplevel    The TOPLEVEL object.
  *  \param [in]     color       The color of the bus
  *  \param [in]     x1          x-coord of the first point
  *  \param [in]     y1          y-coord of the first point
@@ -285,8 +282,7 @@ geda_bus_object_calculate_bounds (TOPLEVEL *toplevel,
  *  \return A new bus OBJECT
  */
 GedaObject*
-geda_bus_object_new (TOPLEVEL *toplevel,
-                     gint color,
+geda_bus_object_new (gint color,
                      gint x1,
                      gint y1,
                      gint x2,
@@ -309,8 +305,6 @@ geda_bus_object_new (TOPLEVEL *toplevel,
 
   new_node->bus_ripper_direction = bus_ripper_direction;
 
-  new_node->w_bounds_valid_for = NULL;
-
   return new_node;
 }
 
@@ -320,15 +314,13 @@ geda_bus_object_new (TOPLEVEL *toplevel,
  *  If the bus object was read successfully, a new bus object is
  *  allocated and appended to the \a object_list.
  *
- *  \param [in] toplevel     The TOPLEVEL object
  *  \param [in] buf          a text buffer (usually a line of a schematic file)
  *  \param [in] release_ver  The release number gEDA
  *  \param [in] fileformat_ver a integer value of the file format
  *  \return The object list, or NULL on error.
  */
 GedaObject*
-o_bus_read (TOPLEVEL *toplevel,
-            const char buf[],
+o_bus_read (const char buf[],
             unsigned int release_ver,
             unsigned int fileformat_ver,
             GError **err)
@@ -372,7 +364,7 @@ o_bus_read (TOPLEVEL *toplevel,
     ripper_dir = 0;
   }
 
-  new_obj = geda_bus_object_new (toplevel, color, x1, y1, x2, y2, ripper_dir);
+  new_obj = geda_bus_object_new (color, x1, y1, x2, y2, ripper_dir);
 
   return new_obj;
 }
@@ -422,21 +414,17 @@ geda_bus_object_translate (GedaObject *object, gint dx, gint dy)
   object->line->y[0] = object->line->y[0] + dy;
   object->line->x[1] = object->line->x[1] + dx;
   object->line->y[1] = object->line->y[1] + dy;
-
-  /* Update bounding box */
-  object->w_bounds_valid_for = NULL;
 }
 
 /*! \brief create a copy of a bus object
  *  \par Function Description
  *  This function creates a copy of the bus object \a o_current.
  *
- *  \param [in] toplevel     The TOPLEVEL object
  *  \param [in] o_current    The object that is copied
  *  \return a new bus object
  */
 GedaObject*
-geda_bus_object_copy (TOPLEVEL *toplevel, const GedaObject *object)
+geda_bus_object_copy (const GedaObject *object)
 {
   GedaObject *new_obj;
 
@@ -448,8 +436,7 @@ geda_bus_object_copy (TOPLEVEL *toplevel, const GedaObject *object)
   /* still doesn't work... you need to pass in the new values */
   /* or don't update and update later */
   /* I think for now I'll disable the update and manually update */
-  new_obj = geda_bus_object_new (toplevel,
-                                 object->color,
+  new_obj = geda_bus_object_new (object->color,
                                  object->line->x[0],
                                  object->line->y[0],
                                  object->line->x[1],
@@ -464,7 +451,6 @@ geda_bus_object_copy (TOPLEVEL *toplevel, const GedaObject *object)
  *  This function rotates a bus \a object around the point
  *  (\a world_centerx, \a world_centery).
  *
- *  \param [in]     toplevel      The TOPLEVEL object
  *  \param [in]     world_centerx x-coord of the rotation center
  *  \param [in]     world_centery y-coord of the rotation center
  *  \param [in]     angle         The angle to rotate the bus object
@@ -472,8 +458,7 @@ geda_bus_object_copy (TOPLEVEL *toplevel, const GedaObject *object)
  *  \note only steps of 90 degrees are allowed for the \a angle
  */
 void
-geda_bus_object_rotate (TOPLEVEL *toplevel,
-                        gint world_centerx,
+geda_bus_object_rotate (gint world_centerx,
                         gint world_centery,
                         gint angle,
                         GedaObject *object)
@@ -518,14 +503,12 @@ geda_bus_object_rotate (TOPLEVEL *toplevel,
  *  This function mirrors a bus \a object horizontaly at the point
  *  (\a world_centerx, \a world_centery).
  *
- *  \param [in]     toplevel      The TOPLEVEL object
  *  \param [in]     world_centerx x-coord of the mirror position
  *  \param [in]     world_centery y-coord of the mirror position
  *  \param [in,out] object        The bus object
  */
 void
-geda_bus_object_mirror (TOPLEVEL *toplevel,
-                        gint world_centerx,
+geda_bus_object_mirror (gint world_centerx,
                         gint world_centery,
                         GedaObject *object)
 {
@@ -574,15 +557,13 @@ geda_bus_object_orientation (const GedaObject *object)
  *  is specified by the \a whichone variable and the new coordinate
  *  is (\a x, \a y).
  *
- *  \param [in]     toplevel   The TOPLEVEL object
  *  \param [in,out] object     The bus OBJECT to modify
  *  \param [in]     x          new x-coord of the bus point
  *  \param [in]     y          new y-coord of the bus point
  *  \param [in]     whichone   bus point to modify
  */
 void
-geda_bus_object_modify (TOPLEVEL *toplevel,
-                        GedaObject *object,
+geda_bus_object_modify (GedaObject *object,
                         gint x,
                         gint y,
                         gint whichone)
@@ -595,6 +576,4 @@ geda_bus_object_modify (TOPLEVEL *toplevel,
 
   object->line->x[whichone] = x;
   object->line->y[whichone] = y;
-
-  object->w_bounds_valid_for = NULL;
 }

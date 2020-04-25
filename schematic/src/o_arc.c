@@ -136,21 +136,17 @@ void o_arc_end4(GschemToplevel *w_current, int radius,
   PAGE *page = gschem_page_view_get_page (page_view);
   g_return_if_fail (page != NULL);
 
-  TOPLEVEL *toplevel = page->toplevel;
-  g_return_if_fail (toplevel != NULL);
-
   OBJECT *new_obj;
 
   /* create, initialize and link the new arc object */
-  new_obj = geda_arc_object_new (toplevel,
-                                 GRAPHIC_COLOR,
+  new_obj = geda_arc_object_new (GRAPHIC_COLOR,
                                  w_current->first_wx,
                                  w_current->first_wy,
                                  radius,
                                  start_angle,
                                  sweep_angle);
 
-  s_page_append (toplevel, page, new_obj);
+  s_page_append (page, new_obj);
 
   w_current->first_wx  = -1;
   w_current->first_wy  = -1;

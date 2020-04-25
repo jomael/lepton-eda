@@ -1,5 +1,6 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 2018 dmn <graahnul.grom@gmail.com>
+ * Copyright (C) 2018-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,8 +23,13 @@
  * \brief Schematic font selection widget
  *
  */
+#include "config.h"
 
 #include "gschem.h"
+
+
+#define PREVIEW_TEXT_SIZE 18
+#define PREVIEW_TEXT "refdes=R1 Q23 U45 footprint=TQFN20_4_EP.fp"
 
 
 /* convenience macro - gobject type implementation:
@@ -58,25 +64,25 @@ static void
 update_font_label (FontSelectWidget* widget, const gchar* font);
 
 static gchar*
-get_schematic_font (GschemToplevel* toplevel);
+schematic_get_font (GschemToplevel* toplevel);
 
 static void
-set_schematic_font (GschemToplevel* toplevel, const gchar* font);
+schematic_set_font (GschemToplevel* toplevel, const gchar* font);
+
+static gchar*
+fontsel_get_font (GtkFontSelection* sel);
 
 static void
-save_schematic_font (GschemToplevel* toplevel, EdaConfig* cfg);
+fontsel_set_font (FontSelectWidget* widget, const gchar* font);
+
+static void
+config_save (GschemToplevel* toplevel, EdaConfig* cfg);
 
 static void
 on_btn_apply(GtkWidget* btn, gpointer p);
 
 static void
 on_btn_save(GtkWidget* btn, gpointer p);
-
-static gchar*
-font_sel_get_font (GtkFontSelection* sel);
-
-static void
-fontsel_set_font (FontSelectWidget* widget, const gchar* font);
 
 static EdaConfig*
 save_settings_dlg (FontSelectWidget* widget);
@@ -227,6 +233,15 @@ font_select_widget_create (FontSelectWidget* widget)
   /* separator */
   gtk_box_pack_start (GTK_BOX (vbox), gtk_hseparator_new(), FALSE, FALSE, 5);
 
+  /* informational label: */
+  const gchar* msg =
+    _("After you're done choosing the font, it's recommended\n"
+      "to reopen schematics or restart the application.");
+
+  GtkWidget* label = gtk_label_new (msg);
+  gtk_label_set_selectable (GTK_LABEL (label), TRUE);
+  gtk_box_pack_start (GTK_BOX (vbox), label, FALSE, FALSE, 0);
+
   g_signal_connect (G_OBJECT (btn_apply),
                     "clicked",
                     G_CALLBACK (&on_btn_apply),
@@ -253,7 +268,7 @@ font_select_widget_on_show (GtkWidget* w)
   if (widget->toplevel_ == NULL)
     return;
 
-  gchar* font = get_schematic_font (widget->toplevel_);
+  gchar* font = schematic_get_font (widget->toplevel_);
 
   update_font_label (widget, font);
   fontsel_set_font (widget, font);
@@ -290,7 +305,7 @@ update_font_label (FontSelectWidget* widget, const gchar* font)
  *  \return Current schematic font name
  */
 static gchar*
-get_schematic_font (GschemToplevel* toplevel)
+schematic_get_font (GschemToplevel* toplevel)
 {
   g_return_val_if_fail (toplevel != NULL, NULL);
   g_return_val_if_fail (toplevel->renderer != NULL, NULL);
@@ -309,7 +324,7 @@ get_schematic_font (GschemToplevel* toplevel)
  *  \param font     Font name
  */
 static void
-set_schematic_font (GschemToplevel* toplevel, const gchar* font)
+schematic_set_font (GschemToplevel* toplevel, const gchar* font)
 {
   g_return_if_fail (toplevel != NULL);
   g_return_if_fail (toplevel->renderer != NULL);
@@ -328,12 +343,12 @@ set_schematic_font (GschemToplevel* toplevel, const gchar* font)
  * *  \param cfg      Configuration context to save settings to
  */
 static void
-save_schematic_font (GschemToplevel* toplevel, EdaConfig* cfg)
+config_save (GschemToplevel* toplevel, EdaConfig* cfg)
 {
   g_return_if_fail (toplevel != NULL);
   g_return_if_fail (cfg != NULL);
 
-  gchar* font = get_schematic_font (toplevel);
+  gchar* font = schematic_get_font (toplevel);
 
   if (cfg != NULL && font != NULL)
   {
@@ -342,6 +357,29 @@ save_schematic_font (GschemToplevel* toplevel, EdaConfig* cfg)
   }
 
   g_free (font);
+}
+
+
+
+/*! \brief Get selected font as a string composed of family and face
+ *  \note  Caller must g_free() return value
+ *
+ *  \param sel Pointer to a GtkFontSelection widget
+ *
+ *  \return string in the form "family face"
+ */
+static gchar*
+fontsel_get_font (GtkFontSelection* sel)
+{
+  g_return_val_if_fail (sel != NULL, NULL);
+
+  PangoFontFamily* family = gtk_font_selection_get_family (sel);
+  const char* family_name = pango_font_family_get_name (family);
+
+  PangoFontFace* face = gtk_font_selection_get_face (sel);
+  const char* face_name = pango_font_face_get_face_name (face);
+
+  return g_strdup_printf ("%s %s", family_name, face_name);
 }
 
 
@@ -356,7 +394,19 @@ fontsel_set_font (FontSelectWidget* widget, const gchar* font)
 {
   g_return_if_fail (widget != NULL);
 
-  gtk_font_selection_set_font_name (widget->font_sel_, font);
+  /* Append font size to the [font] name.
+   * If the [font] name string doesn't contain font size,
+   * GtkFontSelection widget will set its "Size" field to 0,
+   * effectively hiding text in the "Preview" box:
+  */
+  gchar* fname = g_strdup_printf ("%s %d", font, PREVIEW_TEXT_SIZE);
+  gtk_font_selection_set_font_name (widget->font_sel_, fname);
+
+  g_free (fname);
+
+  /* Set preview text:
+  */
+  gtk_font_selection_set_preview_text (widget->font_sel_, PREVIEW_TEXT);
 }
 
 
@@ -376,9 +426,9 @@ on_btn_apply (GtkWidget* btn, gpointer p)
   g_return_if_fail (widget != NULL);
   g_return_if_fail (widget->toplevel_ != NULL);
 
-  gchar* font = font_sel_get_font (widget->font_sel_);
+  gchar* font = fontsel_get_font (widget->font_sel_);
 
-  set_schematic_font (widget->toplevel_, font);
+  schematic_set_font (widget->toplevel_, font);
   update_font_label (widget, font);
 
   g_free (font);
@@ -399,7 +449,7 @@ on_btn_save (GtkWidget* btn, gpointer p)
 
   if (cfg != NULL)
   {
-    save_schematic_font (widget->toplevel_, cfg);
+    config_save (widget->toplevel_, cfg);
   }
 
 } /* on_btn_save() */
@@ -412,29 +462,6 @@ on_btn_save (GtkWidget* btn, gpointer p)
  * helpers:
  *
  */
-
-/*! \brief Get selected font as a string composed of family and face
- *  \note  Caller must g_free() return value
- *
- *  \param sel Pointer to a GtkFontSelection widget
- *
- *  \return string in the form "family face"
- */
-static gchar*
-font_sel_get_font (GtkFontSelection* sel)
-{
-  g_return_val_if_fail (sel != NULL, NULL);
-
-  PangoFontFamily* family = gtk_font_selection_get_family (sel);
-  const char* family_name = pango_font_family_get_name (family);
-
-  PangoFontFace* face = gtk_font_selection_get_face (sel);
-  const char* face_name = pango_font_face_get_face_name (face);
-
-  return g_strdup_printf ("%s %s", family_name, face_name);
-}
-
-
 
 /*! \brief Open save settings dialog
  *
@@ -457,18 +484,40 @@ save_settings_dlg (FontSelectWidget* widget)
     GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
     NULL);
 
-  /* label: */
-  GtkWidget* lab = gtk_label_new (_("Save settings to:"));
+  /* text for radio buttons: */
+  gchar* cwd = g_get_current_dir();
+  EdaConfig* ctx_local = eda_config_get_context_for_path (cwd);
+  g_free (cwd);
+  const gchar* file_local = eda_config_get_filename (ctx_local);
+  gchar* txt_btn1 = g_strdup_printf ("%s\n%s",
+                                   _("Local configuration file:"),
+                                   file_local);
+
+  EdaConfig* ctx_user = eda_config_get_user_context();
+  const gchar* file_user = eda_config_get_filename (ctx_user);
+  gchar* txt_btn2 = g_strdup_printf ("%s\n%s",
+                                   _("User configuration file:"),
+                                   file_user);
 
   /* radio buttons: */
-  GtkWidget* btn1 = gtk_radio_button_new_with_label (
-    NULL, _("Local configuration file (in current directory)"));
+  GtkWidget* btn1 = gtk_radio_button_new_with_label(
+    NULL, txt_btn1);
   GtkWidget* btn2 = gtk_radio_button_new_with_label_from_widget(
-    GTK_RADIO_BUTTON (btn1), _("User configuration file (geda-user.conf)"));
+    GTK_RADIO_BUTTON (btn1), txt_btn2);
+
+  g_free (txt_btn1);
+  g_free (txt_btn2);
+
+  /* font label: */
+  gchar* font = schematic_get_font (widget->toplevel_);
+  GtkWidget* label_font = gtk_label_new (font);
+  gtk_label_set_text (GTK_LABEL (label_font), font);
+  g_free (font);
 
   /* pack to vbox: */
-  GtkWidget* vbox = gtk_vbox_new (TRUE, 0);
-  gtk_box_pack_start (GTK_BOX (vbox), lab,  TRUE, TRUE, 0);
+  GtkWidget* vbox = gtk_vbox_new (FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (vbox), label_font, TRUE, TRUE, 0);
+  gtk_box_pack_start (GTK_BOX (vbox), gtk_hseparator_new(), TRUE, TRUE, 10);
   gtk_box_pack_start (GTK_BOX (vbox), btn1, TRUE, TRUE, 0);
   gtk_box_pack_start (GTK_BOX (vbox), btn2, TRUE, TRUE, 0);
 
@@ -487,14 +536,12 @@ save_settings_dlg (FontSelectWidget* widget)
   {
     if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (btn1)))
     {
-      gchar* cwd = g_get_current_dir();
-      ctx = eda_config_get_context_for_path (cwd);
-      g_free (cwd);
+      ctx = ctx_local;
     }
     else
     if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (btn2)))
     {
-      ctx = eda_config_get_user_context();
+      ctx = ctx_user;
     }
   }
 

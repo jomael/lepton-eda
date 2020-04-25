@@ -1,5 +1,3 @@
-## Process this file with automake to produce Makefile.in
-
 libleptonincludedir = $(includedir)/liblepton
 libleptoninclude_HEADERS = \
 	liblepton/defines.h \
@@ -21,8 +19,8 @@ libleptoninclude_HEADERS = \
 	liblepton/geda_circle_object.h \
 	liblepton/geda_color.h \
 	liblepton/geda_color_map.h \
-	liblepton/geda_complex.h \
-	liblepton/geda_complex_object.h \
+	liblepton/geda_component.h \
+	liblepton/geda_component_object.h \
 	liblepton/geda_coord.h \
 	liblepton/geda_forward.h \
 	liblepton/geda_fill_type.h \
@@ -62,9 +60,3 @@ noinst_HEADERS = \
 	libgeda_priv.h \
 	prototype_priv.h \
 	libgedaguile_priv.h
-
-MOSTLYCLEANFILES = *.log core FILE *~
-CLEANFILES = *.log core FILE *~
-DISTCLEANFILES = *.log core FILE *~
-MAINTAINERCLEANFILES = *.log core FILE *~ Makefile.in
-

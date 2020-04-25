@@ -181,7 +181,8 @@ void s_undo_print_all( UNDO *head )
  *  \par Function Description
  *
  */
-void s_undo_destroy_all(TOPLEVEL *toplevel, UNDO *head)
+void
+s_undo_destroy_all (UNDO *head)
 {
   UNDO *u_current;
   UNDO *u_prev;
@@ -193,7 +194,7 @@ void s_undo_destroy_all(TOPLEVEL *toplevel, UNDO *head)
     g_free(u_current->filename);
 
     if (u_current->object_list) {
-      geda_object_list_delete (toplevel, u_current->object_list);
+      geda_object_list_delete (u_current->object_list);
       u_current->object_list = NULL;
     }
 
@@ -202,54 +203,14 @@ void s_undo_destroy_all(TOPLEVEL *toplevel, UNDO *head)
   }
 }
 
-/*! \todo Finish function documentation!!!
- *  \brief
- *  \par Function Description
- *
- */
-void s_undo_remove(TOPLEVEL *toplevel, UNDO *head, UNDO *u_tos)
-{
-  UNDO *u_current;
-
-  if (u_tos == NULL) {
-    fprintf(stderr, "Got NULL for u_tos in s_undo_remove\n");
-    return;
-  }
-
-  u_current = head;
-
-  while (u_current != NULL) {
-    if (u_current == u_tos) {
-      if (u_current->next)
-        u_current->next->prev = u_current->prev;
-      else
-        u_current->next = NULL;
-
-      if (u_current->prev)
-        u_current->prev->next = u_current->next;
-      else
-        u_current->prev = NULL;
-
-      g_free(u_current->filename);
-
-      if (u_current->object_list) {
-        geda_object_list_delete (toplevel, u_current->object_list);
-        u_current->object_list = NULL;
-      }
-
-      g_free(u_current);
-      return;
-    }
-    u_current = u_current->next;
-  }
-}
 
 /*! \todo Finish function documentation!!!
  *  \brief
  *  \par Function Description
  *
  */
-void s_undo_remove_rest(TOPLEVEL *toplevel, UNDO *head)
+void
+s_undo_remove_rest (UNDO *head)
 {
   UNDO *u_current;
   UNDO *u_next;
@@ -265,7 +226,7 @@ void s_undo_remove_rest(TOPLEVEL *toplevel, UNDO *head)
     }
 
     if (u_current->object_list) {
-      geda_object_list_delete (toplevel, u_current->object_list);
+      geda_object_list_delete (u_current->object_list);
       u_current->object_list = NULL;
     }
 
@@ -312,9 +273,10 @@ void s_undo_init(PAGE *p_current)
  *  \par Function Description
  *
  */
-void s_undo_free_all(TOPLEVEL *toplevel, PAGE *p_current)
+void
+s_undo_free_all (PAGE *p_current)
 {
-  s_undo_destroy_all(toplevel, p_current->undo_bottom);
+  s_undo_destroy_all (p_current->undo_bottom);
   p_current->undo_bottom = NULL;
   p_current->undo_tos = NULL;
   p_current->undo_current = NULL;

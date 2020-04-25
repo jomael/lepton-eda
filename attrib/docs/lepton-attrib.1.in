@@ -22,15 +22,9 @@ Verbose mode.  Output all diagnostic information.
 .TP 8
 \fB-h\fR, \fB--help\fR
 Print a help message.
-
-.SH ENVIRONMENT
 .TP 8
-.B GEDADATA
-specifies the search directory for Scheme and rc files.  The default
-is `${prefix}/share/lepton-eda'.
-.TP 8
-.B GEDADATARC
-specifies the search directory for rc files.  The default is `$GEDADATA'.
+\fB-V\fR, \fB--version\fR
+Print version information.
 
 .SH AUTHORS
 See the `AUTHORS' file included with this program.

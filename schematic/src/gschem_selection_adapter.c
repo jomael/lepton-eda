@@ -1021,8 +1021,7 @@ gschem_selection_adapter_set_fill_angle1 (GschemSelectionAdapter *adapter, int a
                                  &temp_angle2);
 
     if (success) {
-      o_set_fill_options (adapter->toplevel,
-                          object,
+      o_set_fill_options (object,
                           temp_fill_type,
                           temp_width,
                           temp_pitch1,
@@ -1081,8 +1080,7 @@ gschem_selection_adapter_set_fill_angle2 (GschemSelectionAdapter *adapter, int a
                                  &temp_angle2);
 
     if (success) {
-      o_set_fill_options (adapter->toplevel,
-                          object,
+      o_set_fill_options (object,
                           temp_fill_type,
                           temp_width,
                           temp_pitch1,
@@ -1143,8 +1141,7 @@ gschem_selection_adapter_set_fill_pitch1 (GschemSelectionAdapter *adapter, int p
                                  &temp_angle2);
 
     if (success) {
-      o_set_fill_options (adapter->toplevel,
-                          object,
+      o_set_fill_options (object,
                           temp_fill_type,
                           temp_width,
                           pitch,
@@ -1203,8 +1200,7 @@ gschem_selection_adapter_set_fill_pitch2 (GschemSelectionAdapter *adapter, int p
                                  &temp_angle2);
 
     if (success) {
-      o_set_fill_options (adapter->toplevel,
-                          object,
+      o_set_fill_options (object,
                           temp_fill_type,
                           temp_width,
                           temp_pitch1,
@@ -1265,8 +1261,7 @@ gschem_selection_adapter_set_fill_type (GschemSelectionAdapter *adapter, int fil
                                  &temp_angle2);
 
     if (success) {
-      o_set_fill_options (adapter->toplevel,
-                          object,
+      o_set_fill_options (object,
                           (OBJECT_FILLING) fill_type,
                           temp_width,
                           temp_pitch1,
@@ -1331,8 +1326,7 @@ gschem_selection_adapter_set_fill_width (GschemSelectionAdapter *adapter, int fi
                                  &temp_angle2);
 
     if (success) {
-      o_set_fill_options (adapter->toplevel,
-                          object,
+      o_set_fill_options (object,
                           temp_fill_type,
                           fill_width,
                           temp_pitch1,
@@ -1390,8 +1384,7 @@ gschem_selection_adapter_set_line_type (GschemSelectionAdapter *adapter, int lin
                                   &temp_dash_space);
 
     if (success) {
-      o_set_line_options (adapter->toplevel,
-                          object,
+      o_set_line_options (object,
                           temp_cap_style,
                           (OBJECT_TYPE) line_type,
                           temp_line_width,
@@ -1450,8 +1443,7 @@ gschem_selection_adapter_set_line_width (GschemSelectionAdapter *adapter, int li
                                   &temp_dash_space);
 
     if (success) {
-      o_set_line_options (adapter->toplevel,
-                          object,
+      o_set_line_options (object,
                           temp_cap_style,
                           temp_line_type,
                           line_width,
@@ -1508,8 +1500,7 @@ gschem_selection_adapter_set_dash_length (GschemSelectionAdapter *adapter, int d
                                   &temp_dash_space);
 
     if (success) {
-      o_set_line_options (adapter->toplevel,
-                          object,
+      o_set_line_options (object,
                           temp_cap_style,
                           temp_line_type,
                           temp_line_width,
@@ -1566,8 +1557,7 @@ gschem_selection_adapter_set_dash_space (GschemSelectionAdapter *adapter, int da
                                   &temp_dash_space);
 
     if (success) {
-      o_set_line_options (adapter->toplevel,
-                          object,
+      o_set_line_options (object,
                           temp_cap_style,
                           temp_line_type,
                           temp_line_width,
@@ -1624,8 +1614,7 @@ gschem_selection_adapter_set_cap_style (GschemSelectionAdapter *adapter, int cap
                                   &temp_dash_space);
 
     if (success) {
-      o_set_line_options (adapter->toplevel,
-                          object,
+      o_set_line_options (object,
                           (OBJECT_END) cap_style,
                           temp_line_type,
                           temp_line_width,
@@ -1656,8 +1645,7 @@ gschem_selection_adapter_set_object_color (GschemSelectionAdapter *adapter, int 
   g_return_if_fail (color < MAX_COLORS);
 
   geda_object_list_set_color (geda_list_get_glist (adapter->selection),
-                              color,
-                              adapter->toplevel);
+                              color);
 
   g_object_notify (G_OBJECT (adapter), "object-color");
   g_object_notify (G_OBJECT (adapter), "text-color");
@@ -1686,8 +1674,8 @@ gschem_selection_adapter_set_pin_type (GschemSelectionAdapter *adapter, int type
     OBJECT *object = (OBJECT*) iter->data;
 
     if (object->type == OBJ_PIN && object->pin_type != type) {
-      s_conn_remove_object_connections (adapter->toplevel, object);
-      geda_pin_object_set_type (adapter->toplevel, object, type);
+      s_conn_remove_object_connections (object);
+      geda_pin_object_set_type (object, type);
       s_conn_update_object (object->page, object);
     }
 
@@ -1768,7 +1756,7 @@ gschem_selection_adapter_set_text_alignment (GschemSelectionAdapter *adapter, in
 
     if (object->type == OBJ_TEXT) {
       geda_text_object_set_alignment (object, alignment);
-      o_text_recreate(adapter->toplevel, object);
+      o_text_recreate (object);
     }
 
     iter = g_list_next (iter);
@@ -1801,7 +1789,7 @@ gschem_selection_adapter_set_text_color (GschemSelectionAdapter *adapter, int co
     OBJECT *object = (OBJECT*) iter->data;
 
     if (object->type == OBJ_TEXT) {
-      o_set_color (adapter->toplevel, object, color);
+      o_set_color (object, color);
     }
 
     iter = g_list_next (iter);
@@ -1836,7 +1824,7 @@ gschem_selection_adapter_set_text_rotation (GschemSelectionAdapter *adapter, int
 
     if (object->type == OBJ_TEXT) {
       geda_text_object_set_angle (object, angle);
-      o_text_recreate(adapter->toplevel, object);
+      o_text_recreate (object);
     }
 
     iter = g_list_next (iter);
@@ -1870,7 +1858,7 @@ gschem_selection_adapter_set_text_size (GschemSelectionAdapter *adapter, int siz
 
     if (object->type == OBJ_TEXT) {
       geda_text_object_set_size (object, size);
-      o_text_recreate(adapter->toplevel, object);
+      o_text_recreate (object);
     }
 
     iter = g_list_next (iter);
@@ -1905,14 +1893,14 @@ gschem_selection_adapter_set_text_string (GschemSelectionAdapter *adapter, const
     OBJECT *object = (OBJECT*) iter->data;
 
     if (object->type == OBJ_TEXT) {
-      o_text_set_string (adapter->toplevel, object, string);
+      o_text_set_string (object, string);
 
       /* handle slot= attribute, it's a special case */
       if (object->attached_to != NULL && g_ascii_strncasecmp (string, "slot=", 5) == 0) {
         o_slot_end (w_current, object->attached_to, string);
       }
 
-      o_text_recreate (adapter->toplevel, object);
+      o_text_recreate (object);
     }
 
     iter = g_list_next (iter);

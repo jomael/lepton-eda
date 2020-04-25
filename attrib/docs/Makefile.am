@@ -40,10 +40,7 @@ else
 	@! :
 endif
 
-MOSTLYCLEANFILES = 	*.log *~
-CLEANFILES = 		*.log *~
-DISTCLEANFILES =        *.log
-MAINTAINERCLEANFILES = 	*.log *~ Makefile.in
+CLEANFILES = $(dist_man_MANS) $(html_man_files)
 
 distclean-local:
 	-rm -rf html latex

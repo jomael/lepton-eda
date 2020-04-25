@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2019 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -181,7 +182,9 @@ void o_redraw_rect (GschemToplevel *w_current,
       if (!o_current->dont_redraw) {
         eda_renderer_draw (renderer, o_current);
         eda_renderer_draw_cues (renderer, o_current);
-        eda_renderer_draw_grips (renderer, o_current);
+        if (w_current->draw_grips) {
+          eda_renderer_draw_grips (renderer, o_current);
+        }
       }
     }
     g_object_set (G_OBJECT (renderer),
@@ -363,7 +366,7 @@ int o_redraw_cleanstates(GschemToplevel *w_current)
       /* Free the place list and its contents. If we were in a move
        * action, the list (refering to objects on the page) would
        * already have been cleared in o_move_cancel(), so this is OK. */
-      geda_object_list_delete (toplevel, toplevel->page_current->place_list);
+      geda_object_list_delete (toplevel->page_current->place_list);
       toplevel->page_current->place_list = NULL;
 
       i_action_stop (w_current);

@@ -1,0 +1,111 @@
+.TH lepton-symcheck 1 "@DATE@" "Lepton EDA" @VERSION@
+.SH NAME
+lepton-symcheck \- Lepton EDA Symbol Checker
+.SH SYNOPSIS
+.B lepton-symcheck
+[\fIOPTION\fR ...] \fIFILE\fR ...
+.SH DESCRIPTION
+.PP
+.B lepton-symcheck
+is a symbol checker for Lepton EDA.
+It checks one or more symbol \fIFILE\fRs passed on the command line.
+
+Here is a list of checks that
+.B lepton-symcheck
+performs:
+.IP \[bu] 2
+Checks for \f[I]graphical\f[] attribute (if present does varied tests)
+.IP \[bu]
+Checks for the \f[I]device\f[] attribute
+.IP \[bu]
+Checks for various other missing attributes (\f[I]pinlabel\f[],
+\f[I]pintype\f[], \f[I]pinseq\f[], \f[I]footprint\f[],
+\f[I]refdes\f[])
+.IP \[bu]
+Checks to make sure that the active pin end is on the 100 unit
+grid.
+.IP \[bu]
+Checks the uses of the various attributes (duplicates, incorrect
+syntax, invalid values, etc...)
+.IP \[bu]
+Checks for obsolete, old, and forbidden attributes
+.IP \[bu]
+Checks for any nets or buses within a symbol
+.IP \[bu]
+Checks for any other connections within a symbol
+.IP \[bu]
+Checks to make sure the number of pins is the correct number
+
+.SH OPTIONS
+.B lepton-symcheck
+accepts the following options:
+.TP 8
+.BR \-q ", " \-\-quiet
+Quiet mode on.  This mode turns off all warnings/notes/messages.
+.TP 8
+.BR \-v ", " \-\-verbose
+Verbose mode 1.  This mode will show all error messages.
+.TP 8
+.B -vv
+Verbose mode 2.  This mode will show all error and warning messages.
+.TP 8
+.B -vvv
+Verbose mode 3.  This mode will show all error, warning, and info
+messages.
+.TP 8
+.BR \-V ", " \-\-version
+Print version information.
+.TP 8
+.BR -h ", " \-\-help
+Print a help message.
+
+.SH EXAMPLES
+Here are some examples on how to run
+.BR lepton-symcheck :
+
+To get usage information run:
+
+.RS
+lepton-symcheck \-\-help
+.RE
+
+To actually check a symbol with just error counts, run:
+
+.RS
+lepton-symcheck \f[I]symbolfilename.sym\f[]
+.RE
+
+To get the actuall error messages, run:
+
+.RS
+lepton-symcheck \-v \f[I]symbolfilename.sym\f[]
+.RE
+
+To see all the error messages and warnings, run:
+
+.RS
+lepton-symcheck \-vv \f[I]symbolfilename.sym\f[]
+.RE
+
+To see all the error messages, warnings, and parse info, run:
+
+.RS
+lepton-symcheck \-vvv \f[I]symbolfilename.sym\f[]
+.RE
+
+.SH AUTHORS
+See the `AUTHORS' file included with this program.
+
+.SH COPYRIGHT
+.nf
+Copyright \(co 2012-2017 gEDA Contributors.
+Copyright \(co 2017-@YEAR@ Lepton Developers.
+License GPLv2+: GNU GPL version 2 or later. Please see the `COPYING'
+file included with this program for full details.
+.PP
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+.SH SEE ALSO
+.BR lepton-schematic (1),
+.BR lepton-netlist (1)

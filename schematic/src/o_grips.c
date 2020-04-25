@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2019 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -730,13 +731,12 @@ static void o_grips_start_path(GschemToplevel *w_current, OBJECT *o_current,
 static void o_grips_start_picture(GschemToplevel *w_current, OBJECT *o_current,
                                   int x, int y, int whichone)
 {
-  TOPLEVEL *toplevel = gschem_toplevel_get_toplevel (w_current);
   w_current->last_drawb_mode = LAST_DRAWB_MODE_NONE;
 
-  w_current->current_pixbuf = o_picture_get_pixbuf (toplevel, o_current);
+  w_current->current_pixbuf = o_picture_get_pixbuf (o_current);
   w_current->pixbuf_filename =
     g_strdup (o_picture_get_filename (o_current));
-  w_current->pixbuf_wh_ratio = o_picture_get_ratio (toplevel, o_current);
+  w_current->pixbuf_wh_ratio = o_picture_get_ratio (o_current);
 
   /* (second_wx,second_wy) is the selected corner */
   /* (first_wx, first_wy) is the opposite corner */
@@ -860,6 +860,9 @@ static void o_grips_start_line(GschemToplevel *w_current, OBJECT *o_current,
  *  variables <B>which_grip</B> and <B>which_object</B> with the identifier
  *  of the grip and the object it belongs to respectively.
  *
+ *  If the \a draw-grips rc setting is "disabled", no grids are
+ *  displayed though the object is modified the same way.
+ *
  *  \param [in]  w_current  The GschemToplevel object.
  *  \param [in]  w_x        Current x coordinate of pointer in world units.
  *  \param [in]  w_y        Current y coordinate of pointer in world units.
@@ -870,41 +873,38 @@ void o_grips_start(GschemToplevel *w_current, int w_x, int w_y)
   int whichone;
   void (*func) (GschemToplevel*, OBJECT*, int, int, int) = NULL;
 
-  if (w_current->draw_grips) {
+  /* search if there is a grip on a selected object at (w_x,w_y) */
+  object = o_grips_search_world(w_current, w_x, w_y, &whichone);
 
-    /* search if there is a grip on a selected object at (w_x,w_y) */
-    object = o_grips_search_world(w_current, w_x, w_y, &whichone);
+  if (object != NULL) {
+    w_current->which_grip = whichone;
+    w_current->which_object = object;
 
-    if (object != NULL) {
-      w_current->which_grip = whichone;
-      w_current->which_object = object;
+    /* Switch off drawing for the object being modified */
+    object->dont_redraw = TRUE;
+    o_invalidate (w_current, object);
 
-      /* Switch off drawing for the object being modified */
-      object->dont_redraw = TRUE;
-      o_invalidate (w_current, object);
+    /* there is one */
+    /* depending on its type, start the modification process */
+    switch (object->type) {
+    case OBJ_ARC:     func = o_grips_start_arc;     break;
+    case OBJ_BOX:     func = o_grips_start_box;     break;
+    case OBJ_PATH:    func = o_grips_start_path;    break;
+    case OBJ_PICTURE: func = o_grips_start_picture; break;
+    case OBJ_CIRCLE:  func = o_grips_start_circle;  break;
+    case OBJ_LINE:
+    case OBJ_NET:
+    case OBJ_PIN:
+    case OBJ_BUS:     func = o_grips_start_line;    break;
 
-      /* there is one */
-      /* depending on its type, start the modification process */
-      switch (object->type) {
-          case OBJ_ARC:     func = o_grips_start_arc;     break;
-          case OBJ_BOX:     func = o_grips_start_box;     break;
-          case OBJ_PATH:    func = o_grips_start_path;    break;
-          case OBJ_PICTURE: func = o_grips_start_picture; break;
-          case OBJ_CIRCLE:  func = o_grips_start_circle;  break;
-          case OBJ_LINE:
-          case OBJ_NET:
-          case OBJ_PIN:
-          case OBJ_BUS:     func = o_grips_start_line;    break;
+    default: break;
+    }
 
-          default: break;
-      }
-
-      /* start the modification of a grip on the object */
-      if (func != NULL) {
-        (*func) (w_current, object, w_x, w_y, whichone);
-        i_set_state (w_current, GRIPS);
-        i_action_start (w_current);
-      }
+    /* start the modification of a grip on the object */
+    if (func != NULL) {
+      (*func) (w_current, object, w_x, w_y, whichone);
+      i_set_state (w_current, GRIPS);
+      i_action_start (w_current);
     }
   }
 }
@@ -1015,7 +1015,6 @@ void o_grips_cancel(GschemToplevel *w_current)
 static void o_grips_end_arc(GschemToplevel *w_current, OBJECT *o_current,
                             int whichone)
 {
-  TOPLEVEL *toplevel = gschem_toplevel_get_toplevel (w_current);
   int arg1, arg2;
 
   /* erase the temporary arc */
@@ -1049,7 +1048,7 @@ static void o_grips_end_arc(GschemToplevel *w_current, OBJECT *o_current,
   }
 
   /* modify the arc with the parameters determined above */
-  geda_arc_object_modify (toplevel, o_current, arg1, arg2, whichone);
+  geda_arc_object_modify (o_current, arg1, arg2, whichone);
 }
 
 /*! \todo Finish function documentation!!!
@@ -1063,7 +1062,6 @@ static void o_grips_end_arc(GschemToplevel *w_current, OBJECT *o_current,
 static void o_grips_end_box(GschemToplevel *w_current, OBJECT *o_current,
                             int whichone)
 {
-  TOPLEVEL *toplevel = gschem_toplevel_get_toplevel (w_current);
   int box_width, box_height;
 
   box_width  = GET_BOX_WIDTH (w_current);
@@ -1078,7 +1076,7 @@ static void o_grips_end_box(GschemToplevel *w_current, OBJECT *o_current,
     return;
   }
 
-  geda_box_object_modify (toplevel, o_current, w_current->second_wx, w_current->second_wy, whichone);
+  geda_box_object_modify (o_current, w_current->second_wx, w_current->second_wy, whichone);
 }
 
 /*! \todo Finish function documentation!!!
@@ -1092,8 +1090,10 @@ static void o_grips_end_box(GschemToplevel *w_current, OBJECT *o_current,
 static void o_grips_end_path(GschemToplevel *w_current, OBJECT *o_current,
                              int whichone)
 {
-  geda_path_object_modify (w_current->toplevel, o_current,
-                           w_current->second_wx, w_current->second_wy, whichone);
+  geda_path_object_modify (o_current,
+                           w_current->second_wx,
+                           w_current->second_wy,
+                           whichone);
 }
 
 /*! \todo Finish function documentation!!!
@@ -1107,9 +1107,7 @@ static void o_grips_end_path(GschemToplevel *w_current, OBJECT *o_current,
 static void o_grips_end_picture(GschemToplevel *w_current, OBJECT *o_current,
                                 int whichone)
 {
-  TOPLEVEL *toplevel = gschem_toplevel_get_toplevel (w_current);
-
-  /* don't allow zero width/height picturees
+  /* don't allow zero width/height pictures
    * this ends the picture drawing behavior
    * we want this? hack */
   if ((GET_PICTURE_WIDTH(w_current) == 0) || (GET_PICTURE_HEIGHT(w_current) == 0)) {
@@ -1118,8 +1116,8 @@ static void o_grips_end_picture(GschemToplevel *w_current, OBJECT *o_current,
     return;
   }
 
-  o_picture_modify(toplevel, o_current,
-		   w_current->second_wx, w_current->second_wy, whichone);
+  o_picture_modify (o_current,
+                    w_current->second_wx, w_current->second_wy, whichone);
 
   g_object_unref (w_current->current_pixbuf);
   w_current->current_pixbuf = NULL;
@@ -1146,8 +1144,6 @@ static void o_grips_end_picture(GschemToplevel *w_current, OBJECT *o_current,
 static void o_grips_end_circle(GschemToplevel *w_current, OBJECT *o_current,
                                int whichone)
 {
-  TOPLEVEL *toplevel = gschem_toplevel_get_toplevel (w_current);
-
   /* don't allow zero radius circles
    * this ends the circle drawing behavior
    * we want this? hack */
@@ -1158,7 +1154,7 @@ static void o_grips_end_circle(GschemToplevel *w_current, OBJECT *o_current,
   }
 
   /* modify the radius of the circle */
-  geda_circle_object_modify (toplevel, o_current, w_current->distance, -1, CIRCLE_RADIUS);
+  geda_circle_object_modify (o_current, w_current->distance, -1, CIRCLE_RADIUS);
 }
 
 /*! \brief End process of modifying line object with grip.
@@ -1180,8 +1176,6 @@ static void o_grips_end_circle(GschemToplevel *w_current, OBJECT *o_current,
 static void o_grips_end_line(GschemToplevel *w_current, OBJECT *o_current,
                              int whichone)
 {
-  TOPLEVEL *toplevel = gschem_toplevel_get_toplevel (w_current);
-
   /* don't allow zero length nets / lines / pins
    * this ends the net drawing behavior
    * we want this? hack */
@@ -1193,8 +1187,8 @@ static void o_grips_end_line(GschemToplevel *w_current, OBJECT *o_current,
   }
 
   /* modify the right line end according to whichone */
-  geda_line_object_modify(toplevel, o_current,
-                          w_current->second_wx, w_current->second_wy, whichone);
+  geda_line_object_modify (o_current,
+                           w_current->second_wx, w_current->second_wy, whichone);
 }
 
 
@@ -1217,7 +1211,6 @@ static void o_grips_end_line(GschemToplevel *w_current, OBJECT *o_current,
 static void o_grips_end_net(GschemToplevel *w_current, OBJECT *o_current,
                             int whichone)
 {
-  TOPLEVEL *toplevel = gschem_toplevel_get_toplevel (w_current);
   GList *connected_objects;
 
   /* don't allow zero length net
@@ -1229,8 +1222,8 @@ static void o_grips_end_net(GschemToplevel *w_current, OBJECT *o_current,
     return;
   }
 
-  s_conn_remove_object_connections (toplevel, o_current);
-  geda_net_object_modify (toplevel, o_current, w_current->second_wx,
+  s_conn_remove_object_connections (o_current);
+  geda_net_object_modify (o_current, w_current->second_wx,
                           w_current->second_wy, w_current->which_grip);
   s_conn_update_object (o_current->page, o_current);
 
@@ -1259,8 +1252,6 @@ static void o_grips_end_net(GschemToplevel *w_current, OBJECT *o_current,
 static void o_grips_end_pin(GschemToplevel *w_current, OBJECT *o_current,
                             int whichone)
 {
-  TOPLEVEL *toplevel = gschem_toplevel_get_toplevel (w_current);
-
   /* don't allow zero length pin
    * this ends the pin changing behavior
    * we want this? hack */
@@ -1270,9 +1261,11 @@ static void o_grips_end_pin(GschemToplevel *w_current, OBJECT *o_current,
     return;
   }
 
-  s_conn_remove_object_connections (toplevel, o_current);
-  geda_pin_object_modify (toplevel, o_current, w_current->second_wx,
-                          w_current->second_wy, w_current->which_grip);
+  s_conn_remove_object_connections (o_current);
+  geda_pin_object_modify (o_current,
+                          w_current->second_wx,
+                          w_current->second_wy,
+                          w_current->which_grip);
   s_conn_update_object (o_current->page, o_current);
 }
 
@@ -1295,8 +1288,6 @@ static void o_grips_end_pin(GschemToplevel *w_current, OBJECT *o_current,
 static void o_grips_end_bus(GschemToplevel *w_current, OBJECT *o_current,
                             int whichone)
 {
-  TOPLEVEL *toplevel = gschem_toplevel_get_toplevel (w_current);
-
   /* don't allow zero length bus
    * this ends the bus changing behavior
    * we want this? hack */
@@ -1306,8 +1297,8 @@ static void o_grips_end_bus(GschemToplevel *w_current, OBJECT *o_current,
     return;
   }
 
-  s_conn_remove_object_connections (toplevel, o_current);
-  geda_bus_object_modify (toplevel, o_current, w_current->second_wx,
+  s_conn_remove_object_connections (o_current);
+  geda_bus_object_modify (o_current, w_current->second_wx,
                           w_current->second_wy, w_current->which_grip);
   s_conn_update_object (o_current->page, o_current);
 }

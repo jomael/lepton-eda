@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ static gint global_pid = 0;
 /* Called just before removing an OBJECT from a PAGE
  * or after appending an OBJECT to a PAGE. */
 static void
-object_added (TOPLEVEL *toplevel, PAGE *page, OBJECT *object)
+object_added (PAGE *page, OBJECT *object)
 {
   /* Set up object parent pointer */
 #ifndef NDEBUG
@@ -70,14 +70,14 @@ object_added (TOPLEVEL *toplevel, PAGE *page, OBJECT *object)
   /* Update object connection tracking */
   s_conn_update_object (page, object);
 
-  o_emit_change_notify (toplevel, object);
+  o_emit_change_notify (object);
 }
 
 /* Called just before removing an OBJECT from a PAGE. */
 static void
-pre_object_removed (TOPLEVEL *toplevel, PAGE *page, OBJECT *object)
+pre_object_removed (PAGE *page, OBJECT *object)
 {
-  o_emit_pre_change_notify (toplevel, object);
+  o_emit_pre_change_notify (object);
 
   /* Remove object from the list of connectible objects */
   s_conn_remove_object (page, object);
@@ -96,7 +96,7 @@ pre_object_removed (TOPLEVEL *toplevel, PAGE *page, OBJECT *object)
   }
 
   /* Remove object from connection system */
-  s_conn_remove_object_connections (toplevel, object);
+  s_conn_remove_object_connections (object);
 }
 
 /*! \brief create a new page object
@@ -146,7 +146,6 @@ PAGE *s_page_new (TOPLEVEL *toplevel, const gchar *filename)
   page->weak_refs = NULL;
 
   /* Backup variables */
-  g_get_current_time (&page->last_load_or_save_time);
   page->ops_since_last_backup = 0;
   page->saved_since_first_loaded = 0;
   page->do_autosave_backup = 0;
@@ -194,7 +193,8 @@ void s_page_delete (TOPLEVEL *toplevel, PAGE *page)
   real_filename = follow_symlinks (s_page_get_filename(page), NULL);
 
   if (real_filename == NULL) {
-    s_log_message (_("s_page_delete: Can't get the real filename of %1$s."),
+    s_log_message ("s_page_delete:");
+    s_log_message (_("Can't get the real filename of %1$s."),
                    s_page_get_filename (page));
   }
   else {
@@ -205,7 +205,8 @@ void s_page_delete (TOPLEVEL *toplevel, PAGE *page)
 	 (!g_file_test(backup_filename, G_FILE_TEST_IS_DIR)) )
     {
       if (unlink(backup_filename) != 0) {
-	s_log_message(_("s_page_delete: Unable to delete backup file %1$s."),
+        s_log_message ("s_page_delete:");
+	s_log_message (_("Unable to delete backup file %1$s."),
                       backup_filename);
       }
     }
@@ -217,10 +218,10 @@ void s_page_delete (TOPLEVEL *toplevel, PAGE *page)
   g_object_unref( page->selection_list );
 
   /* then delete objects of page */
-  s_page_delete_objects (toplevel, page);
+  s_page_delete_objects (page);
 
   /* Free the objects in the place list. */
-  geda_object_list_delete (toplevel, page->place_list);
+  geda_object_list_delete (page->place_list);
   page->place_list = NULL;
 
   /*  This removes all objects from the list of connectible objects
@@ -235,7 +236,7 @@ void s_page_delete (TOPLEVEL *toplevel, PAGE *page)
   page->connectible_list = NULL;
 
   /* free current page undo structs */
-  s_undo_free_all (toplevel, page);
+  s_undo_free_all (page);
 
   /* ouch, deal with parents going away and the children still around */
   page->up = -2;
@@ -418,6 +419,47 @@ PAGE *s_page_search (TOPLEVEL *toplevel, const gchar *filename)
   return NULL;
 }
 
+/*! \brief Search for page by its filename's basename.
+ *  \par Function Description
+ *  Searches in \a toplevel's list of pages for a page with
+ *  basename( filename ) equal to \a filename.
+ *
+ *  \param toplevel  The TOPLEVEL object
+ *  \param filename  The filename string to search for
+ *
+ *  \return PAGE pointer to a matching page, NULL otherwise.
+ */
+PAGE *s_page_search_by_basename (TOPLEVEL *toplevel, const gchar *filename)
+{
+  const GList* iter   = NULL;
+  PAGE*        page   = NULL;
+  PAGE*        result = NULL;
+
+  for ( iter = geda_list_get_glist( toplevel->pages );
+        iter != NULL;
+        iter = g_list_next( iter ) )
+  {
+    page = (PAGE*) iter->data;
+
+    const gchar* fname = s_page_get_filename (page);
+    gchar* bname = g_path_get_basename (fname);
+
+    /* FIXME this may not be correct on platforms with
+     * case-insensitive filesystems. */
+
+    if ( strcmp( bname, filename ) == 0 )
+    {
+      result = page;
+      g_free (bname);
+      break;
+    }
+
+    g_free (bname);
+  }
+
+  return result;
+}
+
 /*! \brief Search for a page given its page id in a page list.
  *  \par Function Description
  *  This functions returns the page that have the page id \a pid in
@@ -485,8 +527,7 @@ gint s_page_save_all (TOPLEVEL *toplevel)
 
     p_current = (PAGE *)iter->data;
 
-    if (f_save (toplevel, p_current,
-                s_page_get_filename (p_current), NULL)) {
+    if (f_save (p_current, s_page_get_filename (p_current), NULL)) {
       s_log_message (_("Saved [%1$s]"),
                      s_page_get_filename (p_current));
       /* reset the CHANGED flag of p_current */
@@ -617,14 +658,15 @@ gint s_page_autosave (TOPLEVEL *toplevel)
  *  Links the passed OBJECT to the end of the PAGE's
  *  linked list of objects.
  *
- *  \param [in] toplevel  The TOPLEVEL object.
  *  \param [in] page      The PAGE the object is being added to.
  *  \param [in] object    The OBJECT being added to the page.
  */
-void s_page_append (TOPLEVEL *toplevel, PAGE *page, OBJECT *object)
+void
+s_page_append (PAGE *page,
+               OBJECT *object)
 {
   page->_object_list = g_list_append (page->_object_list, object);
-  object_added (toplevel, page, object);
+  object_added (page, object);
 }
 
 /*! \brief Append a GList of OBJECTs to the PAGE
@@ -633,16 +675,17 @@ void s_page_append (TOPLEVEL *toplevel, PAGE *page, OBJECT *object)
  *  Links the passed OBJECT GList to the end of the PAGE's
  *  object_list.
  *
- *  \param [in] toplevel  The TOPLEVEL object.
  *  \param [in] page      The PAGE the objects are being added to.
  *  \param [in] obj_list  The OBJECT list being added to the page.
  */
-void s_page_append_list (TOPLEVEL *toplevel, PAGE *page, GList *obj_list)
+void
+s_page_append_list (PAGE *page,
+                    GList *obj_list)
 {
   GList *iter;
   page->_object_list = g_list_concat (page->_object_list, obj_list);
   for (iter = obj_list; iter != NULL; iter = g_list_next (iter)) {
-    object_added (toplevel, page, (OBJECT*) iter->data);
+    object_added (page, (OBJECT*) iter->data);
   }
 }
 
@@ -652,13 +695,14 @@ void s_page_append_list (TOPLEVEL *toplevel, PAGE *page, GList *obj_list)
  *  Removes the passed OBJECT from the PAGE's
  *  linked list of objects.
  *
- *  \param [in] toplevel  The TOPLEVEL object.
  *  \param [in] page      The PAGE the object is being removed from.
  *  \param [in] object    The OBJECT being removed from the page.
  */
-void s_page_remove (TOPLEVEL *toplevel, PAGE *page, OBJECT *object)
+void
+s_page_remove (PAGE *page,
+               OBJECT *object)
 {
-  pre_object_removed (toplevel, page, object);
+  pre_object_removed (page, object);
   page->_object_list = g_list_remove (page->_object_list, object);
 }
 
@@ -669,45 +713,42 @@ void s_page_remove (TOPLEVEL *toplevel, PAGE *page, OBJECT *object)
  * \a object2 in the position thus vacated. If \a object1 is not in \a
  * page, object2 is appended to \a page.
  *
- * \param [in] toplevel  The TOPLEVEL object.
  * \param [in] page      The PAGE to be modified.
  * \param [in] object1   The OBJECT being removed from the page.
  * \param [in] object2   The OBJECT being added to the page.
  */
 void
-s_page_replace (TOPLEVEL *toplevel, PAGE *page,
-                OBJECT *object1, OBJECT *object2)
+s_page_replace (PAGE *page,
+                OBJECT *object1,
+                OBJECT *object2)
 {
   GList *iter = g_list_find (page->_object_list, object1);
 
   /* If object1 not found, append object2 */
   if (iter == NULL) {
-    s_page_append (toplevel, page, object2);
+    s_page_append (page, object2);
     return;
   }
 
-  pre_object_removed (toplevel, page, object1);
+  pre_object_removed (page, object1);
   iter->data = object2;
-  object_added (toplevel, page, object2);
+  object_added (page, object2);
 }
 
 /*! \brief Remove and free all OBJECTs from the PAGE
  *
- *  \par Function Description
- *  Removes and frees all OBJECTs from the PAGE.
- *
- *  \param [in] toplevel  The TOPLEVEL object.
  *  \param [in] page      The PAGE being cleared.
  */
-void s_page_delete_objects (TOPLEVEL *toplevel, PAGE *page)
+void
+s_page_delete_objects (PAGE *page)
 {
   GList *objects = page->_object_list;
   GList *iter;
   for (iter = objects; iter != NULL; iter = g_list_next (iter)) {
-    pre_object_removed (toplevel, page, (OBJECT*) iter->data);
+    pre_object_removed (page, (OBJECT*) iter->data);
   }
   page->_object_list = NULL;
-  geda_object_list_delete (toplevel, objects);
+  geda_object_list_delete (objects);
 }
 
 

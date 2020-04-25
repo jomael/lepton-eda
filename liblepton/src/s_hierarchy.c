@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ s_hierarchy_down_schematic_single(TOPLEVEL *toplevel, const gchar *filename,
   g_return_val_if_fail ((filename != NULL), NULL);
   g_return_val_if_fail ((parent != NULL), NULL);
 
-  SCM string_s = scm_call_1 (scm_c_public_ref ("geda library",
+  SCM string_s = scm_call_1 (scm_c_public_ref ("lepton library",
                                                "get-source-library-file"),
                              scm_from_utf8_string (filename));
 
@@ -229,7 +229,7 @@ s_hierarchy_load_subpage (PAGE *page, const char *filename, GError **error)
   g_return_val_if_fail (filename != NULL, NULL);
   g_return_val_if_fail (page != NULL, NULL);
 
-  SCM string_s = scm_call_1 (scm_c_public_ref ("geda library",
+  SCM string_s = scm_call_1 (scm_c_public_ref ("lepton library",
                                                "get-source-library-file"),
                              scm_from_utf8_string (filename));
 
@@ -315,7 +315,7 @@ s_hierarchy_traversepages (TOPLEVEL *toplevel, PAGE *p_current, gint flags)
     o_current = (OBJECT *)iter->data;
 
     /* only complex things like symbols can contain attributes */
-    if (o_current->type != OBJ_COMPLEX) continue;
+    if (o_current->type != OBJ_COMPONENT) continue;
 
     filename =
       o_attrib_search_attached_attribs_by_name (o_current, "source", 0);

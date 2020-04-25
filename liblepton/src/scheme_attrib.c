@@ -1,6 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library - Scheme API
+/* Lepton EDA library - Scheme API
  * Copyright (C) 2010-2011 Peter Brett <peter@peter-b.co.uk>
+ * Copyright (C) 2010-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +38,7 @@ SCM_SYMBOL (attribute_format_sym, "attribute-format");
  * <tt>attribute-format</tt> error.
  *
  * \note Scheme API: Implements the %attrib-parse procedure of the
- * (geda core attrib) module.
+ * (lepton core attrib) module.
  *
  * \param text_s text object to attempt to split.
  * \return name/value pair, or SCM_BOOL_F.
@@ -81,7 +82,7 @@ SCM_DEFINE (parse_attrib, "%parse-attrib", 1, 0, 0,
  * <tt>attribute-format</tt> error.
  *
  * \note Scheme API: Implements the %attrib-name procedure of the
- * (geda core attrib) module.
+ * (lepton core attrib) module.
  *
  * \param text_s text object to parse
  * \return name, or SCM_BOOL_F.
@@ -112,7 +113,7 @@ SCM_DEFINE (attrib_name, "%attrib-name", 1, 0, 0,
  * #OBJECT smobs.
  *
  * \note Scheme API: Implements the %object-attribs procedure of the
- * (geda core attrib) module.
+ * (lepton core attrib) module.
  *
  * \param obj_s object to get attributes for.
  * \return a list of #OBJECT smobs.
@@ -135,7 +136,7 @@ SCM_DEFINE (object_attribs, "%object-attribs", 1, 0, 0,
  * attrib_s is not attached as an attribute, returns SCM_BOOL_F.
  *
  * \note Scheme API: Implements the %attrib-attachment procedure of
- * the (geda core attrib) module.
+ * the (lepton core attrib) module.
  *
  * \param attrib_s the object to get attribute attachment for.
  * \return the object to which \a attrib_s is attached, or SCM_BOOL_F.
@@ -164,7 +165,7 @@ SCM_DEFINE (attrib_attachment, "%attrib-attachment", 1, 0, 0,
  * - Neither \a obj_s nor \a attrib_s may be already attached as an
  *   attribute.
  * - Both \a obj_s and \a attrib_s must be part of the same page
- *   and/or complex object. (They can't be "loose" objects).
+ *   and/or component object. (They can't be "loose" objects).
  * - \a attrib_s must be a text object.
  *
  * These restrictions are intentionally harsher than those of the C
@@ -175,7 +176,7 @@ SCM_DEFINE (attrib_attachment, "%attrib-attachment", 1, 0, 0,
  * successfully.
  *
  * \note Scheme API: Implements the %attach-attrib! procedure of
- * the (geda core attrib) module.
+ * the (lepton core attrib) module.
  *
  * \param obj_s the object to which to attach an attribute.
  * \param attrib_s the attribute to attach.
@@ -189,19 +190,18 @@ SCM_DEFINE (attach_attrib_x, "%attach-attrib!", 2, 0, 0,
   SCM_ASSERT (edascm_is_object_type (attrib_s, OBJ_TEXT), attrib_s,
               SCM_ARG2, s_attach_attrib_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
   OBJECT *attrib = edascm_to_object (attrib_s);
 
   /* Check that attachment doesn't already exist */
   if (attrib->attached_to == obj) return obj_s;
 
-  /* Check that both are in the same page and/or complex object */
+  /* Check that both are in the same page and/or component object */
   if ((obj->parent != attrib->parent)
-      || (o_get_page (toplevel, obj) != o_get_page (toplevel, attrib))
-      || ((obj->parent == NULL) && (o_get_page (toplevel, obj) == NULL))) {
+      || (o_get_page (obj) != o_get_page (attrib))
+      || ((obj->parent == NULL) && (o_get_page (obj) == NULL))) {
     scm_error (edascm_object_state_sym, s_attach_attrib_x,
-               _("Objects ~A and ~A are not part of the same page and/or complex object"),
+               _("Objects ~A and ~A are not part of the same page and/or component object"),
                scm_list_2 (obj_s, attrib_s), SCM_EOL);
   }
 
@@ -218,11 +218,11 @@ SCM_DEFINE (attach_attrib_x, "%attach-attrib!", 2, 0, 0,
   }
 
   /* Carry out the attachment */
-  o_emit_pre_change_notify (toplevel, attrib);
-  o_attrib_attach (toplevel, attrib, obj, TRUE);
-  o_emit_change_notify (toplevel, attrib);
+  o_emit_pre_change_notify (attrib);
+  o_attrib_attach (attrib, obj, TRUE);
+  o_emit_change_notify (attrib);
 
-  o_page_changed (toplevel, obj);
+  o_page_changed (obj);
 
   scm_remember_upto_here_1 (attrib_s);
   return obj_s;
@@ -236,7 +236,7 @@ SCM_DEFINE (attach_attrib_x, "%attach-attrib!", 2, 0, 0,
  * error.
  *
  * \note Scheme API: Implements the %detach-attrib! procedure of
- * the (geda core attrib) module.
+ * the (lepton core attrib) module.
  *
  * \param obj_s the object from which to detach an attribute.
  * \param attrib_s the attribute to detach.
@@ -250,7 +250,6 @@ SCM_DEFINE (detach_attrib_x, "%detach-attrib!", 2, 0, 0,
   SCM_ASSERT (edascm_is_object_type (attrib_s, OBJ_TEXT), attrib_s,
               SCM_ARG2, s_detach_attrib_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
   OBJECT *attrib = edascm_to_object (attrib_s);
 
@@ -267,49 +266,48 @@ SCM_DEFINE (detach_attrib_x, "%detach-attrib!", 2, 0, 0,
   }
 
   /* Detach object */
-  o_emit_pre_change_notify (toplevel, attrib);
-  o_attrib_remove (toplevel, &obj->attribs, attrib);
-  o_set_color (toplevel, attrib, DETACHED_ATTRIBUTE_COLOR);
-  o_emit_change_notify (toplevel, attrib);
+  o_emit_pre_change_notify (attrib);
+  o_attrib_remove (&obj->attribs, attrib);
+  o_set_color (attrib, DETACHED_ATTRIBUTE_COLOR);
+  o_emit_change_notify (attrib);
 
-  o_page_changed (toplevel, obj);
+  o_page_changed (obj);
 
   scm_remember_upto_here_1 (attrib_s);
   return obj_s;
 }
 
-/*! \brief Get a complex object's promotable attribs.
+/*! \brief Get a component object's promotable attribs.
  * \par Function Description
- * Returns the promotable attributes of \a complex_s, according to the
+ * Returns the promotable attributes of \a component_s, according to the
  * current gEDA configuration.
  *
- * \param complex_s the complex object for which to get promotable
- *                  attributes.
+ * \param component_s the component object for which to get promotable
+ *                    attributes.
  * \return a list of promotable attributes.
  */
 SCM_DEFINE (promotable_attribs, "%promotable-attribs", 1, 0, 0,
-            (SCM complex_s), "Get a component's promotable attributes")
+            (SCM component_s), "Get a component's promotable attributes")
 {
-  SCM_ASSERT (edascm_is_object_type (complex_s, OBJ_COMPLEX), complex_s,
+  SCM_ASSERT (edascm_is_object_type (component_s, OBJ_COMPONENT), component_s,
               SCM_ARG1, s_promotable_attribs);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
-  OBJECT *obj = edascm_to_object (complex_s);
+  OBJECT *obj = edascm_to_object (component_s);
 
-  GList *lst = o_complex_get_promotable (toplevel, obj, FALSE);
+  GList *lst = o_component_get_promotable (obj, FALSE);
 
   return edascm_from_object_glist (lst);
 }
 
 
 /*!
- * \brief Create the (geda core attrib) Scheme module.
+ * \brief Create the (lepton core attrib) Scheme module.
  * \par Function Description
- * Defines procedures in the (geda core attrib) module. The module can
- * be accessed using (use-modules (geda core attrib)).
+ * Defines procedures in the (lepton core attrib) module. The module can
+ * be accessed using (use-modules (lepton core attrib)).
  */
 static void
-init_module_geda_core_attrib (void *unused)
+init_module_lepton_core_attrib (void *unused)
 {
   /* Register the functions */
   #include "scheme_attrib.x"
@@ -330,8 +328,8 @@ init_module_geda_core_attrib (void *unused)
 void
 edascm_init_attrib ()
 {
-  /* Define the (geda core attrib) module */
-  scm_c_define_module ("geda core attrib",
-                       (void (*)(void*)) init_module_geda_core_attrib,
+  /* Define the (lepton core attrib) module */
+  scm_c_define_module ("lepton core attrib",
+                       (void (*)(void*)) init_module_lepton_core_attrib,
                        NULL);
 }

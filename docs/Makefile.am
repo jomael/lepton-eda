@@ -1,7 +1,6 @@
+SUBDIRS = toplevel wiki scheme-api changelogs
 
-SUBDIRS = toplevel wiki scheme-api
-
-EXTRA_DIST = ChangeLog-1.0 ChangeLog
+EXTRA_DIST = ChangeLog
 
 if HAVE_GIT_REPO
 ChangeLog: $(top_builddir)/stamp-git
@@ -11,8 +10,3 @@ ChangeLog: $(top_builddir)/stamp-git
 	  echo "WARNING: ChangeLog information not available from git" >&2 ; \
 	) > $@
 endif HAVE_GIT_REPO
-
-MOSTLYCLEANFILES = *.log core FILE *~
-CLEANFILES = *.log core FILE *~
-DISTCLEANFILES = *.log core FILE *~
-MAINTAINERCLEANFILES = *.log core FILE *~ Makefile.in ChangeLog

@@ -1,6 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library - Scheme API
+/* Lepton EDA library
  * Copyright (C) 2010-2013 Peter Brett <peter@peter-b.co.uk>
+ * Copyright (C) 2010-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +28,7 @@
  * To initialise the API, edascm_init() needs to be called before any
  * Scheme code is executed or any of the other functions listed in
  * this module are called.  Normally, this will be called
- * automatically by libgeda_init().
+ * automatically by liblepton_init().
  *
  * The Scheme API requires a libgeda #TOPLEVEL context to be available
  * at any given time.  The #TOPLEVEL can be set on a per-thread basis
@@ -88,7 +89,7 @@
 void edascm_init_smob ();
 void edascm_init_toplevel ();
 void edascm_init_object ();
-void edascm_init_complex ();
+void edascm_init_component ();
 void edascm_init_page ();
 void edascm_init_attrib ();
 void edascm_init_os ();
@@ -97,6 +98,7 @@ void edascm_init_closure (void);
 void edascm_init_log (void);
 void edascm_init_version ();
 void edascm_init_deprecated ();
+void edascm_init_rc ();
 
 /* ---------------------------------------- */
 
@@ -151,7 +153,7 @@ enum geda_smob_flags {
 #else
 #  define EDASCM_ASSERT_SMOB_VALID(x) \
   do { if (!EDASCM_SMOB_VALIDP(x)) {                                    \
-      scm_misc_error (NULL, "Found invalid gEDA smob ~S", scm_list_1 (x)); \
+      scm_misc_error (NULL, "Found invalid object (smob) ~S", scm_list_1 (x)); \
     } } while (0)
 #endif
 
@@ -206,7 +208,7 @@ int edascm_is_object_type (SCM smob, int type);
 
 
 /*! \brief Flag an object's page as having been changed. */
-extern void o_page_changed (TOPLEVEL *t, OBJECT *o);
+extern void o_page_changed (OBJECT *o);
 
 /* ---------------------------------------- */
 

@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2011 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,7 +66,7 @@ void o_attrib_add_selected(GschemToplevel *w_current, SELECTION *selection,
 
     /* make sure object isn't selected already */
     if (!a_current->selected) {
-      o_selection_add (w_current->toplevel, selection, a_current);
+      o_selection_add (selection, a_current);
       selected_objects = g_list_prepend (selected_objects, a_current);
     }
   }
@@ -106,8 +107,8 @@ void o_attrib_deselect_invisible (GschemToplevel *w_current,
        a_iter = g_list_next (a_iter)) {
     a_current = (OBJECT*) a_iter->data;
 
-    if (a_current->selected && !o_is_visible(w_current->toplevel, a_current)) {
-      o_selection_remove (w_current->toplevel, selection, a_current);
+    if (a_current->selected && !o_is_visible (a_current)) {
+      o_selection_remove (selection, a_current);
     }
   }
 }
@@ -140,8 +141,8 @@ void o_attrib_select_invisible (GschemToplevel *w_current,
        a_iter = g_list_next (a_iter)) {
     a_current = (OBJECT*) a_iter->data;
 
-    if (!a_current->selected && !o_is_visible(w_current->toplevel, a_current)) {
-      o_selection_add (w_current->toplevel, selection, a_current);
+    if (!a_current->selected && !o_is_visible (a_current)) {
+      o_selection_add (selection, a_current);
     }
   }
 }
@@ -161,13 +162,13 @@ void o_attrib_toggle_visibility(GschemToplevel *w_current, OBJECT *object)
 
   g_return_if_fail (object != NULL && object->type == OBJ_TEXT);
 
-  if (o_is_visible (toplevel, object)) {
+  if (o_is_visible (object)) {
     /* only erase if we are not showing hidden text */
     if (!toplevel->show_hidden_text) {
       o_invalidate (w_current, object);
     }
 
-    o_set_visibility (toplevel, object, INVISIBLE);
+    o_set_visibility (object, INVISIBLE);
 
     if (toplevel->show_hidden_text) {
       /* draw text so that little I is drawn */
@@ -181,8 +182,8 @@ void o_attrib_toggle_visibility(GschemToplevel *w_current, OBJECT *object)
       o_invalidate (w_current, object);
     }
 
-    o_set_visibility (toplevel, object, VISIBLE);
-    o_text_recreate(toplevel, object);
+    o_set_visibility (object, VISIBLE);
+    o_text_recreate (object);
   }
 
   gschem_toplevel_page_content_changed (w_current, toplevel->page_current);
@@ -207,7 +208,7 @@ void o_attrib_toggle_show_name_value(GschemToplevel *w_current,
 
   o_invalidate (w_current, object);
   object->show_name_value = show_name_value;
-  o_text_recreate(toplevel, object);
+  o_text_recreate (object);
 
   gschem_toplevel_page_content_changed (w_current, toplevel->page_current);
 }
@@ -241,10 +242,10 @@ OBJECT *o_attrib_add_attrib(GschemToplevel *w_current,
   if (o_current) {
     /* get coordinates of where to place the text object */
     switch(o_current->type) {
-      case(OBJ_COMPLEX):
+      case(OBJ_COMPONENT):
       case(OBJ_PLACEHOLDER):
-        world_x = o_current->complex->x;
-        world_y = o_current->complex->y;
+        world_x = o_current->component->x;
+        world_y = o_current->component->y;
         align = LOWER_LEFT;
         angle = 0;
         color = ATTRIBUTE_COLOR;
@@ -351,8 +352,7 @@ OBJECT *o_attrib_add_attrib(GschemToplevel *w_current,
   }
 
   /* first create text item */
-  new_obj = geda_text_object_new (toplevel,
-                                  color,
+  new_obj = geda_text_object_new (color,
                                   world_x,
                                   world_y,
                                   align,
@@ -361,15 +361,15 @@ OBJECT *o_attrib_add_attrib(GschemToplevel *w_current,
                                   w_current->text_size, /* current text size */
                                   visibility,
                                   show_name_value);
-  s_page_append (toplevel, toplevel->page_current, new_obj);
+  s_page_append (toplevel->page_current, new_obj);
 
   /* now attach the attribute to the object (if o_current is not NULL) */
   /* remember that o_current contains the object to get the attribute */
   if (o_current) {
-    o_attrib_attach (toplevel, new_obj, o_current, FALSE);
+    o_attrib_attach (new_obj, o_current, FALSE);
   }
 
-  o_selection_add (toplevel, toplevel->page_current->selection_list, new_obj);
+  o_selection_add (toplevel->page_current->selection_list, new_obj);
 
   /* handle slot= attribute, it's a special case */
   if (o_current != NULL &&

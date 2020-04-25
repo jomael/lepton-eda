@@ -1,5 +1,6 @@
 ;;; Lepton EDA Schematic Capture
 ;;; Copyright (C) 2013-2014 Patrick Bernaud <patrickb@chez.com>
+;;; Copyright (C) 2020 Lepton EDA Contributors
 ;;;
 ;;; This program is free software; you can redistribute it and/or modify
 ;;; it under the terms of the GNU General Public License as published by
@@ -16,9 +17,9 @@
 ;;; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 ;;; MA 02111-1301 USA.
 
-(use-modules (gschem hook)
-             (geda object)
-             (geda attrib))
+(use-modules (lepton attrib)
+             (lepton object)
+             (schematic hook))
 
 (define (place-netname-attribute attribute)
   ;; Only attached netname attributes

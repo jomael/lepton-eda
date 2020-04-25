@@ -1,7 +1,11 @@
 G_BEGIN_DECLS
 
 /* a_basic.c */
-int o_save (TOPLEVEL *toplevel, const GList *object_list, const char *filename, GError **err);
+int
+o_save (const GList *object_list,
+        const char *filename,
+        GError **err);
+
 GList *o_read_buffer(TOPLEVEL *toplevel, GList *object_list, char *buffer, const int size, const char *name, GError **err);
 GList *o_read(TOPLEVEL *toplevel, GList *object_list, char *filename, GError **err);
 
@@ -12,7 +16,12 @@ int f_open(TOPLEVEL *toplevel, PAGE *page, const gchar *filename, GError **err);
 int f_open_flags(TOPLEVEL *toplevel, PAGE *page, const gchar *filename,
                  const gint flags, GError **err);
 void f_close(TOPLEVEL *toplevel);
-int f_save(TOPLEVEL *toplevel, PAGE *page, const char *filename, GError **error);
+
+int
+f_save (PAGE *page,
+        const char *filename,
+        GError **error);
+
 gchar *f_normalize_filename (const gchar *filename, GError **error) G_GNUC_WARN_UNUSED_RESULT;
 char *follow_symlinks (const gchar *filename, GError **error);
 
@@ -23,8 +32,6 @@ SCM g_scm_c_eval_string_protected (const gchar *str);
 gboolean g_read_file(TOPLEVEL *toplevel, const gchar *filename, GError **err);
 
 /* g_rc.c */
-SCM g_rc_mode_general(SCM scmmode, const char *rc_name, int *mode_var,
-                      const vstbl_entry *table, int table_size);
 gboolean g_rc_parse_system (TOPLEVEL *toplevel, const gchar *rcname, GError **err);
 gboolean g_rc_parse_user (TOPLEVEL *toplevel, const gchar *rcname, GError **err);
 gboolean g_rc_parse_local (TOPLEVEL *toplevel, const gchar *rcname, const gchar *path, GError **err);
@@ -32,15 +39,16 @@ gboolean g_rc_load_cache_config (TOPLEVEL* toplevel, GError** err);
 void g_rc_parse(TOPLEVEL *toplevel, const gchar* pname, const gchar* rcname, const gchar* rcfile);
 void g_rc_parse_handler (TOPLEVEL *toplevel, const gchar *rcname, const gchar *rcfile, ConfigParseErrorFunc handler, void *user_data);
 SCM g_rc_rc_filename();
-SCM g_rc_rc_config ();
 SCM g_rc_parse_rc (SCM pname_s, SCM rcname_s);
 
 /* i_vars.c */
 void i_vars_libgeda_set(TOPLEVEL *toplevel);
 void i_vars_libgeda_freenames();
 
-/* libgeda.c */
-void libgeda_init(void);
+/* liblepton.c */
+void liblepton_init(void);
+void set_guile_compiled_path();
+char* version_message();
 
 /* m_hatch.c */
 void m_hatch_box(GedaBox *box, gint angle, gint pitch, GArray *lines);
@@ -52,13 +60,29 @@ void m_polygon_append_bezier(GArray *points, GedaBezier *bezier, int segments);
 void m_polygon_append_point(GArray *points, int x, int y);
 
 /* o_attrib.c */
-void o_attrib_add(TOPLEVEL *toplevel, OBJECT *object, OBJECT *item);
-gboolean o_attrib_is_attached (TOPLEVEL *toplevel, OBJECT *attrib, OBJECT *object);
-void o_attrib_attach(TOPLEVEL *toplevel, OBJECT *attrib, OBJECT *object, int set_color);
-void o_attrib_attach_list(TOPLEVEL *toplevel, GList *attr_list, OBJECT *object, int set_color);
-void o_attrib_detach_all(TOPLEVEL *toplevel, OBJECT *object);
+void
+o_attrib_add (OBJECT *object,
+              OBJECT *item);
+
+void
+o_attrib_attach (OBJECT *attrib,
+                 OBJECT *object,
+                 int set_color);
+
+void
+o_attrib_attach_list (GList *attr_list,
+                      OBJECT *object,
+                      int set_color);
+
+void
+o_attrib_detach_all (OBJECT *object);
+
 void o_attrib_print(GList *attributes);
-void o_attrib_remove(TOPLEVEL *toplevel, GList **list, OBJECT *remove);
+
+void
+o_attrib_remove (GList **list,
+                 OBJECT *remove);
+
 gboolean o_attrib_string_get_name_value (const gchar *string, gchar **name_ptr, gchar **value_ptr);
 gboolean o_attrib_get_name_value (const OBJECT *attrib, gchar **name_ptr, gchar **value_ptr);
 const char *o_attrib_get_name (const OBJECT *attrib);
@@ -72,14 +96,21 @@ int o_attrib_is_inherited(const OBJECT *attrib);
 gboolean o_attrib_is_attrib (const OBJECT *attrib);
 
 /* o_embed.c */
-void o_embed(TOPLEVEL *toplevel, OBJECT *o_current);
-void o_unembed(TOPLEVEL *toplevel, OBJECT *o_current);
+void o_embed (OBJECT *o_current);
+void o_unembed (OBJECT *o_current);
 
 /* o_selection.c */
 SELECTION *o_selection_new( void );
-void o_selection_add(TOPLEVEL *toplevel, SELECTION *selection, OBJECT *o_selected);
+
+void
+o_selection_add (SELECTION *selection,
+                 OBJECT *o_selected);
+
 void o_selection_print_all(const SELECTION *selection);
-void o_selection_remove(TOPLEVEL *toplevel, SELECTION *selection, OBJECT *o_selected);
+
+void
+o_selection_remove (SELECTION *selection,
+                    OBJECT *o_selected);
 
 /* s_attrib.c */
 int s_attrib_add_entry(char *new_attrib);
@@ -119,7 +150,7 @@ gchar *s_clib_symbol_get_data_by_name (const gchar *name);
 GList *s_toplevel_get_symbols (const TOPLEVEL *toplevel);
 
 /* s_conn.c */
-void s_conn_remove_object_connections (TOPLEVEL *toplevel, OBJECT *to_remove);
+void s_conn_remove_object_connections (OBJECT *to_remove);
 void s_conn_update_object (PAGE* page, OBJECT *object);
 int s_conn_net_search(OBJECT* new_net, int whichone, GList * conn_list);
 GList *s_conn_return_others(GList *input_list, OBJECT *object);
@@ -149,12 +180,66 @@ void s_menu_init(void);
 
 /* s_slot.c */
 char *s_slot_search_slot(OBJECT *object, OBJECT **return_found);
-void s_slot_update_object(TOPLEVEL *toplevel, OBJECT *object);
+
+void
+s_slot_update_object (OBJECT *object);
 
 /* s_textbuffer.c */
-TextBuffer *s_textbuffer_new (const gchar *data, const gint size);
+TextBuffer *s_textbuffer_new (const gchar *data, const gint size, const gchar* name);
 TextBuffer *s_textbuffer_free (TextBuffer *tb);
 const gchar *s_textbuffer_next (TextBuffer *tb, const gssize count);
 const gchar *s_textbuffer_next_line (TextBuffer *tb);
+gsize s_textbuffer_linenum (TextBuffer* tb);
+
+/* i_vars.c */
+
+
+/* \struct OptionStringInt
+ * \brief  A mapping of a string option's value to an int value.
+ */
+struct OptionStringInt
+{
+  const gchar* str_; /* a string value of an option */
+  gint         int_; /* an int value of an option */
+};
+
+gboolean
+cfg_read_bool (const gchar* group,
+               const gchar* key,
+               gboolean defval,
+               gboolean* result);
+
+gboolean
+cfg_read_int (const gchar* group,
+              const gchar* key,
+              gint defval,
+              gint* result);
+
+gboolean
+cfg_check_int_not_0 (gint val);
+
+gboolean
+cfg_check_int_greater_0 (gint val);
+
+gboolean
+cfg_check_int_greater_eq_0 (gint val);
+
+gboolean
+cfg_check_int_text_size (gint val);
+
+gboolean
+cfg_read_int_with_check (const gchar* group,
+                         const gchar* key,
+                         gint         defval,
+                         gint*        result,
+                         gboolean     (*pfn_check)(int));
+
+gboolean
+cfg_read_string2int (const gchar* group,
+                     const gchar* key,
+                     gint         defval,
+                     const struct OptionStringInt* vals,
+                     size_t       nvals,
+                     gint*        result);
 
 G_END_DECLS

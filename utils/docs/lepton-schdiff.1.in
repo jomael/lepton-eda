@@ -6,7 +6,7 @@
 
 .SH SYNOPSIS
 .B lepton-schdiff
-.I infile1.sch infile2.sch
+.I [-d VIEWER] infile1.sch infile2.sch
 
 
 .SH DESCRIPTION
@@ -19,8 +19,15 @@ to display a graphical diff of two schematic files.  It's most useful
 when combined with a revision control system so it can compare two revisions of
 the same file, review changes, etc.  However, it is limited in that it can only
 compare two files at a time; it cannot diff entire directories nor can it diff
-an entire revision (unless that revision affected only one file).  It can
-easily be configured to work with most revision control systems.  Here are
+an entire revision (unless that revision affected only one file).
+
+\fIVIEWER\fR command, if specified, will be used to display the result.
+By default, it's
+.B display
+program from the ImageMagick package.
+
+.B lepton-schdiff
+can easily be configured to work with most revision control systems.  Here are
 instructions for three:
 
 .B git:
@@ -53,11 +60,19 @@ command like normal, but supply the
 .B --diff-cmd lepton-schdiff
 option.
 
+.B Note:
+To make lepton-schdiff work properly, all page contents
+should be enclosed in some form of bounding box (e.g.
+a title block), otherwise the symbols in exported
+images could have different relative positions and/or
+sizes, resulting in a difference image that is rather
+hard to comprehend.
+
 .SH EXAMPLES
 
 .TP
 Use git to view the changes to a file between two revisions
-git difftool \-x lepton-schdiff 182110f690c51eb53ea1799fd022e87322d742e3 039e012397f2638d1577dd7c80fb862a5503dbfd cpu.sch
+git difftool \-x lepton-schdiff 182110f 039e012 cpu.sch
 
 .TP
 Use mercurial to see all the changes since a specific revision

@@ -82,14 +82,13 @@ void o_bus_end(GschemToplevel *w_current, int w_x, int w_y)
   if ( (w_current->first_wx != w_current->second_wx) ||
        (w_current->first_wy != w_current->second_wy) ) {
 
-    new_obj = geda_bus_object_new (toplevel,
-                                   BUS_COLOR,
+    new_obj = geda_bus_object_new (BUS_COLOR,
                                    w_current->first_wx,
                                    w_current->first_wy,
                                    w_current->second_wx,
                                    w_current->second_wy,
                                    0);
-    s_page_append (toplevel, page, new_obj);
+    s_page_append (page, new_obj);
 
     /* connect the new bus to the other busses */
     prev_conn_objects = s_conn_return_others (prev_conn_objects, new_obj);

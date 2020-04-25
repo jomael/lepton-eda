@@ -32,8 +32,7 @@ G_BEGIN_DECLS
 /* construction, destruction */
 
 OBJECT*
-geda_box_object_new (TOPLEVEL *toplevel,
-                     char type,
+geda_box_object_new (char type,
                      int color,
                      int x1,
                      int y1,
@@ -41,42 +40,37 @@ geda_box_object_new (TOPLEVEL *toplevel,
                      int y2);
 
 OBJECT*
-geda_box_object_copy (TOPLEVEL *toplevel, OBJECT *o_current);
+geda_box_object_copy (OBJECT *o_current);
 
 /* methods */
 
 void
-geda_box_object_calculate_bounds (TOPLEVEL *toplevel,
-                                  const OBJECT *object,
+geda_box_object_calculate_bounds (const OBJECT *object,
                                   GedaBounds *bounds);
 
 gboolean
 geda_box_object_get_position (const GedaObject *object, gint *x, gint *y);
 
 void
-geda_box_object_mirror (TOPLEVEL *toplevel,
-                        int world_centerx,
+geda_box_object_mirror (int world_centerx,
                         int world_centery,
                         OBJECT *object);
 
 void
-geda_box_object_modify (TOPLEVEL *toplevel,
-                        OBJECT *object,
+geda_box_object_modify (OBJECT *object,
                         int x,
                         int y,
                         int whichone);
 
 void
-geda_box_object_modify_all (TOPLEVEL *toplevel,
-                            OBJECT *object,
+geda_box_object_modify_all (OBJECT *object,
                             int x1,
                             int y1,
                             int x2,
                             int y2);
 
 void
-geda_box_object_rotate (TOPLEVEL *toplevel,
-                        int world_centerx,
+geda_box_object_rotate (int world_centerx,
                         int world_centery,
                         int angle,
                         OBJECT *object);
@@ -95,8 +89,7 @@ void
 geda_box_object_translate (GedaObject *object, int dx, int dy);
 
 OBJECT*
-o_box_read (TOPLEVEL *toplevel,
-            const char buf[],
+o_box_read (const char buf[],
             unsigned int release_ver,
             unsigned int fileformat_ver,
             GError **err);

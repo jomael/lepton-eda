@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,6 +51,8 @@
 #endif
 
 #include "libgeda_priv.h"
+#include "libleptonrenderer/libleptonrenderer.h"
+
 
 /*! \brief Scale factor between legacy lepton-schematic font units
  *  and postscript points.
@@ -92,14 +94,41 @@ geda_text_object_calculate_bounds (TOPLEVEL *toplevel,
   g_return_val_if_fail (object->text != NULL, FALSE);
   g_return_val_if_fail (object->type == OBJ_TEXT, FALSE);
   g_return_val_if_fail (toplevel != NULL, FALSE);
-  g_return_val_if_fail (toplevel->rendered_text_bounds_func != NULL, FALSE);
 
-  return toplevel->rendered_text_bounds_func (toplevel->rendered_text_bounds_data,
-                                              object,
-                                              &bounds->min_x,
-                                              &bounds->min_y,
-                                              &bounds->max_x,
-                                              &bounds->max_y);
+  gboolean result = FALSE;
+  double t, l, r, b;
+
+  if (toplevel->rendered_text_bounds_data == NULL) {
+    return result;
+  }
+
+  /* Use dummy zero-sized surface */
+  cairo_surface_t *surface =
+    cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 0, 0);
+  cairo_t *cr = cairo_create (surface);
+
+  EdaRenderer *renderer =
+    EDA_RENDERER (toplevel->rendered_text_bounds_data);
+  g_object_set (G_OBJECT (renderer),
+                "cairo-context", cr,
+                NULL);
+
+  /* Use the new renderer to calculate text bounds */
+  result = eda_renderer_get_user_bounds (renderer,
+                                         object,
+                                         &l, &t, &r, &b);
+
+  /* Clean up */
+  cairo_surface_destroy (surface);
+  cairo_destroy (cr);
+
+  /* Round bounds to nearest integer */
+  bounds->min_x = lrint (fmin (l, r));
+  bounds->min_y = lrint (fmin (t, b));
+  bounds->max_x = lrint (fmax (l, r));
+  bounds->max_y = lrint (fmax (t, b));
+
+  return result;
 }
 
 /*! \brief Get the text alignment
@@ -390,7 +419,6 @@ update_disp_string (OBJECT *object)
  *  \par Function Description
  *  Create an OBJECT of type OBJ_TEXT.
  *
- *  \param [in]  toplevel              The TOPLEVEL object.
  *  \param [in]  type                   OBJ_TEXT (TODO: why bother)
  *  \param [in]  color                  The color of the text.
  *  \param [in]  x                      World x coord of text.
@@ -407,8 +435,7 @@ update_disp_string (OBJECT *object)
  *  Caller is responsible for string; this function allocates its own copy.
  */
 GedaObject*
-geda_text_object_new (TOPLEVEL *toplevel,
-                      gint color,
+geda_text_object_new (gint color,
                       gint x,
                       gint y,
                       gint alignment,
@@ -440,13 +467,10 @@ geda_text_object_new (TOPLEVEL *toplevel,
   new_node->text = text;
 
   new_node->color = color;
-  o_set_visibility (toplevel, new_node, visibility);
+  o_set_visibility (new_node, visibility);
   new_node->show_name_value = show_name_value;
 
   update_disp_string (new_node);
-
-  /* Update bounding box */
-  new_node->w_bounds_valid_for = NULL;
 
   return new_node;
 }
@@ -458,7 +482,6 @@ geda_text_object_new (TOPLEVEL *toplevel,
  *  If the line object was read successfully, a new object is
  *  create and appended to the \a object_list.
  *
- *  \param [in] toplevel     The TOPLEVEL object
  *  \param [in] first_line   the first line of the text
  *  \param [in] tb           a text buffer (usually a line of a schematic file)
  *  \param [in] release_ver  The release number gEDA
@@ -466,8 +489,7 @@ geda_text_object_new (TOPLEVEL *toplevel,
  *  \return The object list, or NULL on error.
  */
 OBJECT*
-o_text_read (TOPLEVEL *toplevel,
-             const char *first_line,
+o_text_read (const char *first_line,
              TextBuffer *tb,
              unsigned int release_ver,
              unsigned int fileformat_ver,
@@ -594,8 +616,7 @@ o_text_read (TOPLEVEL *toplevel,
     }
   }
 
-  new_obj = geda_text_object_new (toplevel,
-                                  color,
+  new_obj = geda_text_object_new (color,
                                   x,
                                   y,
                                   alignment,
@@ -650,16 +671,14 @@ geda_text_object_to_buffer (const GedaObject *object)
  *  This function updates the underlying primary of the text object
  *  \a o_current.
  *
- *  \param toplevel  The TOPLEVEL object
  *  \param o_current The text object to update
  */
 void
-o_text_recreate (TOPLEVEL *toplevel, OBJECT *o_current)
+o_text_recreate (OBJECT *o_current)
 {
-  o_emit_pre_change_notify (toplevel, o_current);
+  o_emit_pre_change_notify (o_current);
   update_disp_string (o_current);
-  o_current->w_bounds_valid_for = NULL;
-  o_emit_change_notify (toplevel, o_current);
+  o_emit_change_notify (o_current);
 }
 
 /*! \brief move a text object
@@ -679,21 +698,17 @@ geda_text_object_translate (GedaObject *object, int dx, int dy)
 
   object->text->x = object->text->x + dx;
   object->text->y = object->text->y + dy;
-
-  /* Update bounding box */
-  object->w_bounds_valid_for = NULL;
 }
 
 /*! \brief create a copy of a text object
  *  \par Function Description
  *  This function creates a copy of the text object \a o_current.
  *
- *  \param [in] toplevel     The TOPLEVEL object
  *  \param [in] object    The object that is copied
  *  \return a new text object
  */
 GedaObject*
-geda_text_object_copy (TOPLEVEL *toplevel, const GedaObject *object)
+geda_text_object_copy (const GedaObject *object)
 {
   GedaObject *new_obj;
 
@@ -701,8 +716,7 @@ geda_text_object_copy (TOPLEVEL *toplevel, const GedaObject *object)
   g_return_val_if_fail (object->text != NULL, NULL);
   g_return_val_if_fail (object->type == OBJ_TEXT, NULL);
 
-  new_obj = geda_text_object_new (toplevel,
-                                  object->color,
+  new_obj = geda_text_object_new (object->color,
                                   object->text->x,
                                   object->text->y,
                                   object->text->alignment,
@@ -720,7 +734,6 @@ geda_text_object_copy (TOPLEVEL *toplevel, const GedaObject *object)
  *  This function rotates a text \a object around the point
  *  (\a world_centerx, \a world_centery).
  *
- *  \param [in] toplevel      The TOPLEVEL object
  *  \param [in] world_centerx x-coord of the rotation center
  *  \param [in] world_centery y-coord of the rotation center
  *  \param [in] angle         The angle to rotate the text object
@@ -728,8 +741,7 @@ geda_text_object_copy (TOPLEVEL *toplevel, const GedaObject *object)
  *  \note only steps of 90 degrees are allowed for the \a angle
  */
 void
-geda_text_object_rotate (TOPLEVEL *toplevel,
-                         int world_centerx,
+geda_text_object_rotate (int world_centerx,
                          int world_centery,
                          int angle,
                          OBJECT *object)
@@ -754,7 +766,7 @@ geda_text_object_rotate (TOPLEVEL *toplevel,
 
   geda_text_object_translate (object, x-object->text->x, y-object->text->y);
 
-  o_text_recreate(toplevel, object);
+  o_text_recreate (object);
 }
 
 
@@ -763,14 +775,12 @@ geda_text_object_rotate (TOPLEVEL *toplevel,
  *  This function mirrors a text \a object horizontaly at the point
  *  (\a world_centerx, \a world_centery).
  *
- *  \param [in] toplevel      The TOPLEVEL object
  *  \param [in] world_centerx x-coord of the mirror position
  *  \param [in] world_centery y-coord of the mirror position
  *  \param [in] object        The text object
  */
 void
-geda_text_object_mirror (TOPLEVEL *toplevel,
-                         int world_centerx,
+geda_text_object_mirror (int world_centerx,
                          int world_centery,
                          OBJECT *object)
 {
@@ -850,7 +860,7 @@ geda_text_object_mirror (TOPLEVEL *toplevel,
   object->text->x = -x + (world_centerx);
   object->text->y =  y + (world_centery);
 
-  o_text_recreate(toplevel, object);
+  o_text_recreate (object);
 }
 
 /*! \brief Calculates the distance between the given point and the closest
@@ -898,14 +908,13 @@ geda_text_object_shortest_distance (TOPLEVEL *toplevel,
  *  \par Function Description
  *  Updates the text object with a new text string.
  *
- *  \param [in]  toplevel              The TOPLEVEL object.
  *  \param [in]  obj                   The text object.
  *  \param [in]  new_string            The new value.
  */
 void
-o_text_set_string (TOPLEVEL *toplevel, OBJECT *obj, const gchar *new_string)
+o_text_set_string (OBJECT *obj,
+                   const gchar *new_string)
 {
-  g_return_if_fail (toplevel != NULL);
   g_return_if_fail (obj != NULL);
   g_return_if_fail (obj->type == OBJ_TEXT);
   g_return_if_fail (obj->text != NULL);
@@ -914,7 +923,7 @@ o_text_set_string (TOPLEVEL *toplevel, OBJECT *obj, const gchar *new_string)
   g_free (obj->text->string);
   obj->text->string = g_strdup (new_string);
 
-  o_text_recreate (toplevel, obj);
+  o_text_recreate (obj);
 }
 
 /*! \brief Set the font-renderer-specific bounds function.
@@ -923,14 +932,11 @@ o_text_set_string (TOPLEVEL *toplevel, OBJECT *obj, const gchar *new_string)
  *  #TOPLEVEL.
  *
  *  \param [in] toplevel     The TOPLEVEL object
- *  \param [in] func      Function to use.
  *  \param [in] user_data User data to be passed to the function.
  */
 void
 o_text_set_rendered_bounds_func (TOPLEVEL *toplevel,
-                                 RenderedBoundsFunc func,
                                  void *user_data)
 {
-  toplevel->rendered_text_bounds_func = func;
   toplevel->rendered_text_bounds_data = user_data;
 }

@@ -7,11 +7,9 @@ POTFILES
 *.sed
 *.header
 *.sin
-liblepton*.pot
 Rules-quot
 Makevars.template
 stamp-po
 stamp-it
 stamp-i18n
-domain.mak
 *~

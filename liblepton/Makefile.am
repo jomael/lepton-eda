@@ -1,7 +1,6 @@
-
 SUBDIRS = po data docs include lib src scheme tests
 
-EXTRA_DIST = HACKING ChangeLog ChangeLog-1.0 po/domain.mak.in
+EXTRA_DIST = HACKING ChangeLog
 
 pkgconfigdir            = $(libdir)/pkgconfig
 pkgconfig_DATA          = liblepton.pc
@@ -18,8 +17,3 @@ ChangeLog: $(top_builddir)/stamp-git
 	  echo "WARNING: ChangeLog information not available from git" >&2 ; \
 	) > $@
 endif HAVE_GIT_REPO
-
-MOSTLYCLEANFILES = *.log core FILE *~
-CLEANFILES = *.log core FILE *~
-DISTCLEANFILES = *.log core FILE *~ liblepton.pc po/domain.mak
-MAINTAINERCLEANFILES = *.log core FILE *~ Makefile.in liblepton.pc ChangeLog

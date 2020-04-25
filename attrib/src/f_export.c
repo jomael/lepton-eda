@@ -1,6 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * gattrib -- gEDA component and net attribute manipulation using spreadsheet.
+/* Lepton EDA attribute editor
  * Copyright (C) 2003-2010 Stuart D. Brorson.
+ * Copyright (C) 2003-2013 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,11 +76,12 @@ void f_export_components(gchar *filename)
   /* -----  First try to open file for writing ----- */
 
 #ifdef DEBUG
-  printf("In f_export_components, trying to open %s.\n", filename);
+  printf ("f_export_components: ");
+  printf ("Trying to open %s.\n", filename);
 #endif
   fp = fopen(filename, "wb");
   if (fp == NULL) {
-    s_log_message(_("o_save: Could not open [%1$s]"), filename);
+    s_log_message(_("Could not open [%1$s]"), filename);
     /* XXXXX Throw up error message  in window */
     return;
   }
@@ -113,8 +115,9 @@ void f_export_components(gchar *filename)
     text = g_strdup( s_string_list_get_data_at_index(
 		       sheet_head->master_comp_list_head, i) );
 #ifdef DEBUG
-  printf("In f_export_components, getting refes, i = %d.\n", i);
-  printf("In f_export_components, output component refdes %s.\n", text);
+    printf ("f_export_components: ");
+    printf ("Getting refdes: row number = %d, output component refdes = %s.\n",
+            i, text);
 #endif
     fprintf(fp, "%s, ",text);
     g_free(text);
@@ -125,7 +128,8 @@ void f_export_components(gchar *filename)
         /* make a copy of the text, escaping any special chars, like " */
         text = (gchar *) g_strescape( (sheet_head->component_table)[i][j].attrib_value, "" );
 #ifdef DEBUG
-  printf("In f_export_components, output attribute %s.\n", text);
+        printf ("f_export_components: ");
+        printf ("Output attribute %s.\n", text);
 #endif
         /* if there's a comma anywhere in the field, wrap the field in " */
         gboolean havecomma = ( g_strstr_len(text, -1, ",") != NULL );
@@ -137,7 +141,8 @@ void f_export_components(gchar *filename)
 	g_free(text);
       } else {                                                  /* no attrib string */
 #ifdef DEBUG
-  printf("In f_export_components, output blank attrib space\n");
+        printf ("f_export_components: ");
+        printf ("Output blank attrib space.\n");
 #endif
 	fprintf(fp, ", ");
       }
@@ -147,7 +152,8 @@ void f_export_components(gchar *filename)
       /* make a copy of the text, escaping any special chars, like " */
       text = (gchar *) g_strescape( (sheet_head->component_table)[i][j].attrib_value, "" );
 #ifdef DEBUG
-  printf("In f_export_components, output final attribute %s.\n", text);
+      printf ("f_export_components: ");
+      printf ("Output final attribute %s.\n", text);
 #endif
       /* if there's a comma anywhere in the field, wrap the field in " */
       gboolean havecomma = ( g_strstr_len(text, -1, ",") != NULL );
@@ -159,12 +165,14 @@ void f_export_components(gchar *filename)
       g_free(text);
     } else {                                                  /* no attrib string */
 #ifdef DEBUG
-  printf("In f_export_components, output blank at end of line.\n");
+      printf ("f_export_components: ");
+      printf ("Output blank at end of line.\n");
 #endif
       fprintf(fp, "\n");
     }
 #ifdef DEBUG
-  printf("In f_export_components, Go to next row.\n");
+    printf ("f_export_components: ");
+    printf ("Go to next row.\n");
 #endif
   }  /* close of for over rows */
 

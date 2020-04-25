@@ -1,6 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's Library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
+ * Copyright (C) 1999-2016 gEDA Contributors
+ * Copyright (C) 2017-2019 Lepton EDA Contributors
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -108,11 +109,6 @@
 #define UNDO_ALL		0
 #define UNDO_VIEWPORT_ONLY	1
 
-/* These are for where status information goes */
-#define LOG_WINDOW		0
-#define STDOUT_TTY		1
-#define BOTH_LOGWIN_STDOUT	2
-
 /* list copying flags */
 #define NORMAL_FLAG		0
 #define SELECTION_FLAG		1
@@ -182,15 +178,5 @@
 #ifndef S_IRWXG
 # define S_IRWXG 0
 #endif
-
-
-/* Used by the rc loading mechanism */
-#define RETURN_G_RC_MODE(rc, var, size) \
-  return g_rc_mode_general(mode,        \
-                           (rc),        \
-                           &(var),      \
-                           mode_table,  \
-                           size)
-
 
 #endif /* !_DEFINES_H_INCL */

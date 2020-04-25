@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,14 +38,15 @@
  *  \bug g_access introduces a race condition in certain cases, but
  *  solves bug #698565 in the normal use-case
  *
- *  \param [in] toplevel    The current TOPLEVEL.
  *  \param [in] object_list The head of a GList of OBJECTs to save.
  *  \param [in] filename    The filename to save the data to.
  *  \param [in,out] err     #GError structure for error reporting.
  *  \return 1 on success, 0 on failure.
  */
-int o_save (TOPLEVEL *toplevel, const GList *object_list,
-            const char *filename, GError **err)
+int
+o_save (const GList *object_list,
+        const char *filename,
+        GError **err)
 {
   char *buffer;
 
@@ -101,10 +102,11 @@ GList *o_read_buffer (TOPLEVEL *toplevel, GList *object_list,
   unsigned int release_ver = 0;
   unsigned int fileformat_ver = 0;
   int found_pin = 0;
-  OBJECT* last_complex = NULL;
+  OBJECT* last_component = NULL;
   int itemsread = 0;
 
   int embedded_level = 0;
+  gboolean force_boundingbox;
 
   g_return_val_if_fail ((buffer != NULL), NULL);
 
@@ -115,7 +117,7 @@ GList *o_read_buffer (TOPLEVEL *toplevel, GList *object_list,
     return NULL;
   }
 
-  tb = s_textbuffer_new (buffer, size);
+  tb = s_textbuffer_new (buffer, size, name);
 
   while (1) {
 
@@ -125,92 +127,92 @@ GList *o_read_buffer (TOPLEVEL *toplevel, GList *object_list,
     sscanf(line, "%c", &objtype);
 
     /* Do we need to check the symbol version?  Yes, but only if */
-    /* 1) the last object read was a complex and */
+    /* 1) the last object read was a component and */
     /* 2) the next object isn't the start of attributes.  */
     /* If the next object is the start of attributes, then check the */
     /* symbol version after the attributes have been read in, see the */
     /* STARTATTACH_ATTR case */
-    if (last_complex && objtype != STARTATTACH_ATTR)
+    if (last_component && objtype != STARTATTACH_ATTR)
     {
         /* yes */
         /* verify symbol version (not file format but rather contents) */
-        o_complex_check_symversion(toplevel, last_complex);
-        last_complex = NULL;  /* no longer need to check */
+        o_component_check_symversion(toplevel, last_component);
+        last_component = NULL;  /* no longer need to check */
     }
 
     switch (objtype) {
 
       case(OBJ_LINE):
-        if ((new_obj = o_line_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_line_read (line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         new_object_list = g_list_prepend (new_object_list, new_obj);
         break;
 
 
       case(OBJ_NET):
-        if ((new_obj = o_net_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_net_read (line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         new_object_list = g_list_prepend (new_object_list, new_obj);
         break;
 
       case(OBJ_BUS):
-        if ((new_obj = o_bus_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_bus_read (line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         new_object_list = g_list_prepend (new_object_list, new_obj);
         break;
 
       case(OBJ_BOX):
-        if ((new_obj = o_box_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_box_read (line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         new_object_list = g_list_prepend (new_object_list, new_obj);
         break;
 
       case(OBJ_PICTURE):
-        new_obj = o_picture_read (toplevel, line, tb, release_ver, fileformat_ver, err);
+        new_obj = o_picture_read (line, tb, release_ver, fileformat_ver, err);
         if (new_obj == NULL)
           goto error;
         new_object_list = g_list_prepend (new_object_list, new_obj);
         break;
 
       case(OBJ_CIRCLE):
-        if ((new_obj = o_circle_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_circle_read (line, release_ver, fileformat_ver, err)) == NULL)
 	  goto error;
         new_object_list = g_list_prepend (new_object_list, new_obj);
         break;
 
-      case(OBJ_COMPLEX):
+      case(OBJ_COMPONENT):
       case(OBJ_PLACEHOLDER):
-        if ((new_obj = o_complex_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_component_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         new_object_list = g_list_prepend (new_object_list, new_obj);
 
-        /* last_complex is used for verifying symversion attribute */
-        last_complex = new_obj;
+        /* last_component is used for verifying symversion attribute */
+        last_component = new_obj;
         break;
 
       case(OBJ_TEXT):
-        new_obj = o_text_read (toplevel, line, tb, release_ver, fileformat_ver, err);
+        new_obj = o_text_read (line, tb, release_ver, fileformat_ver, err);
         if (new_obj == NULL)
           goto error;
         new_object_list = g_list_prepend (new_object_list, new_obj);
         break;
 
       case(OBJ_PATH):
-        new_obj = o_path_read (toplevel, line, tb, release_ver, fileformat_ver, err);
+        new_obj = o_path_read (line, tb, release_ver, fileformat_ver, err);
         if (new_obj == NULL)
           goto error;
         new_object_list = g_list_prepend (new_object_list, new_obj);
         break;
 
       case(OBJ_PIN):
-        if ((new_obj = o_pin_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_pin_read (line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         new_object_list = g_list_prepend (new_object_list, new_obj);
         found_pin++;
         break;
 
       case(OBJ_ARC):
-        if ((new_obj = o_arc_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_arc_read (line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         new_object_list = g_list_prepend (new_object_list, new_obj);
         break;
@@ -225,20 +227,20 @@ GList *o_read_buffer (TOPLEVEL *toplevel, GList *object_list,
           new_object_list = g_list_concat (new_attrs_list, new_object_list);
 
           /* by now we have finished reading all the attributes */
-          /* did we just finish attaching to a complex object? */
-          if (last_complex)
+          /* did we just finish attaching to a component object? */
+          if (last_component)
           {
             /* yes */
             /* verify symbol version (not file format but rather contents) */
-            o_complex_check_symversion(toplevel, last_complex);
-            last_complex = NULL;
+            o_component_check_symversion(toplevel, last_component);
+            last_component = NULL;
           }
 
-          /* slots only apply to complex objects */
+          /* slots only apply to component objects */
           if (new_obj != NULL &&
-              (new_obj->type == OBJ_COMPLEX ||
+              (new_obj->type == OBJ_COMPONENT ||
                new_obj->type == OBJ_PLACEHOLDER)) {
-            s_slot_update_object (toplevel, new_obj);
+            s_slot_update_object (new_obj);
           }
           new_obj = NULL;
         }
@@ -252,11 +254,11 @@ GList *o_read_buffer (TOPLEVEL *toplevel, GList *object_list,
 
       case(START_EMBEDDED):
         if (new_obj != NULL &&
-            (new_obj->type == OBJ_COMPLEX ||
+            (new_obj->type == OBJ_COMPONENT ||
              new_obj->type == OBJ_PLACEHOLDER)) {
 
           object_list_save = new_object_list;
-          new_object_list = new_obj->complex->prim_objs;
+          new_object_list = new_obj->component->prim_objs;
 
           embedded_level++;
         } else {
@@ -271,23 +273,21 @@ GList *o_read_buffer (TOPLEVEL *toplevel, GList *object_list,
         if (embedded_level>0) {
           /* don't do this since objects are already
            * stored/read translated
-           * geda_complex_object_translate (toplevel, new_object_list->x,
-           *                            new_object_list->y, new_object_list->complex);
+           * geda_component_object_translate (toplevel, new_object_list->x,
+           *                                  new_object_list->y, new_object_list->component);
            */
           new_object_list = g_list_reverse (new_object_list);
 
           new_obj = (OBJECT*) object_list_save->data;
-          new_obj->complex->prim_objs = new_object_list;
+          new_obj->component->prim_objs = new_object_list;
           new_object_list = object_list_save;
 
           /* set the parent field now */
-          for (iter = new_obj->complex->prim_objs;
+          for (iter = new_obj->component->prim_objs;
                iter != NULL; iter = g_list_next (iter)) {
             OBJECT *tmp = (OBJECT*) iter->data;
             tmp->parent = new_obj;
           }
-
-          new_obj->w_bounds_valid_for = NULL;
 
           embedded_level--;
         } else {
@@ -339,19 +339,22 @@ GList *o_read_buffer (TOPLEVEL *toplevel, GList *object_list,
 
   }
 
-  /* Was the very last thing we read a complex and has it not been checked */
-  /* yet?  This would happen if the complex is at the very end of the file  */
+  /* Was the very last thing we read a component and has it not been checked */
+  /* yet?  This would happen if the component is at the very end of the file  */
   /* and had no attached attributes */
-  if (last_complex)
+  if (last_component)
   {
-        o_complex_check_symversion(toplevel, last_complex);
-        last_complex = NULL;  /* no longer need to check */
+        o_component_check_symversion(toplevel, last_component);
+        last_component = NULL;  /* no longer need to check */
   }
 
-  if (found_pin) {
-    if (release_ver <= VERSION_20020825) {
-      geda_pin_object_update_whichend (toplevel, new_object_list, found_pin);
-    }
+  if (release_ver <= VERSION_20020825) {
+    cfg_read_bool ("schematic.gui", "force-boundingbox",
+                   default_force_boundingbox, &force_boundingbox);
+
+    geda_pin_object_update_whichend (toplevel,
+                                     new_object_list,
+                                     (found_pin == 1 || force_boundingbox));
   }
 
   s_textbuffer_free(tb);
@@ -360,8 +363,13 @@ GList *o_read_buffer (TOPLEVEL *toplevel, GList *object_list,
   object_list = g_list_concat (object_list, new_object_list);
 
   return(object_list);
- error:
-  geda_object_list_delete (toplevel, new_object_list);
+
+error:
+  geda_object_list_delete (new_object_list);
+
+  unsigned long linenum = s_textbuffer_linenum (tb);
+  g_prefix_error (err, "Parsing stopped at line %lu:\n", linenum);
+
   return NULL;
 }
 

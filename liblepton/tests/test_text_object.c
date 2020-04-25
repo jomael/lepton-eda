@@ -32,8 +32,7 @@ check_construction ()
     const gchar *string = strings[g_test_rand_int_range (0, STRINGS_COUNT)];
     gboolean visible = g_test_rand_bit ();
 
-    GedaObject *object0 = geda_text_object_new (toplevel,
-                                                color,
+    GedaObject *object0 = geda_text_object_new (color,
                                                 x,
                                                 y,
                                                 alignment,
@@ -55,13 +54,13 @@ check_construction ()
     g_assert_cmpint (visible, ==, geda_object_get_visible (object0));
     g_assert_cmpstr (string, ==, geda_text_object_get_string (object0));
 
-    GedaObject *object1 = geda_text_object_copy (toplevel, object0);
+    GedaObject *object1 = geda_text_object_copy (object0);
 
     g_assert (object1 != NULL);
     g_assert (object1 != object0);
     g_assert_cmpint (OBJ_TEXT, ==, object1->type);
 
-    s_delete_object (toplevel, object0);
+    s_delete_object (object0);
 
     g_assert_cmpint (x, ==, geda_text_object_get_x (object1));
     g_assert_cmpint (y, ==, geda_text_object_get_y (object1));
@@ -72,7 +71,7 @@ check_construction ()
     g_assert_cmpint (visible, ==, geda_object_get_visible (object1));
     g_assert_cmpstr (string, ==, geda_text_object_get_string (object1));
 
-    s_delete_object (toplevel, object1);
+    s_delete_object (object1);
   }
 
   s_toplevel_delete (toplevel);
@@ -95,8 +94,7 @@ check_accessors ()
     const gchar *string = strings[g_test_rand_int_range (0, STRINGS_COUNT)];
     gboolean visible = g_test_rand_bit ();
 
-    GedaObject *object0 = geda_text_object_new (toplevel,
-                                                color,
+    GedaObject *object0 = geda_text_object_new (color,
                                                 x,
                                                 y,
                                                 alignment,
@@ -124,9 +122,9 @@ check_accessors ()
     geda_text_object_set_alignment (object0, alignment);
     geda_text_object_set_angle (object0, angle);
     geda_text_object_set_size (object0, size);
-    o_set_color (toplevel, object0, color);
-    o_set_visibility (toplevel, object0, visible);
-    o_text_set_string (toplevel, object0, string);
+    o_set_color (object0, color);
+    o_set_visibility (object0, visible);
+    o_text_set_string (object0, string);
 
     g_assert_cmpint (x, ==, geda_text_object_get_x (object0));
     g_assert_cmpint (y, ==, geda_text_object_get_y (object0));
@@ -143,7 +141,7 @@ check_accessors ()
     g_assert_cmpint (x, ==, temp_x);
     g_assert_cmpint (y, ==, temp_y);
 
-    s_delete_object (toplevel, object0);
+    s_delete_object (object0);
   }
 
   s_toplevel_delete (toplevel);
@@ -171,8 +169,7 @@ check_serialization ()
     const gchar *string = strings[g_test_rand_int_range (0, STRINGS_COUNT)];
     gboolean visible = g_test_rand_bit ();
 
-    GedaObject *object0 = geda_text_object_new (toplevel,
-                                                color,
+    GedaObject *object0 = geda_text_object_new (color,
                                                 x,
                                                 y,
                                                 alignment,
@@ -185,18 +182,18 @@ check_serialization ()
     g_assert (object0 != NULL);
 
     gchar *buffer0 = geda_text_object_to_buffer (object0);
-    s_delete_object (toplevel, object0);
+    s_delete_object (object0);
     g_assert (buffer0 != NULL);
 
-    TextBuffer *tb = s_textbuffer_new (buffer0, -1);
-    gchar *line = s_textbuffer_next_line (tb);
+    TextBuffer *tb = s_textbuffer_new (buffer0, -1,
+                                       "test_text_object.c::check_serialization()");
+    const gchar *line = s_textbuffer_next_line (tb);
 
-    GedaObject *object1 = o_text_read (toplevel,
-                                      line,
-                                      tb,
-                                      version,
-                                      FILEFORMAT_VERSION,
-                                      NULL);
+    GedaObject *object1 = o_text_read (line,
+                                       tb,
+                                       version,
+                                       FILEFORMAT_VERSION,
+                                       NULL);
 
     g_assert (object1 != NULL);
     s_textbuffer_free (tb);
@@ -211,7 +208,7 @@ check_serialization ()
     g_assert_cmpstr (string, ==, geda_text_object_get_string (object1));
 
     gchar *buffer1 = geda_text_object_to_buffer (object1);
-    s_delete_object (toplevel, object1);
+    s_delete_object (object1);
     g_assert (buffer1 != NULL);
 
     g_assert_cmpstr (buffer0, ==, buffer1);

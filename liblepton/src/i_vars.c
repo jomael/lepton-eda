@@ -1,7 +1,5 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
- * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2017 gEDA Contributors (see ChangeLog for details)
+/* Lepton EDA library
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,78 +15,217 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
-#include <config.h>
-#include <stdio.h>
 
 #include "libgeda_priv.h"
 
-/*! \def INIT_STR(w, name, str) */
-#define INIT_STR(w, name, str) {                                        \
-        g_free((w)->name);                                              \
-        (w)->name = g_strdup(((default_ ## name) != NULL) ?             \
-                             (default_ ## name) : (str));               \
-}
 
-/* \note 
+
+/* \note
  * Kazu Hirata <kazu@seul.org> on July 16, 1999 - Added these absolute
  * defaults used when default_... is NULL.
  */
-#define DEFAULT_BITMAP_DIRECTORY "../lib/bitmaps"
-#define DEFAULT_BUS_RIPPER_SYMNAME "busripper-1.sym"
-
-char *default_bitmap_directory = NULL;
-char *default_bus_ripper_symname = NULL;
-GPtrArray *default_always_promote_attributes = NULL;
 
 int   default_attribute_promotion = TRUE;
 int   default_promote_invisible = FALSE;
 int   default_keep_invisible = TRUE;
 
 int   default_make_backup_files = TRUE;
+int   default_net_consolidate = TRUE;
+int   default_force_boundingbox = FALSE;
 
-/*! \brief Initialize variables in TOPLEVEL object
- *  \par Function Description
- *  This function will initialize variables to default values.
+
+/*! \brief Read configuration, initialize variables in TOPLEVEL object.
  *
- *  \param [out] toplevel  The TOPLEVEL object to be updated.
- *
+ *  \param [in] toplevel  The TOPLEVEL object to be updated.
  */
-void i_vars_libgeda_set(TOPLEVEL *toplevel)
-{
-
-  toplevel->attribute_promotion = default_attribute_promotion;
-  toplevel->promote_invisible = default_promote_invisible;
-  toplevel->keep_invisible = default_keep_invisible;
-
-  toplevel->make_backup_files = default_make_backup_files;
-
-  /* copy the always_promote_attributes list from the default */
-  if (toplevel->always_promote_attributes) {
-    g_ptr_array_unref (toplevel->always_promote_attributes);
-    toplevel->always_promote_attributes = NULL;
-  }
-  if (default_always_promote_attributes) {
-    toplevel->always_promote_attributes =
-      g_ptr_array_ref (default_always_promote_attributes);
-  }
-
-  /* you cannot free the default* strings here since new windows */
-  /* need them */
-  INIT_STR(toplevel, bitmap_directory, DEFAULT_BITMAP_DIRECTORY);
-  INIT_STR(toplevel, bus_ripper_symname, DEFAULT_BUS_RIPPER_SYMNAME);
-}
+void i_vars_libgeda_set(TOPLEVEL *toplevel) {
+} /* i_vars_libgeda_set() */
 
 
-/*! \brief Free default names
- *  \par Function Description
- *  This function will free all of the default variables for libgeda.
- *
+
+/*! \brief Free default variables.
  */
 void i_vars_libgeda_freenames()
 {
-  g_free(default_bitmap_directory);
-  g_free(default_bus_ripper_symname);
-
-  g_ptr_array_unref (default_always_promote_attributes);
-  default_always_promote_attributes = NULL;
 }
+
+/* \brief Read a boolean configuration key.
+ *
+ * \par Function Description
+ * On success, set \a result to the value of the
+ * configuration key, otherwise set it to \a defval.
+ *
+ * \param [in]       group   Configuration group name
+ * \param [in]       key     Configuration key name
+ * \param [in]       defval  Default value
+ * \param [in, out]  result  Result
+ *
+ * \return  TRUE if a specified config parameter was successfully read
+ */
+gboolean
+cfg_read_bool (const gchar* group,
+               const gchar* key,
+               gboolean     defval,
+               gboolean*    result)
+{
+  gchar*     cwd = g_get_current_dir();
+  EdaConfig* cfg = eda_config_get_context_for_path (cwd);
+  g_free (cwd);
+
+  GError*  err = NULL;
+  gboolean val = eda_config_get_boolean (cfg, group, key, &err);
+
+  gboolean success = err == NULL;
+  g_clear_error (&err);
+
+  *result = success ? val : defval;
+  return success;
+}
+
+
+/* \brief Read an int configuration key.
+ *
+ * \par Function Description
+ * On success, set \a result to the value of the
+ * configuration key, otherwise set it to \a defval.
+ *
+ * \param [in]       group   Configuration group name
+ * \param [in]       key     Configuration key name
+ * \param [in]       defval  Default value
+ * \param [in, out]  result  Result
+ *
+ * \return  TRUE if a specified config parameter was successfully read
+ */
+gboolean
+cfg_read_int (const gchar* group,
+              const gchar* key,
+              gint         defval,
+              gint*        result)
+{
+  gchar*     cwd = g_get_current_dir();
+  EdaConfig* cfg = eda_config_get_context_for_path (cwd);
+  g_free (cwd);
+
+  GError*  err = NULL;
+  gint val = eda_config_get_int (cfg, group, key, &err);
+
+  gboolean success = err == NULL;
+  g_clear_error (&err);
+
+  *result = success ? val : defval;
+  return success;
+}
+
+
+
+gboolean
+cfg_check_int_not_0 (gint val) { return val != 0; }
+
+gboolean
+cfg_check_int_greater_0 (gint val) { return val > 0; }
+
+gboolean
+cfg_check_int_greater_eq_0 (gint val) { return val >= 0; }
+
+gboolean
+cfg_check_int_text_size (gint val) { return val >= MINIMUM_TEXT_SIZE; }
+
+
+
+/* \brief Read an int configuration key, check read value.
+ *
+ * \par Function Description
+ * On success, set \a result to the value of the
+ * configuration key, otherwise set it to \a defval.
+ * Also, check read value with pfn_check() function, and
+ * if it returns FALSE, reset \a result to \a defval and
+ * print an error message to STDERR.
+ *
+ * \param [in]       group      Configuration group name
+ * \param [in]       key        Configuration key name
+ * \param [in]       defval     Default value
+ * \param [in, out]  result     Result
+ * \param [in]       pfn_check  Function to check if value is valid
+ *
+ * \return  TRUE if a specified config parameter was successfully read
+ */
+gboolean
+cfg_read_int_with_check (const gchar* group,
+                         const gchar* key,
+                         gint         defval,
+                         gint*        result,
+                         gboolean     (*pfn_check)(int))
+{
+  gint val = 0;
+  gboolean success = cfg_read_int (group, key, defval, &val);
+
+  if (pfn_check (val))
+  {
+    *result = val;
+  }
+  else
+  {
+    *result = defval;
+    const gchar* errmsg = _("Invalid [%s]::%s (%d) is set in configuration\n");
+    fprintf (stderr, errmsg, group, key, val);
+  }
+
+  return success;
+}
+
+
+/* \brief Read a string configuration key, set a corresponding int option.
+ *
+ * \par Function Description
+ * Read and compare a configuration value to the options passed
+ * as an array of OptionStringInt structures - the mapping of
+ * the string option values to the corresponding int values.
+ * On success, set the \a result to the int value of
+ * the option (if found), otherwise set it to \a defval.
+ *
+ * \param [in]       group      Configuration group name
+ * \param [in]       key        Configuration key name
+ * \param [in]       defval     Default value
+ * \param [in]       vals       An array of OptionStringInt structures
+ * \param [in]       nvals      A size of \a vals array
+ * \param [in, out]  result     Result
+ *
+ * \return  TRUE if a specified config parameter was successfully read
+ */
+gboolean
+cfg_read_string2int (const gchar* group,
+                     const gchar* key,
+                     gint         defval,
+                     const struct OptionStringInt* vals,
+                     size_t       nvals,
+                     gint*        result)
+{
+  gchar*     cwd = g_get_current_dir();
+  EdaConfig* cfg = eda_config_get_context_for_path (cwd);
+  g_free (cwd);
+
+  GError* err = NULL;
+  gchar*  str = eda_config_get_string (cfg, group, key, &err);
+
+  gboolean success = err == NULL;
+  g_clear_error (&err);
+
+  *result = defval;
+
+  if (success)
+  {
+    for (size_t i = 0; i < nvals; ++i)
+    {
+      if ( strcmp (vals[i].str_, str) == 0 )
+      {
+        *result = vals[i].int_;
+        break;
+      }
+    }
+
+    g_free (str);
+  }
+
+  return success;
+
+} /* cfg_read_string2int() */

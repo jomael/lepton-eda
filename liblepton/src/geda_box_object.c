@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,7 +44,6 @@
  *  line type with a width of 0, and no filling. It can be changed after
  *  with the #o_set_line_options() and #o_set_fill_options().
  *
- *  \param [in]     toplevel     The TOPLEVEL object.
  *  \param [in]     type         Box type.
  *  \param [in]     color        Box border color.
  *  \param [in]     x1           Upper x coordinate.
@@ -54,8 +53,12 @@
  *  \return The new OBJECT
  */
 OBJECT*
-geda_box_object_new (TOPLEVEL *toplevel, char type, int color,
-                     int x1, int y1, int x2, int y2)
+geda_box_object_new (char type,
+                     int color,
+                     int x1,
+                     int y1,
+                     int x2,
+                     int y2)
 {
   OBJECT *new_node;
   BOX *box;
@@ -74,19 +77,15 @@ geda_box_object_new (TOPLEVEL *toplevel, char type, int color,
   box->lower_y = y2;
 
   /* line type and filling initialized to default */
-  o_set_line_options (toplevel,
-                      new_node,
+  o_set_line_options (new_node,
                       DEFAULT_OBJECT_END,
                       TYPE_SOLID,
                       LINE_WIDTH,
                       -1,
                       -1);
 
-  o_set_fill_options(toplevel, new_node,
-		     FILLING_HOLLOW, -1, -1, -1, -1, -1);
-
-  /* compute the bounding box */
-  new_node->w_bounds_valid_for = NULL;
+  o_set_fill_options (new_node,
+                      FILLING_HOLLOW, -1, -1, -1, -1, -1);
 
   return new_node;
 }
@@ -96,18 +95,17 @@ geda_box_object_new (TOPLEVEL *toplevel, char type, int color,
  *  The function #geda_box_object_copy() creates a verbatim copy of the object
  *  pointed by <B>o_current</B> describing a box.
  *
- *  \param [in]      toplevel  The TOPLEVEL object.
  *  \param [in]      o_current  BOX OBJECT to copy.
  *  \return The new OBJECT
  */
 OBJECT*
-geda_box_object_copy(TOPLEVEL *toplevel, OBJECT *o_current)
+geda_box_object_copy (OBJECT *o_current)
 {
   OBJECT *new_obj;
 
   /* A new box object is created with #geda_box_object_new().
    * Values for its fields are default and need to be modified. */
-  new_obj = geda_box_object_new (toplevel, OBJ_BOX, o_current->color, 0, 0, 0, 0);
+  new_obj = geda_box_object_new (OBJ_BOX, o_current->color, 0, 0, 0, 0);
 
   /*
    * The dimensions of the new box are set with the ones of the original box.
@@ -119,17 +117,13 @@ geda_box_object_copy(TOPLEVEL *toplevel, OBJECT *o_current)
   new_obj->box->lower_x = o_current->box->lower_x;
   new_obj->box->lower_y = o_current->box->lower_y;
 
-  o_set_line_options(toplevel, new_obj, o_current->line_end,
-		     o_current->line_type, o_current->line_width,
-		     o_current->line_length, o_current->line_space);
-  o_set_fill_options(toplevel, new_obj,
-		     o_current->fill_type, o_current->fill_width,
-		     o_current->fill_pitch1, o_current->fill_angle1,
-		     o_current->fill_pitch2, o_current->fill_angle2);
-
-  new_obj->w_bounds_valid_for = NULL;
-
-  /* new_obj->attribute = 0;*/
+  o_set_line_options (new_obj, o_current->line_end,
+                      o_current->line_type, o_current->line_width,
+                      o_current->line_length, o_current->line_space);
+  o_set_fill_options (new_obj,
+                      o_current->fill_type, o_current->fill_width,
+                      o_current->fill_pitch1, o_current->fill_angle1,
+                      o_current->fill_pitch2, o_current->fill_angle2);
 
   return new_obj;
 }
@@ -140,7 +134,6 @@ geda_box_object_copy(TOPLEVEL *toplevel, OBJECT *o_current)
  * the box to the rectangle enclosed by the points (\a x1, \a y1) and
  * (\a x2, \a y2).
  *
- * \param [in]     toplevel current #TOPLEVEL.
  * \param [in,out] object   box #OBJECT to be modified.
  * \param [in]     x1       x coordinate of first corner of box.
  * \param [in]     y1       y coordinate of first corner of box.
@@ -148,10 +141,13 @@ geda_box_object_copy(TOPLEVEL *toplevel, OBJECT *o_current)
  * \param [in]     y2       y coordinate of second corner of box,
  */
 void
-geda_box_object_modify_all (TOPLEVEL *toplevel, OBJECT *object,
-                            int x1, int y1, int x2, int y2)
+geda_box_object_modify_all (OBJECT *object,
+                            int x1,
+                            int y1,
+                            int x2,
+                            int y2)
 {
-  o_emit_pre_change_notify (toplevel, object);
+  o_emit_pre_change_notify (object);
 
   object->box->lower_x = (x1 > x2) ? x1 : x2;
   object->box->lower_y = (y1 > y2) ? y2 : y1;
@@ -159,9 +155,7 @@ geda_box_object_modify_all (TOPLEVEL *toplevel, OBJECT *object,
   object->box->upper_x = (x1 > x2) ? x2 : x1;
   object->box->upper_y = (y1 > y2) ? y1 : y2;
 
-  /* recalculate the world coords and bounds */
-  object->w_bounds_valid_for = NULL;
-  o_emit_change_notify (toplevel, object);
+  o_emit_change_notify (object);
 }
 
 /*! \brief Modify a BOX OBJECT's coordinates.
@@ -173,7 +167,6 @@ geda_box_object_modify_all (TOPLEVEL *toplevel, OBJECT *object,
  *  The coordinates of the corner is modified in the world coordinate system.
  *  Screen coordinates and boundings are then updated.
  *
- *  \param [in]     toplevel  The TOPLEVEL object.
  *  \param [in,out] object     BOX OBJECT to be modified.
  *  \param [in]     x          x coordinate.
  *  \param [in]     y          y coordinate.
@@ -189,11 +182,14 @@ geda_box_object_modify_all (TOPLEVEL *toplevel, OBJECT *object,
  *  </DL>
  */
 void
-geda_box_object_modify (TOPLEVEL *toplevel, OBJECT *object, int x, int y, int whichone)
+geda_box_object_modify (OBJECT *object,
+                        int x,
+                        int y,
+                        int whichone)
 {
 	int tmp;
 
-	o_emit_pre_change_notify (toplevel, object);
+	o_emit_pre_change_notify (object);
 
 	/* change the position of the selected corner */
 	switch(whichone) {
@@ -234,9 +230,7 @@ geda_box_object_modify (TOPLEVEL *toplevel, OBJECT *object, int x, int y, int wh
 		object->box->lower_y = tmp;
 	}
 
-	/* recalculate the world coords and the boundings */
-	object->w_bounds_valid_for = NULL;
-	o_emit_change_notify (toplevel, object);
+	o_emit_change_notify (object);
 
 }
 
@@ -252,14 +246,16 @@ geda_box_object_modify (TOPLEVEL *toplevel, OBJECT *object, int x, int y, int wh
  *    <DT>*</DT><DD>the file format used for the releases after 2000704.
  *  </DL>
  *
- *  \param [in]     toplevel       The TOPLEVEL object.
  *  \param [in]     buf             Character string with box description.
  *  \param [in]     release_ver     libgeda release version number.
  *  \param [in]     fileformat_ver  libgeda file format version number.
  *  \return The BOX OBJECT that was created, or NULL on error.
  */
-OBJECT *o_box_read (TOPLEVEL *toplevel, const char buf[],
-                    unsigned int release_ver, unsigned int fileformat_ver, GError **err)
+OBJECT*
+o_box_read (const char buf[],
+            unsigned int release_ver,
+            unsigned int fileformat_ver,
+            GError **err)
 {
   OBJECT *new_obj;
   char type;
@@ -349,17 +345,16 @@ OBJECT *o_box_read (TOPLEVEL *toplevel, const char buf[],
   d_y2 = y1;
 
   /* create a new box */
-  new_obj = geda_box_object_new (toplevel, type, color, d_x1, d_y1, d_x2, d_y2);
+  new_obj = geda_box_object_new (type, color, d_x1, d_y1, d_x2, d_y2);
   /* set its line options */
-  o_set_line_options (toplevel,
-                      new_obj,
+  o_set_line_options (new_obj,
                       (OBJECT_END) box_end,
                       (OBJECT_TYPE) box_type,
                       box_width,
                       box_length,
                       box_space);
   /* set its fill options */
-  o_set_fill_options (toplevel, new_obj,
+  o_set_fill_options (new_obj,
                       (OBJECT_FILLING) box_filling,
                       fill_width,
                       pitch1, angle1, pitch2, angle2);
@@ -456,9 +451,6 @@ geda_box_object_translate (GedaObject *object, int dx, int dy)
   object->box->upper_y = object->box->upper_y + dy;
   object->box->lower_x = object->box->lower_x + dx;
   object->box->lower_y = object->box->lower_y + dy;
-
-  /* recalc the screen coords and the bounding box */
-  object->w_bounds_valid_for = NULL;
 }
 
 /*! \brief Rotate BOX OBJECT using WORLD coordinates.
@@ -468,15 +460,16 @@ geda_box_object_translate (GedaObject *object, int dx, int dy)
  *  <B>angle</B> degrees.
  *  The center of rotation is in world unit.
  *
- *  \param [in]      toplevel      The TOPLEVEL object.
  *  \param [in]      world_centerx  Rotation center x coordinate in WORLD units.
  *  \param [in]      world_centery  Rotation center y coordinate in WORLD units.
  *  \param [in]      angle          Rotation angle in degrees (See note below).
  *  \param [in,out]  object         BOX OBJECT to rotate.
  *
  */
-void geda_box_object_rotate (TOPLEVEL *toplevel,
-			int world_centerx, int world_centery, int angle,
+void
+geda_box_object_rotate (int world_centerx,
+                        int world_centery,
+                        int angle,
 			OBJECT *object)
 {
   int newx1, newy1;
@@ -526,9 +519,6 @@ void geda_box_object_rotate (TOPLEVEL *toplevel,
   object->box->upper_y += world_centery;
   object->box->lower_x += world_centerx;
   object->box->lower_y += world_centery;
-
-  /* recalc boundings and world coords */
-  object->w_bounds_valid_for = NULL;
 }
 
 /*! \brief Mirror BOX using WORLD coordinates.
@@ -539,13 +529,13 @@ void geda_box_object_rotate (TOPLEVEL *toplevel,
  *  The box is first translated to the origin, then mirrored and finally
  *  translated back at its previous position.
  *
- *  \param [in]     toplevel      The TOPLEVEL object.
  *  \param [in]     world_centerx  Origin x coordinate in WORLD units.
  *  \param [in]     world_centery  Origin y coordinate in WORLD units.
  *  \param [in,out] object         BOX OBJECT to mirror.
  */
-void geda_box_object_mirror (TOPLEVEL *toplevel,
-			int world_centerx, int world_centery,
+void
+geda_box_object_mirror (int world_centerx,
+                        int world_centery,
 			OBJECT *object)
 {
   int newx1, newy1;
@@ -578,10 +568,6 @@ void geda_box_object_mirror (TOPLEVEL *toplevel,
   object->box->upper_y += world_centery;
   object->box->lower_x += world_centerx;
   object->box->lower_y += world_centery;
-
-  /* recalc boundings and world coords */
-  object->w_bounds_valid_for = NULL;
-
 }
 
 /*! \brief Get BOX bounding rectangle in WORLD coordinates.
@@ -590,7 +576,6 @@ void geda_box_object_mirror (TOPLEVEL *toplevel,
  *  parameters to the boundings of the box object described in <B>*box</B>
  *  in world units.
  *
- *  \param [in]  toplevel  The TOPLEVEL object.
  *  \param [in]  object     BOX OBJECT to read coordinates from.
  *  \param [out] left       Left box coordinate in WORLD units.
  *  \param [out] top        Top box coordinate in WORLD units.
@@ -598,8 +583,7 @@ void geda_box_object_mirror (TOPLEVEL *toplevel,
  *  \param [out] bottom     Bottom box coordinate in WORLD units.
  */
 void
-geda_box_object_calculate_bounds (TOPLEVEL *toplevel,
-                                  const OBJECT *object,
+geda_box_object_calculate_bounds (const OBJECT *object,
                                   GedaBounds *bounds)
 {
   gint expand;

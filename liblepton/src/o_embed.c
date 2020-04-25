@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2015 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,34 +32,36 @@
 /*! \brief embed an object into a schematic
  *  \par Function Description
  *  This functions embeds an object \a o_current into a
- *  libgeda. Currently complex objects are just marked to
- *  be embedded later. Picture objects are embedded immediatly.
+ *  liblepton. Currently component objects are just marked to
+ *  be embedded later. Picture objects are embedded immediately.
  *
- *  \param toplevel  The TOPLEVEL object
  *  \param o_current The OBJECT to embed
  */
-void o_embed(TOPLEVEL *toplevel, OBJECT *o_current)
+void
+o_embed (OBJECT *o_current)
 {
-  PAGE *page = o_get_page (toplevel, o_current);
   int page_modified = 0;
+  PAGE *page = NULL;
 
-  /* check o_current is a complex and is not already embedded */
-  if (o_current->type == OBJ_COMPLEX &&
-      !o_complex_is_embedded (o_current))
+  page = o_get_page (o_current);
+
+  /* check o_current is a component and is not already embedded */
+  if (o_current->type == OBJ_COMPONENT &&
+      !o_component_is_embedded (o_current))
   {
 
     /* set the embedded flag */
-    o_current->complex_embedded = TRUE;
+    o_current->component_embedded = TRUE;
 
     s_log_message (_("Component [%1$s] has been embedded."),
-                   o_current->complex_basename);
+                   o_current->component_basename);
     page_modified = 1;
   }
 
   /* If it's a picture and it's not embedded */
   if ( (o_current->type == OBJ_PICTURE) &&
        !o_picture_is_embedded (o_current) ) {
-    o_picture_embed (toplevel, o_current);
+    o_picture_embed (o_current);
 
     page_modified = 1;
   }
@@ -73,38 +75,40 @@ void o_embed(TOPLEVEL *toplevel, OBJECT *o_current)
 /*! \brief unembed an object from a schematic
  *  \par Function Description
  *  This functions unembeds an object \a o_current from a
- *  libgeda structure. Complex objects are just marked to
- *  be not embedded. Picture objects are unembeded immediatly.
+ *  liblepton structure. Component objects are just marked to
+ *  be not embedded. Picture objects are unembedded immediately.
  *
- *  \param toplevel  The TOPLEVEL object
  *  \param o_current The OBJECT to unembed
  */
-void o_unembed(TOPLEVEL *toplevel, OBJECT *o_current)
+void
+o_unembed (OBJECT *o_current)
 {
   const CLibSymbol *sym;
-  PAGE *page = o_get_page (toplevel, o_current);
   int page_modified = 0;
+  PAGE *page = NULL;
 
-  /* check o_current is an embedded complex */
-  if (o_current->type == OBJ_COMPLEX &&
-      o_complex_is_embedded (o_current))
+  page = o_get_page (o_current);
+
+  /* check o_current is an embedded component */
+  if (o_current->type == OBJ_COMPONENT &&
+      o_component_is_embedded (o_current))
   {
 
     /* search for the symbol in the library */
-    sym = s_clib_get_symbol_by_name (o_current->complex_basename);
+    sym = s_clib_get_symbol_by_name (o_current->component_basename);
 
     if (sym == NULL) {
       /* symbol not found in the symbol library: signal an error */
       s_log_message (_("Could not find component [%1$s], while trying to "
                        "unembed. Component is still embedded."),
-                     o_current->complex_basename);
+                     o_current->component_basename);
 
     } else {
       /* clear the embedded flag */
-      o_current->complex_embedded = FALSE;
+      o_current->component_embedded = FALSE;
 
       s_log_message (_("Component [%1$s] has been successfully unembedded."),
-                     o_current->complex_basename);
+                     o_current->component_basename);
 
       page_modified = 1;
     }
@@ -113,7 +117,7 @@ void o_unembed(TOPLEVEL *toplevel, OBJECT *o_current)
   /* If it's a picture and it's embedded */
   if ( (o_current->type == OBJ_PICTURE) &&
        o_picture_is_embedded (o_current)) {
-    o_picture_unembed (toplevel, o_current);
+    o_picture_unembed (o_current);
 
     page_modified = 1;
   }

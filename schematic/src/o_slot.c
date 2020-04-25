@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2011 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +39,7 @@ void o_slot_start (GschemToplevel *w_current, OBJECT *object)
   char *slot_value;
 
   /* single object for now */
-  if (object->type != OBJ_COMPLEX)
+  if (object->type != OBJ_COMPONENT)
     return;
 
   slot_count = o_attrib_search_object_attribs_by_name (object, "numslots", 0);
@@ -107,35 +108,34 @@ void o_slot_end(GschemToplevel *w_current, OBJECT *object, const char *string)
   }
 
   /* first see if slot attribute already exists outside
-   * complex */
+   * component */
   slot_value = s_slot_search_slot (object, &o_slot);
   g_free (slot_value);
 
   if (o_slot != NULL && !o_attrib_is_inherited (o_slot)) {
-    o_text_set_string (toplevel, o_slot, string);
+    o_text_set_string (o_slot, string);
   } else {
     /* here you need to do the add the slot
        attribute since it doesn't exist */
-    new_obj = geda_text_object_new (toplevel,
-                                    ATTRIBUTE_COLOR,
-                                    object->complex->x,
-                                    object->complex->y,
+    new_obj = geda_text_object_new (ATTRIBUTE_COLOR,
+                                    object->component->x,
+                                    object->component->y,
                                     LOWER_LEFT,
                                     0, /* zero is angle */
                                     string,
                                     10,
                                     INVISIBLE,
                                     SHOW_NAME_VALUE);
-    s_page_append (toplevel, toplevel->page_current, new_obj);
+    s_page_append (toplevel->page_current, new_obj);
 
     /* manually attach attribute */
-    o_attrib_attach (toplevel, new_obj, object, FALSE);
+    o_attrib_attach (new_obj, object, FALSE);
 
     /* Call add-objects-hook */
     g_run_hook_object (w_current, "%add-objects-hook", new_obj);
   }
 
-  s_slot_update_object (toplevel, object);
+  s_slot_update_object (object);
 
   gschem_toplevel_page_content_changed (w_current, toplevel->page_current);
   g_free (value);

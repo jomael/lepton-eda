@@ -8,11 +8,11 @@ backend="`echo "${tmp}" | sed -e "s:^${stem}-::"`"
 LIBLEPTON="${abs_top_builddir}/liblepton/src/liblepton"
 export LIBLEPTON
 
-GNETLIST="${abs_top_builddir}/netlist/scheme/lepton-netlist"
-GEDADATA="${abs_top_srcdir}/netlist" # HACKHACKHACK
-GEDADATARC="${abs_top_builddir}/netlist/lib"
-export GEDADATA
-export GEDADATARC
+GNETLIST="${abs_top_builddir}/utils/scripts/lepton-netlist"
+
+export GUILE_LOAD_PATH="${abs_top_srcdir}/netlist/scheme:${abs_top_builddir}/netlist/scheme:${abs_top_srcdir}/liblepton/scheme:${abs_top_builddir}/liblepton/scheme:${abs_top_srcdir}/symcheck/scheme:${abs_top_builddir}/symcheck/scheme:..."
+
+export LEPTON_INHIBIT_RC_FILES=yes
 
 schematic="${abs_srcdir}/${stem}.sch"
 # Multi-page schematic
@@ -39,6 +39,8 @@ cat > "${rundir}/gafrc" << EOF
 ;; 'make check' during development can work correctly.
 (scheme-directory "${abs_top_srcdir}/netlist/scheme")
 (scheme-directory "${abs_top_builddir}/netlist/scheme")
+(scheme-directory "${abs_top_srcdir}/netlist/scheme/backend")
+(scheme-directory "${abs_top_builddir}/netlist/scheme/backend")
 (scheme-directory "${abs_top_srcdir}/liblepton/scheme")
 (scheme-directory "${abs_top_builddir}/liblepton/scheme")
 
@@ -47,7 +49,7 @@ cat > "${rundir}/gafrc" << EOF
        (component-library
         (string-join (list "${abs_top_srcdir}/symbols/" x) "")))
      '("io" "74" "analog" "power" "misc" "diode" "linear" "connector" "switch"
-       "asic" "spice" "cascade" "titleblock" "memory"))
+       "asic" "spice" "cascade" "titleblock" "memory" "verilog"))
 
 ;; Rather than checking what m4 and pcb's m4 files do with
 ;; the output we produce, just see what output gnetlist produces.
@@ -70,67 +72,67 @@ cmd="\"()\""
 args=
 case "${backend}" in
 config_refdes_attribute_order_true)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 refdes-attribute-order=true
 EOF
     backend=geda
     ;;
 config_refdes_attribute_order_false)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 refdes-attribute-order=false
 EOF
     backend=geda
     ;;
 config_mangle_refdes_attribute_false_1)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 mangle-refdes-attribute=false
 refdes-attribute-order=false
 EOF
     backend=geda
     ;;
 config_mangle_refdes_attribute_false_2)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 mangle-refdes-attribute=false
 refdes-attribute-order=true
 EOF
     backend=geda
     ;;
 config_mangle_refdes_attribute_true)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 mangle-refdes-attribute=true
 EOF
     backend=geda
     ;;
 config_net_attribute_order_true)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 net-attribute-order=true
 EOF
     backend=geda
     ;;
 config_net_attribute_order_false)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 net-attribute-order=false
 EOF
     backend=geda
     ;;
 config_mangle_net_attribute_false_1)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 mangle-net-attribute=false
 net-attribute-order=false
 EOF
     backend=geda
     ;;
 config_mangle_net_attribute_false_2)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 mangle-net-attribute=false
 net-attribute-order=true
 EOF
@@ -138,46 +140,46 @@ EOF
     ;;
 # Default net-attribute-separator.
 config_net_attribute_separator_1)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 mangle-net-attribute=true
 net-attribute-separator=:
 EOF
     backend=geda
     ;;
 config_net_attribute_separator_2)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 mangle-net-attribute=false
 net-attribute-separator=:
 EOF
     backend=geda
     ;;
 config_netname_attribute_order_true)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 netname-attribute-order=true
 EOF
     backend=geda
     ;;
 config_netname_attribute_order_false)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 netname-attribute-order=false
 EOF
     backend=geda
     ;;
 config_mangle_netname_attribute_false_1)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 mangle-netname-attribute=false
 netname-attribute-order=false
 EOF
     backend=geda
     ;;
 config_mangle_netname_attribute_false_2)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 mangle-netname-attribute=false
 netname-attribute-order=true
 EOF
@@ -185,31 +187,31 @@ EOF
     ;;
 # Default netname-attribute-separator.
 config_netname_attribute_separator_1)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 mangle-netname-attribute=true
 netname-attribute-separator=:
 EOF
     backend=geda
     ;;
 config_netname_attribute_separator_2)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist.hierarchy]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist.hierarchy]
 mangle-netname-attribute=false
 netname-attribute-separator=:
 EOF
     backend=geda
     ;;
 config_net_naming_priority_net)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist]
 net-naming-priority=net-attribute
 EOF
     backend=geda
     ;;
 config_net_naming_priority_netname)
-    cat >> "${rundir}/geda.conf" << EOF
-[gnetlist]
+    cat >> "${rundir}/lepton.conf" << EOF
+[netlist]
 net-naming-priority=netname-attribute
 EOF
     backend=geda
@@ -245,14 +247,12 @@ vams-device)
     cmd="(define generate-mode 2) (define top-attribs '(refdes=U1 device=7404 footprint=DIP14))"
     ;;
 postload)
-    (cd "${rundir}" && "${GNETLIST}" -L "${abs_top_srcdir}/liblepton/scheme" \
-                  -L "${abs_top_builddir}/liblepton/scheme" \
-                  -L "${abs_top_srcdir}/symcheck/scheme" \
-                  -L "${abs_top_builddir}/symcheck/scheme" \
-                  -g "geda" \
-                  -o - \
-                  -m "${abs_srcdir}/postload/test-postload.scm" \
-                  ${schematic})
+    (cd "${rundir}" &&
+         "${GNETLIST}" \
+             -g "geda" \
+             -o - \
+             -m "${abs_srcdir}/postload/test-postload.scm" \
+             ${schematic})
     if test $? -ne 100 ; then
         echo "FAILED: Post backend load check failed."
         exit 1
@@ -261,8 +261,6 @@ postload)
     fi
     ;;
 esac
-
-export GUILE_LOAD_PATH="${abs_top_srcdir}/liblepton/scheme:${abs_top_builddir}/liblepton/scheme:${abs_top_srcdir}/symcheck/scheme:${abs_top_builddir}/symcheck/scheme:$GUILE_LOAD_PATH"
 
 # run gnetlist
 echo "${GNETLIST} -c ${cmd} -g ${backend} ${args} ${schematic}"

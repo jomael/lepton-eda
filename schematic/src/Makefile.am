@@ -73,7 +73,7 @@ lepton_schematic_SOURCES = \
 	o_buffer.c \
 	o_bus.c \
 	o_circle.c \
-	o_complex.c \
+	o_component.c \
 	o_copy.c \
 	o_delete.c \
 	o_find.c \
@@ -112,7 +112,7 @@ lepton_schematic_SOURCES = \
 	x_misc.c \
 	x_multiattrib.c \
 	x_newtext.c \
-	x_pagesel.c \
+	page_select_widget.c \
 	x_print.c \
 	x_rc.c \
 	x_script.c \
@@ -128,24 +128,12 @@ lepton_schematic_CPPFLAGS = -I$(top_srcdir)/liblepton/include  -I$(srcdir)/../in
 	-I$(top_srcdir) -I$(includedir)
 lepton_schematic_CFLAGS = $(GCC_CFLAGS) $(LIBSTROKE_CFLAGS) \
 	$(MINGW_CFLAGS) \
-	$(GLIB_CFLAGS) $(GTK_CFLAGS) $(GTHREAD_CFLAGS) $(GUILE_CFLAGS)
+	$(GLIB_CFLAGS) $(GTK_CFLAGS) $(GTHREAD_CFLAGS) $(GUILE_CFLAGS) $(CFLAGS)
 lepton_schematic_LDFLAGS = $(LIBSTROKE_LDFLAGS) $(GLIB_LIBS) $(GTK_LIBS) \
 	$(GTHREAD_LIBS) $(GUILE_LIBS) $(MINGW_GUI_LDFLAGS)
 lepton_schematic_LDADD = \
 	$(top_builddir)/libleptonrenderer/libleptonrenderer.la \
 	$(top_builddir)/liblepton/src/liblepton.la
-
-
-if INSTALL_COMPAT_SYMLINKS
-NAME = lepton-schematic$(EXEEXT)
-COMPAT_NAME = gschem$(EXEEXT)
-install-exec-hook:
-	cd $(DESTDIR)$(bindir) && \
-	if [ -h $(COMPAT_NAME) ]; then rm -f $(COMPAT_NAME); fi && \
-	ln -s $(NAME) $(COMPAT_NAME)
-uninstall-hook:
-	rm -f $(DESTDIR)$(bindir)/$(COMPAT_NAME)
-endif INSTALL_COMPAT_SYMLINKS
 
 
 # This is used to generate boilerplate for defining Scheme functions
@@ -159,7 +147,4 @@ snarf_cpp_opts = $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 localedir = @datadir@/locale
 DEFS = -DLOCALEDIR=\"$(localedir)\" @DEFS@
 
-MOSTLYCLEANFILES = *.log core FILE *~
-CLEANFILES = *.log core FILE *~ $(BUILT_SOURCES)
-DISTCLEANFILES = *.log core FILE *~
-MAINTAINERCLEANFILES = *.log core FILE *~ Makefile.in
+CLEANFILES = $(BUILT_SOURCES)

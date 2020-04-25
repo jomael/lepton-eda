@@ -1,11 +1,15 @@
 #! /bin/sh
 
+VIEWER="display"
+DEFAULT_FONT="Sans"
+
 usage ()
 {
   cat <<EOF
-Usage: lepton-schdiff old new
+Usage: lepton-schdiff [-d VIEWER] old new
 
 View a graphical diff of Lepton EDA schematics using lepton-schematic and ImageMagick.
+If specified, use VIEWER program ('display' by default) to show the result.
 
 Usage with git:
   git difftool -x lepton-schdiff ...
@@ -29,7 +33,17 @@ EOF
 
 }
 
-for PROG in lepton-schematic composite display
+while getopts "d:" arg
+do
+    case "${arg}" in
+        d) VIEWER=$OPTARG ;;
+        *) usage ; exit 1 ;;
+    esac
+done
+
+shift $(( $OPTIND - 1 ))
+
+for PROG in lepton-cli composite
 do
   if which $PROG > /dev/null
   then
@@ -55,16 +69,22 @@ fi
 LEFTFILE=$1
 RIGHTFILE=$2
 
-GEDASCHEMEDIR=share/gEDA/scheme
-SCHEMEFILE=`dirname $0`/../${GEDASCHEMEDIR}/lepton-schdiff-image.scm
-LEFTPNG=`mktemp --tmpdir lepton-schdiff.XXXXXXXXXX`
-RIGHTPNG=`mktemp --tmpdir lepton-schdiff.XXXXXXXXXX`
-DIFFPNG=`mktemp --tmpdir lepton-schdiff.XXXXXXXXXX`
+LEFTPNG=`mktemp /tmp/lepton-schdiff-old.XXXXXXXXXX`
+RIGHTPNG=`mktemp /tmp/lepton-schdiff-new.XXXXXXXXXX`
+DIFFPNG=`mktemp /tmp/lepton-schdiff-diff.XXXXXXXXXX`
 
-lepton-schematic -p -o $LEFTPNG -q -c '(image-size 1344 1008) (image-color "disabled") (gschem-use-rc-values) (gschem-image "dummyfilename") (gschem-exit)' $LEFTFILE && \
-lepton-schematic -p -o $RIGHTPNG -q -c '(image-size 1344 1008) (image-color "disabled") (gschem-use-rc-values) (gschem-image "dummyfilename") (gschem-exit)' $RIGHTFILE && \
+font="`lepton-cli config schematic.gui font`"
+if [ -z "${font}" ]
+then
+  font=$DEFAULT_FONT
+fi
+
+lepton-cli export -f png -s 1344px:1008px --no-color -F "${font}" -o $RIGHTPNG $RIGHTFILE && \
+lepton-cli export -f png -s 1344px:1008px --no-color -F "${font}" -o $LEFTPNG  $LEFTFILE  && \
 composite -stereo 0 $LEFTPNG $RIGHTPNG $DIFFPNG && \
-display $DIFFPNG
+$VIEWER $DIFFPNG
+
 rm $LEFTPNG
 rm $RIGHTPNG
 rm $DIFFPNG
+

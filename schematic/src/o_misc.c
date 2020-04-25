@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2011 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,7 +52,7 @@ void o_edit(GschemToplevel *w_current, GList *list)
 
   o_current = (OBJECT *) list->data;
   if (o_current == NULL) {
-    fprintf(stderr, _("Got an unexpected NULL in o_edit\n"));
+    fprintf (stderr, "o_edit: ERROR: Got an unexpected NULL\n");
     exit(-1);
   }
 
@@ -59,7 +60,7 @@ void o_edit(GschemToplevel *w_current, GList *list)
   switch(o_current->type) {
 
     /* also add the ability to multi attrib edit: nets, busses, pins */
-    case(OBJ_COMPLEX):
+    case(OBJ_COMPONENT):
     case(OBJ_PLACEHOLDER):
     case(OBJ_NET):
     case(OBJ_PIN):
@@ -89,51 +90,97 @@ void o_edit(GschemToplevel *w_current, GList *list)
   /* some sort of redrawing? */
 }
 
-/*! \todo Finish function documentation!!!
- *  \brief
- *  \par Function Description
+/*! \brief Lock selected objects
  *
+ *  \par Function Description
+ *  This locks the entire selected list. It does lock components,
+ *  but does NOT change the color of primatives of the components.
+ *
+ *  \note This function cannot be called recursively.
+ *
+ *  \param w_current  The toplevel environment.
  */
-/* This locks the entire selected list.  It does lock components, but does NOT
- * change the color (of primatives of the components) though
- * this cannot be called recursively */
 void o_lock(GschemToplevel *w_current)
 {
   g_return_if_fail (w_current != NULL);
   g_return_if_fail (w_current->toplevel != NULL);
   g_return_if_fail (w_current->toplevel->page_current != NULL);
 
-  geda_object_list_set_selectable (
-      geda_list_get_glist (w_current->toplevel->page_current->selection_list),
-      FALSE);
+  PAGE*  page = w_current->toplevel->page_current;
+  GList* objs = geda_list_get_glist (page->selection_list);
+
+  /* lock selected objects:
+  */
+  OBJECT* obj = NULL;
+  for (GList* iter = objs; iter != NULL; iter = g_list_next (iter))
+  {
+    obj = (OBJECT*) iter->data;
+    geda_object_set_selectable (obj, FALSE);
+
+    /* for objects with attributes, also lock them:
+    */
+    if (obj->attribs != NULL)
+    {
+      geda_object_list_set_selectable (obj->attribs, FALSE);
+    }
+  }
 
   gschem_toplevel_page_content_changed (w_current, w_current->toplevel->page_current);
-  if (!w_current->SHIFTKEY) o_select_unselect_all(w_current);
+
+  if (!w_current->SHIFTKEY)
+    o_select_unselect_all(w_current);
+
   o_undo_savestate_old(w_current, UNDO_ALL);
   i_update_menus(w_current);
+
+  /* refresh view to properly restore attributes' colors:
+  */
+  GschemPageView* view = gschem_toplevel_get_current_page_view (w_current);
+  gschem_page_view_invalidate_all (view);
 }
 
-/*! \todo Finish function documentation!!!
- *  \brief
- *  \par Function Description
+/*! \brief Unlock selected objects
  *
+ *  \par Function Description
+ *  Unlock objects currenly selected.
+ *  Locked objects can be selected with a bounding box.
+ *
+ *  \note This function cannot be called recursively.
+ *
+ *  \param w_current  The toplevel environment.
  */
-/* You can unlock something by selecting it with a bounding box... */
-/* this will probably change in the future, but for now it's a
-   something.. :-) */
-/* this cannot be called recursively */
 void o_unlock(GschemToplevel *w_current)
 {
   g_return_if_fail (w_current != NULL);
   g_return_if_fail (w_current->toplevel != NULL);
   g_return_if_fail (w_current->toplevel->page_current != NULL);
 
-  geda_object_list_set_selectable (
-      geda_list_get_glist (w_current->toplevel->page_current->selection_list),
-      TRUE);
+  PAGE*  page = w_current->toplevel->page_current;
+  GList* objs = geda_list_get_glist (page->selection_list);
 
-  gschem_toplevel_page_content_changed (w_current, w_current->toplevel->page_current);
+  /* unlock selected objects:
+  */
+  OBJECT* obj = NULL;
+  for (GList* iter = objs; iter != NULL; iter = g_list_next (iter))
+  {
+    obj = (OBJECT*) iter->data;
+    geda_object_set_selectable (obj, TRUE);
+
+    /* for objects with attributes, also unlock them:
+    */
+    if (obj->attribs != NULL)
+    {
+      geda_object_list_set_selectable (obj->attribs, TRUE);
+    }
+  }
+
+  gschem_toplevel_page_content_changed (w_current, page);
   o_undo_savestate_old(w_current, UNDO_ALL);
+
+  /* refresh view to properly restore attributes' colors:
+  */
+  GschemPageView* view = gschem_toplevel_get_current_page_view (w_current);
+  gschem_page_view_invalidate_all (view);
 }
 
 /*! \brief Rotate all objects in list.
@@ -144,7 +191,7 @@ void o_unlock(GschemToplevel *w_current)
  *  The list contains a given object and all its attributes
  *  (refdes, pinname, pinlabel, ...).
  *  There is a second pass to run the rotate hooks of non-simple objects,
- *  like pin or complex objects, for example.
+ *  like pin or component objects, for example.
  *
  *  \param [in] w_current  The GschemToplevel object.
  *  \param [in] centerx    Center x coordinate of rotation.
@@ -175,10 +222,10 @@ void o_rotate_world_update(GschemToplevel *w_current,
   for (o_iter = list; o_iter != NULL; o_iter = g_list_next (o_iter)) {
     o_current = (OBJECT*) o_iter->data;
 
-    s_conn_remove_object_connections (toplevel, o_current);
+    s_conn_remove_object_connections (o_current);
   }
 
-  geda_object_list_rotate ( list, centerx, centery, angle, toplevel );
+  geda_object_list_rotate (list, centerx, centery, angle);
 
   /* Find connected objects, adding each object in turn back to the
    * connection list. We only _really_ want those objects connected
@@ -233,10 +280,10 @@ void o_mirror_world_update(GschemToplevel *w_current, int centerx, int centery, 
   for (o_iter = list; o_iter != NULL; o_iter = g_list_next (o_iter)) {
     o_current = (OBJECT*) o_iter->data;
 
-    s_conn_remove_object_connections (toplevel, o_current);
+    s_conn_remove_object_connections (o_current);
   }
 
-  geda_object_list_mirror ( list, centerx, centery, toplevel );
+  geda_object_list_mirror (list, centerx, centery);
 
   /* Find connected objects, adding each object in turn back to the
    * connection list. We only _really_ want those objects connected
@@ -269,22 +316,20 @@ void o_mirror_world_update(GschemToplevel *w_current, int centerx, int centery, 
 void o_edit_show_hidden_lowlevel (GschemToplevel *w_current,
                                   const GList *o_list)
 {
-  TOPLEVEL *toplevel = gschem_toplevel_get_toplevel (w_current);
   OBJECT *o_current;
   const GList *iter;
 
   iter = o_list;
   while (iter != NULL) {
     o_current = (OBJECT *)iter->data;
-    if (o_current->type == OBJ_TEXT && !o_is_visible (toplevel, o_current)) {
+    if (o_current->type == OBJ_TEXT && !o_is_visible (o_current)) {
 
       /* don't toggle the visibility flag */
-      o_text_recreate (toplevel, o_current);
+      o_text_recreate (o_current);
     }
 
-    if (o_current->type == OBJ_COMPLEX || o_current->type == OBJ_PLACEHOLDER) {
-      o_edit_show_hidden_lowlevel(w_current, o_current->complex->prim_objs);
-      o_current->w_bounds_valid_for = NULL;
+    if (o_current->type == OBJ_COMPONENT || o_current->type == OBJ_PLACEHOLDER) {
+      o_edit_show_hidden_lowlevel(w_current, o_current->component->prim_objs);
     }
 
     iter = g_list_next (iter);
@@ -337,9 +382,9 @@ void o_edit_hide_specific_text (GschemToplevel *w_current,
     if (o_current->type == OBJ_TEXT) {
       const gchar *str = geda_text_object_get_string (o_current);
       if (!strncmp (stext, str, strlen (stext))) {
-        if (o_is_visible (toplevel, o_current)) {
-          o_set_visibility (toplevel, o_current, INVISIBLE);
-          o_text_recreate(toplevel, o_current);
+        if (o_is_visible (o_current)) {
+          o_set_visibility (o_current, INVISIBLE);
+          o_text_recreate (o_current);
 
           gschem_toplevel_page_content_changed (w_current, toplevel->page_current);
         }
@@ -371,9 +416,9 @@ void o_edit_show_specific_text (GschemToplevel *w_current,
     if (o_current->type == OBJ_TEXT) {
       const gchar *str = geda_text_object_get_string (o_current);
       if (!strncmp (stext, str, strlen (stext))) {
-        if (!o_is_visible (toplevel, o_current)) {
-          o_set_visibility (toplevel, o_current, VISIBLE);
-          o_text_recreate(toplevel, o_current);
+        if (!o_is_visible (o_current)) {
+          o_set_visibility (o_current, VISIBLE);
+          o_text_recreate (o_current);
 
           gschem_toplevel_page_content_changed (w_current, toplevel->page_current);
         }
@@ -411,40 +456,40 @@ o_update_component (GschemToplevel *w_current, OBJECT *o_current)
   const CLibSymbol *clib;
 
   g_return_val_if_fail (o_current != NULL, NULL);
-  g_return_val_if_fail (o_current->type == OBJ_COMPLEX, NULL);
-  g_return_val_if_fail (o_current->complex_basename != NULL, NULL);
+  g_return_val_if_fail (o_current->type == OBJ_COMPONENT, NULL);
+  g_return_val_if_fail (o_current->component_basename != NULL, NULL);
 
-  page = o_get_page (toplevel, o_current);
+  page = o_get_page (o_current);
 
   /* Force symbol data to be reloaded from source */
-  clib = s_clib_get_symbol_by_name (o_current->complex_basename);
+  clib = s_clib_get_symbol_by_name (o_current->component_basename);
   s_clib_symbol_invalidate_data (clib);
 
   if (clib == NULL) {
     s_log_message (_("Could not find symbol [%1$s] in library. Update failed."),
-                   o_current->complex_basename);
+                   o_current->component_basename);
     return NULL;
   }
 
   /* Unselect the old object. */
-  o_selection_remove (toplevel, page->selection_list, o_current);
+  o_selection_remove (page->selection_list, o_current);
 
   /* Create new object and set embedded */
-  o_new = o_complex_new (toplevel, OBJ_COMPLEX, DEFAULT_COLOR,
-                         o_current->complex->x,
-                         o_current->complex->y,
-                         o_current->complex->angle,
-                         o_current->complex->mirror,
-                         clib, o_current->complex_basename,
-                         1);
-  if (o_complex_is_embedded (o_current)) {
-    o_embed (toplevel, o_new);
+  o_new = o_component_new (toplevel, OBJ_COMPONENT, DEFAULT_COLOR,
+                           o_current->component->x,
+                           o_current->component->y,
+                           o_current->component->angle,
+                           o_current->component->mirror,
+                           clib, o_current->component_basename,
+                           1);
+  if (o_component_is_embedded (o_current)) {
+    o_embed (o_new);
   }
 
-  new_attribs = o_complex_promote_attribs (toplevel, o_new);
+  new_attribs = o_component_promote_attribs (o_new);
 
-  /* Cull any attributes from new COMPLEX that are already attached to
-   * old COMPLEX. Note that the new_attribs list is kept consistent by
+  /* Cull any attributes from new COMPONENT that are already attached to
+   * old COMPONENT. Note that the new_attribs list is kept consistent by
    * setting GList data pointers to NULL if their OBJECTs are
    * culled. At the end, the new_attribs list is updated by removing
    * all list items with NULL data. This is slightly magic, but
@@ -460,8 +505,8 @@ o_update_component (GschemToplevel *w_current, OBJECT *o_current)
 
     value = o_attrib_search_attached_attribs_by_name (o_current, name, 0);
     if (value != NULL) {
-      o_attrib_remove (toplevel, &o_new->attribs, attr_new);
-      s_delete_object (toplevel, attr_new);
+      o_attrib_remove (&o_new->attribs, attr_new);
+      s_delete_object (attr_new);
       iter->data = NULL;
     }
 
@@ -472,22 +517,22 @@ o_update_component (GschemToplevel *w_current, OBJECT *o_current)
 
   /* Detach attributes from old OBJECT and attach to new OBJECT */
   old_attribs = g_list_copy (o_current->attribs);
-  o_attrib_detach_all (toplevel, o_current);
-  o_attrib_attach_list (toplevel, old_attribs, o_new, 1);
+  o_attrib_detach_all (o_current);
+  o_attrib_attach_list (old_attribs, o_new, 1);
   g_list_free (old_attribs);
 
   /* Add new attributes to page */
-  s_page_append_list (toplevel, page, new_attribs);
+  s_page_append_list (page, new_attribs);
 
   /* Update pinnumbers for current slot */
-  s_slot_update_object (toplevel, o_new);
+  s_slot_update_object (o_new);
 
   /* Replace old OBJECT with new OBJECT */
-  s_page_replace (toplevel, page, o_current, o_new);
-  s_delete_object (toplevel, o_current);
+  s_page_replace (page, o_current, o_new);
+  s_delete_object (o_current);
 
   /* Select new OBJECT */
-  o_selection_add (toplevel, page->selection_list, o_new);
+  o_selection_add (page->selection_list, o_new);
 
   /* mark the page as modified */
   gschem_toplevel_page_content_changed (w_current, toplevel->page_current);
@@ -537,13 +582,14 @@ void o_autosave_backups(GschemToplevel *w_current)
       real_filename = follow_symlinks (s_page_get_filename (p_current), NULL);
 
       if (real_filename == NULL) {
-        s_log_message (_("o_autosave_backups: Can't get the real filename of %1$s."), s_page_get_filename (p_current));
+        s_log_message ("o_autosave_backups: ");
+        s_log_message (_("Can't get the real filename of %1$s."), s_page_get_filename (p_current));
       } else {
         /* Get the directory in which the real filename lives */
         dirname = g_path_get_dirname (real_filename);
         only_filename = g_path_get_basename(real_filename);
 
-        backup_filename = g_strdup_printf("%s%c"AUTOSAVE_BACKUP_FILENAME_STRING,
+        backup_filename = g_strdup_printf("%s%c" AUTOSAVE_BACKUP_FILENAME_STRING,
                                           dirname, G_DIR_SEPARATOR, only_filename);
 
         /* If there is not an existing file with that name, compute the
@@ -587,8 +633,7 @@ void o_autosave_backups(GschemToplevel *w_current)
           umask(saved_umask);
         }
 
-        if (o_save (toplevel,
-                    s_page_objects (toplevel->page_current),
+        if (o_save (s_page_objects (toplevel->page_current),
                     backup_filename, NULL)) {
 
           p_current->ops_since_last_backup = 0;

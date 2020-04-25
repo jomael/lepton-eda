@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2011 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -117,7 +118,7 @@ void o_move_end_lowlevel (GschemToplevel *w_current,
     case (OBJ_NET):
     case (OBJ_BUS):
     case (OBJ_PIN):
-      s_conn_remove_object_connections (page->toplevel, object);
+      s_conn_remove_object_connections (object);
       geda_object_translate (object, diff_x, diff_y);
       s_conn_update_object (page, object);
       break;
@@ -189,26 +190,22 @@ void o_move_end(GschemToplevel *w_current)
     object = (OBJECT *) s_current->data;
 
     if (object == NULL) {
-      fprintf(stderr, _("ERROR: NULL object in o_move_end!\n"));
+      fprintf (stderr, "o_move_end: ERROR: Got an unexpected NULL\n");
       exit(-1);
     }
 
 
     switch (object->type) {
-      case (OBJ_COMPLEX):
+      case (OBJ_COMPONENT):
       case (OBJ_PLACEHOLDER):
 
-        /* TODO: Fix so we can just pass the complex to o_move_end_lowlevel,
+        /* TODO: Fix so we can just pass the component to o_move_end_lowlevel,
          * IE.. by falling through the bottom of this case statement. */
+        object->component->x = object->component->x + diff_x;
+        object->component->y = object->component->y + diff_y;
 
-        /* this next section of code is from */
-        /* o_complex_world_translate_world */
-        object->complex->x = object->complex->x + diff_x;
-        object->complex->y = object->complex->y + diff_y;
-
-        o_move_end_lowlevel_glist (w_current, object->complex->prim_objs,
+        o_move_end_lowlevel_glist (w_current, object->component->prim_objs,
                                    diff_x, diff_y);
-        object->w_bounds_valid_for = NULL;
         break;
 
       default:
@@ -532,20 +529,16 @@ void o_move_check_endpoint(GschemToplevel *w_current, OBJECT * object)
   OBJECT *other;
   int whichone;
 
+  g_return_if_fail (object != NULL);
+  g_return_if_fail ((object->type == OBJ_BUS) ||
+                    (object->type == OBJ_NET) ||
+                    (object->type == OBJ_PIN));
+
   GschemPageView *page_view = gschem_toplevel_get_current_page_view (w_current);
   g_return_if_fail (page_view != NULL);
 
   PAGE *page = gschem_page_view_get_page (page_view);
   g_return_if_fail (page != NULL);
-
-  if (!object)
-  return;
-
-  if (object->type != OBJ_NET && object->type != OBJ_PIN &&
-      object->type != OBJ_BUS) {
-    fprintf(stderr, _("Got a non line object in o_move_check_endpoint\n"));
-    return;
-  }
 
   for (cl_current = object->conn_list;
        cl_current != NULL;
@@ -580,10 +573,10 @@ void o_move_check_endpoint(GschemToplevel *w_current, OBJECT * object)
 
       OBJECT *new_net;
       /* other object is a pin, insert a net */
-      new_net = geda_net_object_new (page->toplevel, OBJ_NET, NET_COLOR,
+      new_net = geda_net_object_new (OBJ_NET, NET_COLOR,
                                      c_current->x, c_current->y,
                                      c_current->x, c_current->y);
-      s_page_append (page->toplevel, page, new_net);
+      s_page_append (page, new_net);
       /* This new net object is only picked up for stretching later,
        * somewhat of a kludge. If the move operation is cancelled, these
        * new 0 length nets are removed by the "undo" operation invoked.
@@ -647,9 +640,9 @@ void o_move_prep_rubberband(GschemToplevel *w_current)
         o_move_check_endpoint (w_current, object);
         break;
 
-      case (OBJ_COMPLEX):
+      case (OBJ_COMPONENT):
       case (OBJ_PLACEHOLDER):
-        for (iter = object->complex->prim_objs;
+        for (iter = object->component->prim_objs;
              iter != NULL; iter = g_list_next (iter)) {
           o_current = (OBJECT*) iter->data;
 
@@ -713,7 +706,7 @@ void o_move_end_rubberband (GschemToplevel *w_current,
         object->type == OBJ_BUS) {
 
       /* remove the object's connections */
-      s_conn_remove_object_connections (page->toplevel, object);
+      s_conn_remove_object_connections (object);
 
       object->line->x[whichone] += w_dx;
       object->line->y[whichone] += w_dy;
@@ -725,7 +718,6 @@ void o_move_end_rubberband (GschemToplevel *w_current,
         continue;
       }
 
-      object->w_bounds_valid_for = NULL;
       s_conn_update_object (page, object);
       *objects = g_list_append (*objects, object);
     }

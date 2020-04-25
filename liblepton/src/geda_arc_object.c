@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,8 +32,7 @@
 /*! \brief create a new arc object
  *
  *  The line and fill type of the created arc are set to default.
-*
- *  \param [in] toplevel The TOPLEVEL object.
+ *
  *  \param [in] color the color index of the arc
  *  \param [in] center_x the x coordinate of the center
  *  \param [in] center_y the y coordinate of the center
@@ -43,8 +42,7 @@
  *  \return the new arc object
  */
 GedaObject*
-geda_arc_object_new (TOPLEVEL *toplevel,
-                     gint color,
+geda_arc_object_new (gint color,
                      gint center_x,
                      gint center_y,
                      gint radius,
@@ -84,32 +82,26 @@ geda_arc_object_new (TOPLEVEL *toplevel,
   new_node->arc->sweep_angle = sweep_angle;
 
   /* Default init */
-  o_set_line_options (toplevel,
-                      new_node,
+  o_set_line_options (new_node,
                       DEFAULT_OBJECT_END,
                       TYPE_SOLID,
                       LINE_WIDTH,
                       -1,
                       -1);
 
-  o_set_fill_options(toplevel, new_node,
-                     FILLING_HOLLOW, -1, -1, -1, -1, -1);
-
-  new_node->w_bounds_valid_for = NULL;
-
-  /* new_node->graphical = arc; eventually */
+  o_set_fill_options (new_node,
+                      FILLING_HOLLOW, -1, -1, -1, -1, -1);
 
   return new_node;
 }
 
 /*! \brief create a copy of an existing arc object
  *
- *  \param [in] toplevel The TOPLEVEL object
  *  \param [in] object the arc object to copy
  *  \return The new arc object
  */
 GedaObject*
-geda_arc_object_copy (TOPLEVEL *toplevel, const GedaObject *object)
+geda_arc_object_copy (const GedaObject *object)
 {
   GedaObject *new_object;
 
@@ -117,24 +109,21 @@ geda_arc_object_copy (TOPLEVEL *toplevel, const GedaObject *object)
   g_return_val_if_fail (object->arc != NULL, NULL);
   g_return_val_if_fail (object->type == OBJ_ARC, NULL);
 
-  new_object = geda_arc_object_new (toplevel,
-                                    object->color,
+  new_object = geda_arc_object_new (object->color,
                                     object->arc->x,
                                     object->arc->y,
                                     object->arc->radius,
                                     object->arc->start_angle,
                                     object->arc->sweep_angle);
 
-  o_set_line_options (toplevel,
-                      new_object,
+  o_set_line_options (new_object,
                       object->line_end,
                       object->line_type,
                       object->line_width,
                       object->line_length,
                       object->line_space);
 
-  o_set_fill_options (toplevel,
-                      new_object,
+  o_set_fill_options (new_object,
                       FILLING_HOLLOW,
                       -1,
                       -1,
@@ -300,31 +289,38 @@ geda_arc_object_set_sweep_angle (GedaObject *object, gint angle)
  *  This function modifies the internal values of the arc object
  *  *object according to the whichone parameter.
  *
- *  The new values are given by <B>x</B> and/or <B>y</B>. Their meaning depends on the value of whichone.
+ *  The new values are given by <B>x</B> and/or <B>y</B>. Their
+ *  meaning depends on the value of whichone.
  *
- *  If <B>whichone</B> is equal to #ARC_CENTER, the (<B>x</B>,<B>y</B>) point is taken as the new center
- *  of the arc in world unit.
+ *  If <B>whichone</B> is equal to #ARC_CENTER, the
+ *  (<B>x</B>,<B>y</B>) point is taken as the new center of the
+ *  arc in world unit.
  *
- *  If <B>whichone</B> is equal to #ARC_RADIUS, the <B>x</B> parameter is taken to be the radius
- *  of the arc in world unit. The <B>y</B> parameter is ignored.
+ *  If <B>whichone</B> is equal to #ARC_RADIUS, the <B>x</B>
+ *  parameter is taken to be the radius of the arc in world
+ *  unit. The <B>y</B> parameter is ignored.
  *
- *  If <B>whichone</B> is equal to #ARC_START_ANGLE, the <B>x</B> parameter is the starting angle of the arc.
- *  <B>x</B> is in degrees. <B>y</B> is ignored.
+ *  If <B>whichone</B> is equal to #ARC_START_ANGLE, the <B>x</B>
+ *  parameter is the starting angle of the arc.  <B>x</B> is in
+ *  degrees. <B>y</B> is ignored.
  *
- *  If <B>whichone</B> is equal to #ARC_SWEEP_ANGLE, the <B>x</B> parameter is the ending angle of the arc.
- *  <B>x</B> is in degrees. <B>y</B> is ignored.
+ *  If <B>whichone</B> is equal to #ARC_SWEEP_ANGLE, the <B>x</B>
+ *  parameter is the ending angle of the arc.  <B>x</B> is in
+ *  degrees. <B>y</B> is ignored.
  *
- *  \param [in]     toplevel  The TOPLEVEL object.
  *  \param [in,out] object
  *  \param [in]     x
  *  \param [in]     y
  *  \param [in]     whichone
  */
 void
-geda_arc_object_modify (TOPLEVEL *toplevel, OBJECT *object, int x, int y, int whichone)
+geda_arc_object_modify (OBJECT *object,
+                        int x,
+                        int y,
+                        int whichone)
 {
 
-	o_emit_pre_change_notify (toplevel, object);
+	o_emit_pre_change_notify (object);
 
 	switch(whichone) {
 		case ARC_CENTER:
@@ -353,8 +349,7 @@ geda_arc_object_modify (TOPLEVEL *toplevel, OBJECT *object, int x, int y, int wh
 	}
 
 	/* update the screen coords and the bounding box */
-	object->w_bounds_valid_for = NULL;
-	o_emit_change_notify (toplevel, object);
+	o_emit_change_notify (object);
 }
 
 /*! \brief
@@ -377,14 +372,16 @@ geda_arc_object_modify (TOPLEVEL *toplevel, OBJECT *object, int x, int y, int wh
  *
  *  A negative or null radius is not allowed.
  *
- *  \param [in] toplevel    The TOPLEVEL object.
  *  \param [in] buf
  *  \param [in] release_ver
  *  \param [in] fileformat_ver
  *  \return The ARC OBJECT that was created, or NULL on error.
  */
-OBJECT *o_arc_read (TOPLEVEL *toplevel, const char buf[],
-           unsigned int release_ver, unsigned int fileformat_ver, GError **err)
+OBJECT
+*o_arc_read (const char buf[],
+             unsigned int release_ver,
+             unsigned int fileformat_ver,
+             GError **err)
 {
   OBJECT *new_obj;
   char type;
@@ -426,7 +423,7 @@ OBJECT *o_arc_read (TOPLEVEL *toplevel, const char buf[],
   /* Error check */
   if (radius <= 0) {
     s_log_message (_("Found a zero radius arc "
-                     "[ %1$c %2$d, %3$d, %4$d, %5$d, %6$d, %7$d ]"),
+                     "[ %1$c %2$d %3$d %4$d %5$d %6$d %7$d ]"),
                    type, x1, y1, radius, start_angle, sweep_angle, color);
     radius = 0;
   }
@@ -438,24 +435,21 @@ OBJECT *o_arc_read (TOPLEVEL *toplevel, const char buf[],
   }
 
   /* Allocation and initialization */
-  new_obj = geda_arc_object_new (toplevel,
-                                 color,
+  new_obj = geda_arc_object_new (color,
                                  x1,
                                  y1,
                                  radius,
                                  start_angle,
                                  sweep_angle);
 
-  o_set_line_options(toplevel,
-                     new_obj,
-                     (OBJECT_END) arc_end,
-                     (OBJECT_TYPE) arc_type,
-                     arc_width,
-                     arc_length,
-                     arc_space);
-  o_set_fill_options(toplevel, new_obj,
-                     FILLING_HOLLOW, -1, -1, -1,
-                     -1, -1);
+  o_set_line_options (new_obj,
+                      (OBJECT_END) arc_end,
+                      (OBJECT_TYPE) arc_type,
+                      arc_width,
+                      arc_length,
+                      arc_space);
+  o_set_fill_options (new_obj,
+                      FILLING_HOLLOW, -1, -1, -1, -1, -1);
 
   return new_obj;
 }
@@ -515,10 +509,6 @@ geda_arc_object_translate (GedaObject *object, int dx, int dy)
   /* Do world coords */
   object->arc->x = object->arc->x + dx;
   object->arc->y = object->arc->y + dy;
-
-
-  /* Recalculate screen coords from new world coords */
-  object->w_bounds_valid_for = NULL;
 }
 
 /*! \brief
@@ -535,15 +525,16 @@ geda_arc_object_translate (GedaObject *object, int dx, int dy)
  *
  *  <B>world_centerx</B> and <B>world_centery</B> are in world units, <B>angle</B> is in degrees.
  *
- *  \param [in] toplevel      The TOPLEVEL object.
  *  \param [in] world_centerx
  *  \param [in] world_centery
  *  \param [in] angle
  *  \param [in] object
  */
-void geda_arc_object_rotate (TOPLEVEL *toplevel,
-			int world_centerx, int world_centery, int angle,
-			OBJECT *object)
+void
+geda_arc_object_rotate (int world_centerx,
+                        int world_centery,
+                        int angle,
+                        OBJECT *object)
 {
   int x, y, newx, newy;
 
@@ -572,10 +563,6 @@ void geda_arc_object_rotate (TOPLEVEL *toplevel,
   /* translate object to its previous place */
   object->arc->x += world_centerx;
   object->arc->y += world_centery;
-
-  /* update the screen coords and the bounding box */
-  object->w_bounds_valid_for = NULL;
-
 }
 
 /*! \brief Mirror the WORLD coordinates of an ARC.
@@ -589,13 +576,13 @@ void geda_arc_object_rotate (TOPLEVEL *toplevel,
  *
  *  The arc is finally back translated to its previous location on the page.
  *
- *  \param [in] toplevel      The TOPLEVEL object.
  *  \param [in] world_centerx
  *  \param [in] world_centery
  *  \param [in] object
  */
-void geda_arc_object_mirror (TOPLEVEL *toplevel,
-			int world_centerx, int world_centery,
+void
+geda_arc_object_mirror (int world_centerx,
+                        int world_centery,
 			OBJECT *object)
 {
   g_return_if_fail (object != NULL);
@@ -616,10 +603,6 @@ void geda_arc_object_mirror (TOPLEVEL *toplevel,
 
   /* translate object back to its previous position */
   object->arc->x += world_centerx;
-
-  /* update the screen coords and bounding box */
-  object->w_bounds_valid_for = NULL;
-
 }
 
 
@@ -634,7 +617,6 @@ void geda_arc_object_mirror (TOPLEVEL *toplevel,
  *  They forms a first rectangle but (depending on the start angle and the
  *  sweep of the arc) not the right.
  *
- *  \param [in]  toplevel  The TOPLEVEL object.
  *  \param [in]  object
  *  \param [out] left
  *  \param [out] top
@@ -642,8 +624,7 @@ void geda_arc_object_mirror (TOPLEVEL *toplevel,
  *  \param [out] bottom
  */
 void
-geda_arc_object_calculate_bounds (TOPLEVEL *toplevel,
-                                  const OBJECT *object,
+geda_arc_object_calculate_bounds (const OBJECT *object,
                                   gint *left,
                                   gint *top,
                                   gint *right,

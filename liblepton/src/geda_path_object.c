@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,16 +60,17 @@ typedef void (*FILL_FUNC) (TOPLEVEL *toplevel, FILE *fp, PATH *path,
  *  The object is added to the end of the list described by the
  *  <B>object_list</B> parameter by the #s_basic_link_object().
  *
- *  \param [in]     toplevel     The TOPLEVEL object.
  *  \param [in]     type         Must be OBJ_PATH.
  *  \param [in]     color        The path color.
  *  \param [in]     path_string  The string representation of the path
  *  \return A pointer to the new end of the object list.
  */
-OBJECT *geda_path_object_new (TOPLEVEL *toplevel,
-                              char type, int color, const char *path_string)
+OBJECT*
+geda_path_object_new (char type,
+                      int color,
+                      const char *path_string)
 {
-  return geda_path_object_new_take_path (toplevel, type, color,
+  return geda_path_object_new_take_path (type, color,
                                          s_path_parse (path_string));
 }
 
@@ -82,15 +83,15 @@ OBJECT *geda_path_object_new (TOPLEVEL *toplevel,
  *
  *  \see geda_path_object_new().
  *
- *  \param [in]     toplevel     The TOPLEVEL object.
  *  \param [in]     type         Must be OBJ_PATH.
  *  \param [in]     color        The path color.
  *  \param [in]     path_data    The #PATH data structure to use.
  *  \return A pointer to the new end of the object list.
  */
 OBJECT*
-geda_path_object_new_take_path (TOPLEVEL *toplevel,
-                                char type, int color, PATH *path_data)
+geda_path_object_new_take_path (char type,
+                                int color,
+                                PATH *path_data)
 {
   OBJECT *new_node;
 
@@ -101,19 +102,15 @@ geda_path_object_new_take_path (TOPLEVEL *toplevel,
   new_node->path  = path_data;
 
   /* path type and filling initialized to default */
-  o_set_line_options (toplevel,
-                      new_node,
+  o_set_line_options (new_node,
                       DEFAULT_OBJECT_END,
                       TYPE_SOLID,
                       LINE_WIDTH,
                       -1,
                       -1);
 
-  o_set_fill_options (toplevel, new_node,
+  o_set_fill_options (new_node,
                       FILLING_HOLLOW, -1, -1, -1, -1, -1);
-
-  /* compute bounding box */
-  new_node->w_bounds_valid_for = NULL;
 
   return new_node;
 }
@@ -126,31 +123,27 @@ geda_path_object_new_take_path (TOPLEVEL *toplevel,
  *  is added at the end of the list following the <B>list_tail</B>
  *  parameter.
  *
- *  \param [in]  toplevel  The TOPLEVEL object.
  *  \param [in]  o_current  Line OBJECT to copy.
  *  \return A new pointer to the end of the object list.
  */
 OBJECT*
-geda_path_object_copy (TOPLEVEL *toplevel, OBJECT *o_current)
+geda_path_object_copy (OBJECT *o_current)
 {
   OBJECT *new_obj;
   char *path_string;
 
   path_string = s_path_string_from_path (o_current->path);
-  new_obj = geda_path_object_new (toplevel, OBJ_PATH, o_current->color, path_string);
+  new_obj = geda_path_object_new (OBJ_PATH, o_current->color, path_string);
   g_free (path_string);
 
   /* copy the path type and filling options */
-  o_set_line_options (toplevel, new_obj, o_current->line_end,
+  o_set_line_options (new_obj, o_current->line_end,
                       o_current->line_type, o_current->line_width,
                       o_current->line_length, o_current->line_space);
-  o_set_fill_options (toplevel, new_obj,
+  o_set_fill_options (new_obj,
                       o_current->fill_type, o_current->fill_width,
                       o_current->fill_pitch1, o_current->fill_angle1,
                       o_current->fill_pitch2, o_current->fill_angle2);
-
-  /* calc the bounding box */
-  o_current->w_bounds_valid_for = NULL;
 
   /* return the new tail of the object list */
   return new_obj;
@@ -170,16 +163,18 @@ geda_path_object_copy (TOPLEVEL *toplevel, OBJECT *o_current)
  *    <DT>*</DT><DD>the file format used for the releases after 20010704.
  *  </DL>
  *
- *  \param [in]  toplevel       The TOPLEVEL object.
  *  \param [in]  first_line      Character string with path description.
  *  \param [in]  tb              Text buffer containing the path string.
  *  \param [in]  release_ver     libgeda release version number.
  *  \param [in]  fileformat_ver  libgeda file format version number.
  *  \return A pointer to the new path object, or NULL on error;
  */
-OBJECT *o_path_read (TOPLEVEL *toplevel,
-                     const char *first_line, TextBuffer *tb,
-                     unsigned int release_ver, unsigned int fileformat_ver, GError **err)
+OBJECT*
+o_path_read (const char *first_line,
+             TextBuffer *tb,
+             unsigned int release_ver,
+             unsigned int fileformat_ver,
+             GError **err)
 {
   OBJECT *new_obj;
   char type;
@@ -241,20 +236,18 @@ OBJECT *o_path_read (TOPLEVEL *toplevel,
   string = geda_string_remove_ending_newline (string);
 
   /* create a new path */
-  new_obj = geda_path_object_new (toplevel, type, color, string);
+  new_obj = geda_path_object_new (type, color, string);
   g_free (string);
 
   /* set its line options */
-  o_set_line_options (toplevel,
-                      new_obj,
+  o_set_line_options (new_obj,
                       (OBJECT_END) line_end,
                       (OBJECT_TYPE) line_type,
                       line_width,
                       line_length,
                       line_space);
   /* set its fill options */
-  o_set_fill_options (toplevel,
-                      new_obj,
+  o_set_fill_options (new_obj,
                       (OBJECT_FILLING) fill_type,
                       fill_width,
                       pitch1,
@@ -327,21 +320,22 @@ geda_path_object_to_buffer (const GedaObject *object)
  *
  *  The new position is given by <B>x</B> and <B>y</B>.
  *
- *  \param [in]     toplevel  The TOPLEVEL object.
  *  \param [in,out] object    The path OBJECT
  *  \param [in]     x         New x coordinate for the control point
  *  \param [in]     y         New y coordinate for the control point
  *  \param [in]     whichone  Which control point is being modified
  */
 void
-geda_path_object_modify (TOPLEVEL *toplevel, OBJECT *object,
-                         int x, int y, int whichone)
+geda_path_object_modify (OBJECT *object,
+                         int x,
+                         int y,
+                         int whichone)
 {
   int i;
   int grip_no = 0;
   PATH_SECTION *section;
 
-  o_emit_pre_change_notify (toplevel, object);
+  o_emit_pre_change_notify (object);
 
   for (i = 0; i <  object->path->num_sections; i++) {
     section = &object->path->sections[i];
@@ -372,9 +366,7 @@ geda_path_object_modify (TOPLEVEL *toplevel, OBJECT *object,
     }
   }
 
-  /* Update bounding box */
-  object->w_bounds_valid_for = NULL;
-  o_emit_change_notify (toplevel, object);
+  o_emit_change_notify (object);
 }
 
 
@@ -417,9 +409,6 @@ geda_path_object_translate (GedaObject *object, int dx, int dy)
       break;
     }
   }
-
-  /* Update bounding box */
-  object->w_bounds_valid_for = NULL;
 }
 
 
@@ -430,15 +419,16 @@ geda_path_object_translate (GedaObject *object, int dx, int dy)
  *  point by <B>angle</B> degrees.
  *  The center of rotation is in world units.
  *
- *  \param [in]      toplevel      The TOPLEVEL object.
  *  \param [in]      world_centerx  Rotation center x coordinate in WORLD units.
  *  \param [in]      world_centery  Rotation center y coordinate in WORLD units.
  *  \param [in]      angle          Rotation angle in degrees (See note below).
  *  \param [in,out]  object         Line OBJECT to rotate.
  */
-void geda_path_object_rotate (TOPLEVEL *toplevel,
-                          int world_centerx, int world_centery, int angle,
-                          OBJECT *object)
+void
+geda_path_object_rotate (int world_centerx,
+                         int world_centery,
+                         int angle,
+                         OBJECT *object)
 {
   PATH_SECTION *section;
   int i;
@@ -472,7 +462,6 @@ void geda_path_object_rotate (TOPLEVEL *toplevel,
       break;
     }
   }
-  object->w_bounds_valid_for = NULL;
 }
 
 
@@ -481,13 +470,14 @@ void geda_path_object_rotate (TOPLEVEL *toplevel,
  *  This function mirrors the path from the point
  *  (<B>world_centerx</B>,<B>world_centery</B>) in world unit.
  *
- *  \param [in]     toplevel      The TOPLEVEL object.
  *  \param [in]     world_centerx  Origin x coordinate in WORLD units.
  *  \param [in]     world_centery  Origin y coordinate in WORLD units.
  *  \param [in,out] object         Line OBJECT to mirror.
  */
-void geda_path_object_mirror (TOPLEVEL *toplevel, int world_centerx,
-                          int world_centery, OBJECT *object)
+void
+geda_path_object_mirror (int world_centerx,
+                         int world_centery,
+                         OBJECT *object)
 {
   PATH_SECTION *section;
   int i;
@@ -515,8 +505,6 @@ void geda_path_object_mirror (TOPLEVEL *toplevel, int world_centerx,
       break;
     }
   }
-
-  object->w_bounds_valid_for = NULL;
 }
 
 
@@ -524,13 +512,11 @@ void geda_path_object_mirror (TOPLEVEL *toplevel, int world_centerx,
  *
  *  On failure, this function sets the bounds to empty.
  *
- *  \param [in]  toplevel  Unused
  *  \param [in]  object    The path to calculate bounds of.
  *  \param [out] bounds    The bounds of the path
  */
 void
-geda_path_object_calculate_bounds (TOPLEVEL *toplevel,
-                                   const OBJECT *object,
+geda_path_object_calculate_bounds (const OBJECT *object,
                                    GedaBounds *bounds)
 {
   gint expand;

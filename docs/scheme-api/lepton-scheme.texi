@@ -13,13 +13,13 @@ This manual is for Lepton EDA, version @value{VERSION}.
 
 Copyright @copyright{} 2011-2013 Peter TB Brett
 Copyright @copyright{} 2011-2017 gEDA developers
-Copyright @copyright{} 2017-2018 Lepton developers
+Copyright @copyright{} 2017-2020 Lepton developers
 
 The text of and illustrations in this document are licensed under a
 Creative Commons Attribution–Share Alike 3.0 Unported license
 ("CC-BY-SA"). An explanation of CC-BY-SA is available at
 @uref{http://creativecommons.org/licenses/by-sa/3.0/}. The original
-authors of this document designate the gEDA Project as the
+authors of this document designate the Lepton EDA Project as the
 "Attribution Party" for purposes of CC-BY-SA. In accordance with
 CC-BY-SA, if you distribute this document or an adaptation of it, you
 must provide the URL for the original version.
@@ -49,6 +49,7 @@ must provide the URL for the original version.
 * Schematic Document Model::
 * Core API Reference::
 * lepton-schematic API Reference::
+* lepton-netlist API Reference::
 
 * Concept Index::
 * Function Index::
@@ -58,6 +59,13 @@ must provide the URL for the original version.
 @node Introduction
 @unnumbered Introduction
 
+@section About Lepton EDA
+Lepton EDA is a suite of free software tools for designing
+electronics. It provides schematic capture, netlisting into over 30
+netlist formats, and many other features. It was forked from the
+@url{http://wiki.geda-project.org/geda:gaf, gEDA/gaf suite} (part of
+gEDA, please see below) by most of its main developers in late 2016.
+
 @section About gEDA
 
 @dfn{gEDA}, or @emph{GPL Electronic Design Automation}, is a suite of
@@ -65,11 +73,7 @@ free software tools for designing electronics.  The gEDA project has
 produced and continues working on a full GPL'd suite and toolkit of
 Electronic Design Automation (EDA) tools. These tools are used for
 electrical circuit design, schematic capture, simulation, prototyping,
-and production. Currently, the gEDA project offers a mature suite of
-free software applications for electronics design, including schematic
-capture, attribute management, bill of materials (BOM) generation,
-netlisting into over 20 netlist formats, analog and digital
-simulation, and printed circuit board (PCB) layout.
+and production.
 
 The gEDA project was started because of the lack of free EDA tools for
 POSIX systems with the primary purpose of advancing the state of free
@@ -77,10 +81,10 @@ hardware or open source hardware. The suite is mainly being developed
 on the GNU/Linux platform with some development effort going into
 making sure the tools run on other platforms as well.
 
-@section About the gEDA Scheme API
+@section About the Lepton EDA Scheme API
 
-The @dfn{gEDA Scheme API}, documented in this manual, is a set of
-Scheme functions which can be used to enhance gEDA applications by
+The @dfn{Lepton EDA Scheme API}, documented in this manual, is a set of
+Scheme functions which can be used to enhance Lepton applications by
 adding new functionality or modify existing behaviour.
 
 Lepton EDA (formerly gEDA) has always used a Scheme interpreter for
@@ -89,10 +93,10 @@ lepton-schemactic (formerly gschem), and implementing netlist exporter
 backends in gnetlist.  However, for a long time the utility of
 embedding a Scheme interpreter was diminished by the lack of a
 low-level API for inspecting and modifying schematic documents.  The
-Scheme types and functions documented here were added to gEDA to
-address that need.
+Scheme types and functions documented here were added to gEDA and
+later to Lepton to address that need.
 
-gEDA uses the @emph{Guile} Scheme implementation (otherwise known as
+Lepton uses the @emph{Guile} Scheme implementation (otherwise known as
 the @emph{GNU Ubiquitous Intelligent Language for Extensions}) as its
 embedded Scheme.  For more information about Guile, please visit
 @uref{http://www.gnu.org/s/guile/}.
@@ -105,13 +109,13 @@ If you think you have found a bug, please file a bug report:
 @samp{scheme-api}.  It will help us to fix your bug quickly if you can
 describe in detail how to reproduce the bug.
 
-If you have a question about using gEDA, or about extending gEDA using
-Scheme, you may wish to send a message to one of the gEDA mailing
-lists.  You may also find additional information in the gEDA
-wiki.
-
-Both the mailing lists and wiki can be accessed from the main gEDA
-website: @uref{http://www.geda-project.org/}.
+If you have a question about using Lepton EDA, or about extending
+Lepton using Scheme, you may wish to send a message to one of the gEDA
+mailing lists (@samp{geda-user} or @samp{geda-help}) which can be
+accessed from the main gEDA website:
+@uref{http://www.geda-project.org/}.  Currently, Lepton doesn't have
+an own mailing list. You may also find additional information in the
+@url{https://github.com/lepton-eda/lepton-eda/wiki, Lepton EDA wiki}.
 
 @section We Need Feedback!
 
@@ -133,8 +137,8 @@ schematics are then processed with the gnetlist tool to generate a
 @emph{netlist}.
 
 This chapter describes the different data types used by the Scheme API
-to represent gEDA documents (both schematics and symbols), and how
-they relate to each other.
+to represent Lepton EDA documents (both schematics and symbols), and
+how they relate to each other.
 
 @menu
 * Pages::
@@ -251,7 +255,7 @@ other types of @code{object}.
 @cindex Attribute
 @cindex Attribute format
 
-A gEDA user is able to annotate schematic elements with additional
+A Lepton user is able to annotate schematic elements with additional
 data, such as footprints for components or net names for nets.  This
 is carried out using @dfn{attributes}.
 
@@ -283,10 +287,10 @@ must not begin with a space (@samp{ }, Unicode @code{U+0020}).
 @end enumerate
 @end itemize
 
-@strong{Note}: Due to assumptions made by some gEDA tools, it is
-@emph{strongly recommended} that you use attribute @var{name}s which
-contain only lower-case Latin characters, decimal digits, full stops
-@samp{.}  (@code{U+002E}), and hyphens @samp{-} (@code{U+002D}).
+@strong{Note}: Due to assumptions made by some Lepton and gEDA tools,
+it is @emph{strongly recommended} that you use attribute @var{name}s
+which contain only lower-case Latin characters, decimal digits, full
+stops @samp{.}  (@code{U+002E}), and hyphens @samp{-} (@code{U+002D}).
 
 There are two types of attribute:
 
@@ -310,7 +314,7 @@ to find the component's data sheet.
 @node Coordinate system
 @section Coordinate system
 
-gEDA documents use a @dfn{coordinate system} (internally referred to
+Lepton documents use a @dfn{coordinate system} (internally referred to
 as `world' coordinates) with coordinates increasing upwards and to the
 right (i.e. a conventional right-handed Cartesian coordinate
 system).
@@ -342,7 +346,7 @@ the smaller and larger y coordinates.
 
 The Scheme modules and functions described in this chapter are
 primitive operations for working with schematics and symbols, and are
-available to be used in all gEDA applications.
+available to be used in all Lepton applications.
 
 @menu
 * Core page functions::
@@ -358,7 +362,7 @@ available to be used in all gEDA applications.
 @section Core page functions
 
 To use the functions described in this section, you will need to load
-the @code{(geda page)} module.
+the @code{(lepton page)} module.
 
 @xref{Pages}.
 
@@ -396,6 +400,17 @@ Returns the filename associated with @var{page} as a string.
 @defun set-page-filename! page filename
 Sets the filename of @var{page} to @var{filename}.  Returns
 @var{page}.
+@end defun
+
+@subsection Conversion between files and pages
+Pages can be converted to and from files in the gEDA schematic file
+format.
+
+@defun file->page filename [new-page?]
+Return a @code{page} for @var{filename} which must be a string. If
+such a page has been already opened, that page is returned, otherwise
+a new page is created.  If @var{new-page?} is not @samp{#f}, new page
+creation is forced.  Returns the resulting @code{page}.
 @end defun
 
 @subsection Page serialisation
@@ -491,7 +506,7 @@ the page as dirty.  Returns @var{page}.
 @section Core object functions
 
 To use the functions described in this section, you will need to load
-the @code{(geda object)} module.
+the @code{(lepton object)} module.
 
 @menu
 * General object functions::
@@ -537,6 +552,26 @@ intersects the net, then @code{(object-connections <net>)} will return
 a list containing the pin @code{object}, and @emph{not} the component.
 @end defun
 
+@defun object-selectable? object
+Returns true (@samp{#t}) if @var{object} is selectable (i.e. not locked).
+@end defun
+
+@defun set-object-selectable! object state
+Sets the selectable flag for @var{object}.
+If @var{state} is @samp{#f}, clears the selectable flag; if @var{state}
+is @samp{#t}, sets it. Returns @var{object}.
+@end defun
+
+@defun object-embedded? object
+Returns true (@samp{#t}) if @var{object} is embedded,
+false (@samp{#f}) otherwise.
+@end defun
+
+@defun set-object-embedded! object state
+Embed (if @var{state} is @samp{#t}) or unembed (if @var{state} is
+@samp{#t}) @var{object}. Returns @var{object}.
+@end defun
+
 @menu
 * Object sub-types::
 * Object transformations::
@@ -579,6 +614,14 @@ one of the following symbols:
 @samp{text}
 @end itemize
 @end defun
+
+@strong{Note}: The word @samp{complex} is only used in Scheme API to
+define component type for historical reasons, since before it was used
+in the gEDA C source code.  As Guile Scheme supports complex numbers,
+and the procedures related to working with complex numbers use the
+word @samp{complex} to describe them, any other code of both Lepton C
+and Scheme API uses the word @samp{component} instead to avoid
+ambiguity.
 
 @defun object-type? object type
 Returns @samp{#t} if and only if @var{object} is an @code{object} and
@@ -636,7 +679,7 @@ returned.
 @node Object color
 @subsubsection Object color
 
-Object colors in gEDA documents are specified as indices into a color
+Object colors in Lepton documents are specified as indices into a color
 map.  This allows users to specify the color map that suits them when
 viewing schematics and symbols.
 
@@ -979,17 +1022,17 @@ stroke settings.
 Returns @samp{#t} if and only if @var{object} is an arc @code{object}.
 @end defun
 
-@defun make-arc center radius start-angle end-angle [color]
+@defun make-arc center radius start-angle sweep-angle [color]
 Creates and returns a new arc @code{object}.  @var{center} is the
 position of the center of the new arc in the form @code{(x . y)}, and
 @var{radius} is the integer radius of the arc.  @var{start-angle} and
-@var{end-angle} are the angles at which to start and end the arc, in
+@var{sweep-angle} are the angles at which to start and end the arc, in
 degrees. If @var{color} is specified, it should be the integer color
 map index of the color with which to draw the arc.  If @var{color}
 is not specified, the default arc color is used.
 @end defun
 
-@defun set-arc! arc center radius start-angle end-angle [color]
+@defun set-arc! arc center radius start-angle sweep-angle [color]
 Sets the parameters of @var{arc}. The arguments are the same as to
 @code{make-arc}. Returns @var{arc}.
 @end defun
@@ -998,7 +1041,7 @@ Sets the parameters of @var{arc}. The arguments are the same as to
 Returns the parameters of @var{arc} as a list of the form:
 
 @example
-((center-x . center-y) radius start-angle end-angle color)
+((center-x . center-y) radius start-angle sweep-angle color)
 @end example
 @end defun
 
@@ -1015,7 +1058,7 @@ Returns the radius of @var{arc} as an integer.
 Returns the start angle of @var{arc} as an integer number of degrees.
 @end defun
 
-@defun arc-end-angle arc
+@defun arc-sweep-angle arc
 Returns the end angle of @var{arc} as an integer number of degrees.
 @end defun
 
@@ -1025,7 +1068,7 @@ Returns the end angle of @var{arc} as an integer number of degrees.
 Paths are arbitrary shapes comprised of straight lines and Bézier
 curves.  Each path contains a sequence of @emph{path elements}, each
 of which requires zero or more absolute position parameters.  The
-element types supported by gEDA are:
+element types supported by Lepton are:
 
 @itemize
 @item
@@ -1349,12 +1392,6 @@ file in the component library.
 
 @xref{Component objects}.
 
-@strong{Note}: In the gEDA C source code, these are normally called
-``complex'' objects.  However, as Guile Scheme supports complex
-numbers, and the procedures related to working with complex numbers
-use the word @samp{complex} to describe them, this API uses
-@samp{component} to avoid ambiguity.
-
 The @var{position}, @var{angle} and @var{mirror} flag of a component
 indicates the transformation that was applied to the contents of the
 original symbol.  The transformation is applied in the following order:
@@ -1428,6 +1465,12 @@ Returns the parameters of @var{component} as a list of the form:
 Returns the basename of @var{component}.
 @end defun
 
+@defun component-filename component
+If a component object @var{component} has a symbol file
+associated with it, returns its full path, otherwise
+returns false (@samp{#f}).
+@end defun
+
 @defun component-position component
 Returns the position to which the original symbol was translated when
 creating @var{component}.
@@ -1483,7 +1526,7 @@ are attached as an attribute.
 @section Core attribute functions
 
 To use the functions described in this section, you will need to load
-the @code{(geda attrib)} module.
+the @code{(lepton attrib)} module.
 
 Attributes are text @code{object}s with a particular format of string.
 They can be floating, or they can be attached to another
@@ -1594,7 +1637,7 @@ fact a component @code{object}, does nothing and returns the empty list.
 @section Core source library functions
 
 To use the functions described in this section, you will need to load
-the @code{(geda library)} module.
+the @code{(lepton library)} module.
 
 @defvar %default-source-library
 Default source library used in the tools.
@@ -1615,10 +1658,10 @@ where source files are stored or @code{'()}.
 @cindex Configuration
 
 To use the functions described in this section, you will need to load
-the @code{(geda config)} module.
+the @code{(lepton config)} module.
 
 This section describes some functions for accessing, monitoring and
-modifying the configuration of gEDA libraries and applications.
+modifying the configuration of Lepton libraries and applications.
 
 @menu
 * Configuration contexts::
@@ -1655,12 +1698,12 @@ Normally, you shouldn't create a configuration context directly; you
 should obtain the configuration context associated with a @var{path}.
 
 @code{path-config-context} looks for a configuration file named
-@file{geda.conf}.  If @var{path} is not a directory, it is truncated,
-and then a file named @file{geda.conf} is looked for in that
+@file{lepton.conf}.  If @var{path} is not a directory, it is truncated,
+and then a file named @file{lepton.conf} is looked for in that
 directory.  If none is found, the parent directory is checked, and so
 on until a configuration file is found or the filesystem root is
 reached.  If no configuration file was found, the returned context
-will be associated with a @file{geda.conf} in the same directory as
+will be associated with a @file{lepton.conf} in the same directory as
 @var{path}.
 
 @strong{Warning}: Do not assume that the configuration file associated
@@ -1688,14 +1731,15 @@ Since 1.10.
 @defun system-config-context
 The system context is used for system-wide configuration.  Its parent
 context is the default context.  It is located by searching
-@code{sys-config-dirs} for a @file{gEDA/geda-system.conf} file.
+@code{sys-config-dirs} for a
+@file{$@{prefix@}/share/lepton-eda/lepton-system.conf} file.
 
 Since 1.10.
 @end defun
 
 @defun user-config-context
 The user context is used for user-specific configuration, and is
-loaded from @file{geda-user.conf} in @code{user-config-dir}.
+loaded from @file{lepton-user.conf} in @code{user-config-dir}.
 Its parent context is the system context.
 
 Since 1.10.
@@ -1715,9 +1759,11 @@ this will return @samp{#f}.
 Since 1.10.
 @end defun
 
-@defun config-load! cfg
+@defun config-load! cfg [force-load]
 Attempt to load configuration parameters for the context @var{cfg}
-from its associated file.
+from its associated file. If @var{force-load} keyword argument is true
+(@samp{#t}), configuration will be reloaded even if it has already been
+loaded. By default, @var{force-load} is set to false (@samp{#f}).
 @end defun
 
 @defun config-loaded? cfg
@@ -1729,7 +1775,8 @@ Since 1.10.
 
 @defun config-save! cfg
 Attempt to save configuration parameters for the context @var{cfg} to
-its associated file.
+its associated file. Returns @var{cfg}. If configuration cannot be
+saved, raises an error.
 
 Since 1.10.
 @end defun
@@ -1750,8 +1797,9 @@ not permitted.
 
 @xref{Configuration parameters, , Configuration inheritance}.
 
-@defun context-parent cfg
+@defun config-parent cfg
 Return the parent context of the context @var{cfg}, if it has one.
+Otherwise, return @samp{#f}.
 
 Since 1.10.
 @end defun
@@ -1825,7 +1873,7 @@ Since 1.10.
 @cindex Configuration group
 @cindex Configuration value
 
-A gEDA @dfn{configuration parameter} consists of three components:
+A Lepton @dfn{configuration parameter} consists of three components:
 
 @table @dfn
 @item Group
@@ -1868,6 +1916,20 @@ Determines whether @var{cfg} or its parent contexts contains @var{key}
 in the specified @var{group}.
 
 Since 1.10.
+@end defun
+
+@defun config-remove-key! cfg group key
+Removes the configuration parameter identified by the given @var{group}
+and @var{key} in the configuration context @var{cfg}. Returns @samp{#t}
+on success, @samp{#f} otherwise.
+
+@end defun
+
+@defun config-remove-group! cfg group
+Removes the configuration group identified by @var{group}
+and all its parameters in the configuration context @var{cfg}.
+Returns @samp{#t} on success, @samp{#f} otherwise.
+
 @end defun
 
 @subsubsection Configuration inheritance
@@ -1965,7 +2027,7 @@ Since 1.10.
 @defun set-config! cfg group key value
 Set the configuration parameter identified by the given @var{group}
 and @var{key} in the configuration context @var{cfg}.  The type of
-value to set is inferred from @var{value}.
+value to set is inferred from @var{value}. Returns @var{cfg}.
 
 Since 1.10.
 @end defun
@@ -1995,6 +2057,9 @@ handler cfg group key
 @var{cfg} is always the configuration context that received the event,
 and the @var{group} and @var{key} identify the configuration parameter
 that changed.
+When a configuration group is deleted, @var{group} argument is set to
+the name of the deleted group and @var{key} argument is set to an empty
+string.
 
 @defun add-config-event! cfg handler
 Registers @var{handler} to be called when configuration changes in the
@@ -2014,7 +2079,7 @@ Since 1.10.
 @subsection Configuration errors
 @cindex Configuration errors
 
-All errors in functions in the @code{(geda config)} are reported using
+All errors in functions in the @code{(lepton config)} are reported using
 one of two keys:
 
 @enumerate
@@ -2045,7 +2110,7 @@ A configuration value could not be parsed into the requested format.
 @section Logging functions
 
 To use the functions described in this section, you will need to load
-the @code{(geda log)} module.
+the @code{(lepton log)} module.
 
 @defun log! level message [format-args...]
 Emit a log message with the specified @var{level}.  The @var{message}
@@ -2066,11 +2131,11 @@ should be localised.
 @section System information
 
 To use the functions described in this section, you will need to load
-the @code{(geda os)} module.
+the @code{(lepton os)} module.
 
 This section describes some functions and variables that are useful
 for Scheme code that needs to behave differently depending on which
-operating system gEDA is running on.
+operating system Lepton is running on.
 
 @defvar separator-char
 The directory separator character that should be used on the host
@@ -2124,20 +2189,20 @@ otherwise.
 
 @defun sys-data-dirs
 Returns an ordered list of directories in which to access system-wide
-gEDA data.
+Lepton data.
 @end defun
 
 @defun sys-config-dirs
 Returns an ordered list of directories in which to access system-wide
-gEDA configuration information.
+Lepton configuration information.
 @end defun
 
 @defun user-data-dir
-Returns the directory in which to store user-specific gEDA data.
+Returns the directory in which to store user-specific Lepton data.
 @end defun
 
 @defun user-config-dir
-Returns the directory in which to store user-specific gEDA
+Returns the directory in which to store user-specific Lepton
 configuration information.
 @end defun
 
@@ -2173,7 +2238,7 @@ operations.
 @section Windows and views
 
 To use the functions described in this section, you will need to load
-the @code{(gschem window)} module.
+the @code{(schematic window)} module.
 
 @defun active-page
 Returns the @code{page} currently being displayed for editing.
@@ -2199,7 +2264,7 @@ closest grid location to @var{point}.  Expects a point in the form
 @section Key mapping
 
 To use the functions described in this section, you will need to load
-the @code{(gschem keymap)} module.
+the @code{(schematic keymap)} module.
 
 @subsection Key combinations
 
@@ -2352,7 +2417,7 @@ Recursively searches @var{keymap} for the key sequence bound to
 @section Selections
 
 To use the functions described in this section, you will need to load
-the @code{(gschem selection)} module.
+the @code{(schematic selection)} module.
 
 Each @code{page} in lepton-schematic has a @dfn{selection} associated
 with it, which is some subset of the @code{page}s contents.  Most
@@ -2395,7 +2460,7 @@ nothing.  Returns @var{object}.
 @section Hooks
 
 To use the hooks described in this section, you will need to load the
-@code{(gschem hook)} module.
+@code{(schematic hook)} module.
 
 lepton-schematic defines a number of hooks that allow functions to be
 automatically run whenever a number of built-in actions are invoked by
@@ -2470,6 +2535,10 @@ a list of objects that were deselected.
 
 @defvar new-page-hook
 Called when a new page is created. The argument is the new page.
+@end defvar
+
+@defvar open-page-hook
+Called when an existing page is loaded. The argument is the loaded page.
 @end defvar
 
 @defvar action-property-hook
@@ -2556,7 +2625,7 @@ Since 1.10.
 @cindex Actions
 
 To use the functions described in this section, you will need to load
-the @code{(gschem action)} module.
+the @code{(schematic action)} module.
 
 @subsection Action objects
 @cindex Action objects
@@ -2692,7 +2761,7 @@ when a command is invoked by hotkey.
 @subsection lepton-schematic Attribute Helpers
 
 To use the functions described in this section, you will need to load
-the @code{(gschem attrib)} module.
+the @code{(schematic attrib)} module.
 
 @defun add-attrib! target name value visible show
 Create a new attribute, either attached to a @var{target}
@@ -2722,20 +2791,27 @@ built-in @strong{Add Attribute} action.
 @subsection Miscellaneous utility functions
 
 To use the functions described in this section, you will need to load
-the @code{(gschem util)} module.
+the @code{(schematic util)} module.
 
 @defun show-uri uri
 Open @var{uri} in the registered default application associated for
 that type of file or protocol.  URI should be fully-qualified URI;
 which URIs can be handled by @code{show-uri} will depend on the system
-configuration.
+configuration.  Raises @code{misc-error} on failure.
 @end defun
 
 @defun show-file filename
 Displays a file in the registered default application for files of
 that type. @var{filename} should be the absolute path and filename of
-a local file.
+a local file.  Convenience function which calls
+@code{(show-uri "file://@var{filename}")}
 @end defun
+
+@node lepton-netlist API Reference
+@chapter lepton-netlist API Reference
+
+The Scheme modules and functions described in this chapter are
+available in the Lepton netlister application lepton-netlist.
 
 @node Concept Index
 @unnumbered Concept Index

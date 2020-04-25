@@ -15,7 +15,6 @@ symbol_dirs = \
 	dec \
 	diode \
 	ecl \
-	gnetman \
 	idt \
 	io \
 	irf \
@@ -43,19 +42,23 @@ symbol_dirs = \
 	titleblock \
 	transistor \
 	tube \
-	verilog \
-	vhdl \
 	xilinx
 
-SUBDIRS = documentation
+SUBDIRS = \
+	documentation \
+	gnetman \
+	verilog \
+	vhdl
 
-gafrcddir = $(GEDADATADIR)/gafrc.d
-dist_gafrcd_DATA = geda-clib.scm
+gafrcddir = $(LEPTONDATADIR)/scheme/autoload
+dist_gafrcd_DATA = config-symbol-libraries.scm
 
-datasymdir = $(GEDADATADIR)/sym
+datasymdir = $(LEPTONDATADIR)/sym
 
-EXTRA_DIST = ChangeLog ChangeLog-1.0 \
-	radio/README AUTHORS
+EXTRA_DIST = \
+	ChangeLog \
+	radio/README \
+	AUTHORS
 
 if HAVE_GIT_REPO
 ChangeLog: $(top_builddir)/stamp-git
@@ -100,8 +103,3 @@ uninstall-local:
 	    (cd "$$d" && rm -f $$list) || exit $$?; \
 	  fi; \
 	done
-
-MOSTLYCLEANFILES = *.log *~
-CLEANFILES = *.log *~
-DISTCLEANFILES = *.log core FILE *~
-MAINTAINERCLEANFILES = *.log *~ Makefile.in ChangeLog

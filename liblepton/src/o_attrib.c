@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2015 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,12 +55,12 @@
  *  \par Function Description
  *  Add an attribute to an existing attribute list.
  *
- *  \param [in]  toplevel   The TOPLEVEL object.
  *  \param [in]  object     The OBJECT we're adding the attribute to.
  *  \param [in]  item       The item you want to add as an attribute.
  *  \return nothing.
  */
-void o_attrib_add(TOPLEVEL *toplevel, OBJECT *object, OBJECT *item)
+void
+o_attrib_add (OBJECT *object, OBJECT *item)
 {
   /* Add link from item to attrib listing */
   item->attached_to = object;
@@ -68,40 +68,18 @@ void o_attrib_add(TOPLEVEL *toplevel, OBJECT *object, OBJECT *item)
 }
 
 
-/*! \brief Check whether a attrib is attached to another object
- *  \par Function Description
- *  This function checks whether the object \a attrib is attached to
- *  the \a object.
- *
- *  \param [in]  toplevel   The TOPLEVEL object.
- *  \param [in]  attrib     The attribute to be checket.
- *  \param [in]  object     The object where you want to add item as an attribute.
- *  \return TRUE if attrib is an attribute of object, FALSE otherwise
- */
-gboolean o_attrib_is_attached (TOPLEVEL *toplevel,
-                               OBJECT *attrib, OBJECT *object)
-{
-  if (attrib == NULL || object == NULL)
-    return FALSE;
-
-  if (attrib->attached_to == object)
-    return TRUE;
-
-  return FALSE;
-}
-
-
 /*! \brief Attach existing attribute to an object.
  *  \par Function Description
  *  Attach existing attribute to an object.
  *
- *  \param [in]  toplevel     The TOPLEVEL object.
  *  \param [in]  attrib       The attribute to be added.
  *  \param [out] object       The object where you want to add item as an attribute.
  *  \param [in]  set_color    Whether or not we should set the new attribute's color.
  */
-void o_attrib_attach (TOPLEVEL *toplevel, OBJECT *attrib, OBJECT *object,
-                      int set_color)
+void
+o_attrib_attach (OBJECT *attrib,
+                 OBJECT *object,
+                 int set_color)
 {
   g_return_if_fail (attrib != NULL);
   g_return_if_fail (object != NULL);
@@ -124,10 +102,14 @@ void o_attrib_attach (TOPLEVEL *toplevel, OBJECT *attrib, OBJECT *object,
     return;
   }
 
-  o_attrib_add (toplevel, object, attrib);
+  /* attribute inherit its selectable status from the object:
+  */
+  attrib->selectable = object->selectable;
+
+  o_attrib_add (object, attrib);
 
   if (set_color)
-    o_set_color (toplevel, attrib, ATTRIBUTE_COLOR);
+    o_set_color (attrib, ATTRIBUTE_COLOR);
 }
 
 
@@ -135,18 +117,19 @@ void o_attrib_attach (TOPLEVEL *toplevel, OBJECT *attrib, OBJECT *object,
  *  \par Function Description
  *  Attach list of existing attributes to an object.
  *
- *  \param [in]  toplevel   The TOPLEVEL object.
  *  \param [in]  attr_list  The list of attributes to be added.
  *  \param [out] object     The object where you want to add item as an attribute.
  *  \param [in]  set_color    Whether or not we should set the new attribute's color.
  */
-void o_attrib_attach_list (TOPLEVEL *toplevel,
-                           GList *attr_list, OBJECT *object, int set_color)
+void
+o_attrib_attach_list (GList *attr_list,
+                      OBJECT *object,
+                      int set_color)
 {
   GList *iter;
 
   for (iter = attr_list; iter != NULL; iter = g_list_next (iter))
-    o_attrib_attach (toplevel, (OBJECT*) iter->data, object, set_color);
+    o_attrib_attach ((OBJECT*) iter->data, object, set_color);
 }
 
 
@@ -154,10 +137,10 @@ void o_attrib_attach_list (TOPLEVEL *toplevel,
  *  \par Function Description
  *  Detach all attributes from an object.
  *
- *  \param [in]     toplevel  The TOPLEVEL object.
  *  \param [in,out] object    The object whos attributes to detach.
  */
-void o_attrib_detach_all(TOPLEVEL *toplevel, OBJECT *object)
+void
+o_attrib_detach_all (OBJECT *object)
 {
   OBJECT *a_current;
   GList *a_iter;
@@ -167,7 +150,7 @@ void o_attrib_detach_all(TOPLEVEL *toplevel, OBJECT *object)
     a_current = (OBJECT*) a_iter->data;
 
     a_current->attached_to = NULL;
-    o_set_color (toplevel, a_current, DETACHED_ATTRIBUTE_COLOR);
+    o_set_color (a_current, DETACHED_ATTRIBUTE_COLOR);
   }
 
   g_list_free (object->attribs);
@@ -204,11 +187,12 @@ void o_attrib_print(GList *attributes)
  *  This function removes the given attribute from an attribute list.
  *  This function should be used when detaching an attribute.
  *
- *  \param [in] toplevel  The TOPLEVEL object.
  *  \param [in] list      The attribute list to remove attribute from.
  *  \param [in] remove    The OBJECT to remove from list.
  */
-void o_attrib_remove(TOPLEVEL *toplevel, GList **list, OBJECT *remove)
+void
+o_attrib_remove (GList **list,
+                 OBJECT *remove)
 {
   g_return_if_fail (remove != NULL);
 
@@ -248,64 +232,64 @@ GList *o_read_attribs (TOPLEVEL *toplevel,
     switch (objtype) {
 
       case(OBJ_LINE):
-        if ((new_obj = o_line_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_line_read (line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         object_list = g_list_prepend (object_list, new_obj);
         break;
 
 
       case(OBJ_NET):
-        if ((new_obj = o_net_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_net_read (line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         object_list = g_list_prepend (object_list, new_obj);
         break;
 
       case(OBJ_BUS):
-        if ((new_obj = o_bus_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_bus_read (line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         object_list = g_list_prepend (object_list, new_obj);
         break;
 
       case(OBJ_BOX):
-        if ((new_obj = o_box_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_box_read (line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         object_list = g_list_prepend (object_list, new_obj);
         break;
 
       case(OBJ_CIRCLE):
-        if ((new_obj = o_circle_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_circle_read (line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         object_list = g_list_prepend (object_list, new_obj);
         break;
 
-      case(OBJ_COMPLEX):
+      case(OBJ_COMPONENT):
       case(OBJ_PLACEHOLDER):
-        if ((new_obj = o_complex_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_component_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         object_list = g_list_prepend (object_list, new_obj);
         break;
 
       case(OBJ_PATH):
-        new_obj = o_path_read (toplevel, line, tb, release_ver, fileformat_ver, err);
+        new_obj = o_path_read (line, tb, release_ver, fileformat_ver, err);
         if (new_obj == NULL)
           goto error;
         object_list = g_list_prepend (object_list, new_obj);
         break;
 
       case(OBJ_PIN):
-        if ((new_obj = o_pin_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_pin_read (line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         object_list = g_list_prepend (object_list, new_obj);
         break;
 
       case(OBJ_ARC):
-        if ((new_obj = o_arc_read (toplevel, line, release_ver, fileformat_ver, err)) == NULL)
+        if ((new_obj = o_arc_read (line, release_ver, fileformat_ver, err)) == NULL)
           goto error;
         object_list = g_list_prepend (object_list, new_obj);
         break;
 
       case(OBJ_TEXT):
-        new_obj = o_text_read (toplevel, line, tb, release_ver, fileformat_ver, err);
+        new_obj = o_text_read (line, tb, release_ver, fileformat_ver, err);
         if (new_obj == NULL)
           goto error;
         object_list = g_list_prepend (object_list, new_obj);
@@ -319,7 +303,7 @@ GList *o_read_attribs (TOPLEVEL *toplevel,
     }
 
     if (ATTACH) {
-      o_attrib_attach (toplevel, new_obj, object_to_get_attribs, FALSE);
+      o_attrib_attach (new_obj, object_to_get_attribs, FALSE);
       ATTACH=FALSE;
     } else {
       g_set_error(err, EDA_ERROR, EDA_ERROR_PARSE, _("Tried to attach a non-text item as an attribute"));
@@ -332,7 +316,7 @@ GList *o_read_attribs (TOPLEVEL *toplevel,
                _("Unexpected end-of-file in attribute list"));
 
 error:
-  geda_object_list_delete (toplevel, object_list);
+  geda_object_list_delete (object_list);
   return NULL;
 }
 
@@ -600,10 +584,10 @@ char *o_attrib_search_inherited_attribs_by_name (OBJECT *object,
                                                  const char *name,
                                                  int counter)
 {
-  g_return_val_if_fail (object->type == OBJ_COMPLEX ||
+  g_return_val_if_fail (object->type == OBJ_COMPONENT ||
                         object->type == OBJ_PLACEHOLDER, NULL);
 
-  return o_attrib_search_floating_attribs_by_name (object->complex->prim_objs, name, counter);
+  return o_attrib_search_floating_attribs_by_name (object->component->prim_objs, name, counter);
 }
 
 
@@ -646,7 +630,7 @@ char *o_attrib_search_object_attribs_by_name (OBJECT *object,
  *  This function aggregates the attached and inherited attributes
  *  belonging to a given OBJECT. (inherited attributes are those
  *  which live as toplevel un-attached attributes inside in a
- *  complex OBJECT's prim_objs).
+ *  component OBJECT's prim_objs).
  *
  *  \param [in] object       OBJECT whos attributes to return.
  *  \return A GList of attributes belinging to the passed object.
@@ -677,12 +661,12 @@ GList * o_attrib_return_attribs (OBJECT *object)
 
   attribs = g_list_reverse (attribs);
 
-  /* Inherited attributes (inside complex objects) */
-  if (object->type == OBJ_COMPLEX ||
+  /* Inherited attributes (inside component objects) */
+  if (object->type == OBJ_COMPONENT ||
       object->type == OBJ_PLACEHOLDER) {
 
     inherited_attribs =
-      o_attrib_find_floating_attribs (object->complex->prim_objs);
+      o_attrib_find_floating_attribs (object->component->prim_objs);
 
     attribs = g_list_concat (attribs, inherited_attribs);
   }
@@ -694,7 +678,7 @@ GList * o_attrib_return_attribs (OBJECT *object)
 /*! \brief Query whether a given attribute OBJECT is "inherited"
  *  \par Function Description
  *  This function returns TRUE if the given attribute OBJECT is a
- *  toplevel un-attached attribute inside a complex's prim_objs.
+ *  toplevel un-attached attribute inside a component's prim_objs.
  *
  *  \param [in] attrib       OBJECT who's status to query.
  *  \return TRUE if the given attribute is inside a symbol

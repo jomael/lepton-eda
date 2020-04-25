@@ -1,6 +1,6 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+/* Lepton EDA library - Scheme API
+ * Copyright (C) 1998-2013 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
  * \par Function Description
  * Returns the line width used to draw an object. Deprecated because
  * it doesn't respect type restrictions, unlike the %object-stroke
- * function in (geda core object).
+ * function in (lepton core object).
  *
  * \param obj_s the object to get line width for.
  * \return the line width.
@@ -47,13 +47,13 @@ SCM_DEFINE (get_line_width, "%get-line-width", 1, 0, 0,
 }
 
 /*!
- * \brief Create the (geda core deprecated) Scheme module.
+ * \brief Create the (lepton core deprecated) Scheme module.
  * \par Function Description
- * Defines procedures in the (geda core deprecated) module. The module can
- * be accessed using (use-modules (geda core deprecated)).
+ * Defines procedures in the (lepton core deprecated) module. The module can
+ * be accessed using (use-modules (lepton core deprecated)).
  */
 static void
-init_module_geda_core_deprecated (void *unused)
+init_module_lepton_core_deprecated (void *unused)
 {
   /* Register the functions */
   #include "scheme_deprecated.x"
@@ -65,7 +65,7 @@ init_module_geda_core_deprecated (void *unused)
   scm_c_define("OBJ_CIRCLE",  SCM_MAKE_CHAR((unsigned char) OBJ_CIRCLE));
   scm_c_define("OBJ_NET",     SCM_MAKE_CHAR((unsigned char) OBJ_NET));
   scm_c_define("OBJ_BUS",     SCM_MAKE_CHAR((unsigned char) OBJ_BUS));
-  scm_c_define("OBJ_COMPLEX", SCM_MAKE_CHAR((unsigned char) OBJ_COMPLEX));
+  scm_c_define("OBJ_COMPLEX", SCM_MAKE_CHAR((unsigned char) OBJ_COMPONENT));
   scm_c_define("OBJ_TEXT",    SCM_MAKE_CHAR((unsigned char) OBJ_TEXT));
   scm_c_define("OBJ_PIN",     SCM_MAKE_CHAR((unsigned char) OBJ_PIN));
   scm_c_define("OBJ_ARC",     SCM_MAKE_CHAR((unsigned char) OBJ_ARC));
@@ -79,16 +79,15 @@ init_module_geda_core_deprecated (void *unused)
 }
 
 /*!
- * \brief Initialise the basic gEDA page manipulation procedures.
+ * \brief Initialise the deprecated Lepton EDA / gEDA procedures.
  * \par Function Description
- * Registers some Scheme procedures for working with #PAGE
- * smobs. Should only be called by edascm_init().
+ * Should only be called by edascm_init().
  */
 void
 edascm_init_deprecated ()
 {
-  /* Define the (geda core page) module */
-  scm_c_define_module ("geda core deprecated",
-                       (void (*)(void*)) init_module_geda_core_deprecated,
+  /* Define the (lepton core deprecated) module */
+  scm_c_define_module ("lepton core deprecated",
+                       (void (*)(void*)) init_module_lepton_core_deprecated,
                        NULL);
 }

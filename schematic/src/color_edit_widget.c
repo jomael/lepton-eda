@@ -1,5 +1,5 @@
 /* Lepton EDA Schematic Capture
- * Copyright (C) 2018 dmn <graahnul.grom@gmail.com>
+ * Copyright (C) 2018-2020 dmn <graahnul.grom@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
  * \brief Color scheme editor widget
  *
  */
+
+#include "config.h"
 
 #include "gschem.h"
 
@@ -51,8 +53,12 @@ typedef enum
 static void
 color_edit_widget_create (ColorEditWidget* widget);
 
+/* \todo Currently unused; see todo in commented out function implementation
+ *
 static void
 mk_opacity_box (GtkWidget* vbox);
+ *
+ */
 
 static void
 color_sel_update (ColorEditWidget* widget);
@@ -183,14 +189,14 @@ color_edit_widget_create (ColorEditWidget* widget)
   gtk_container_add (GTK_CONTAINER (widget), vbox);
 
   GtkWidget* hbox = gtk_hbox_new (FALSE, 0);
-  gtk_box_pack_start (GTK_BOX (vbox), hbox, TRUE, TRUE, 0);
+  gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, TRUE, 0);
 
   /* color selection combo box: */
   widget->color_cb_ = x_colorcb_new();
   gtk_box_pack_start (GTK_BOX (hbox), widget->color_cb_, TRUE, TRUE, 0);
 
   /* "save as..." button: */
-  widget->btn_save_ = gtk_button_new_with_mnemonic ("Save As.._.");
+  widget->btn_save_ = gtk_button_new_with_mnemonic (_("Save As.._."));
   gtk_box_pack_start (GTK_BOX (hbox), widget->btn_save_, FALSE, FALSE, 0);
 
   /* separator: */
@@ -216,6 +222,18 @@ color_edit_widget_create (ColorEditWidget* widget)
 
   /* separator: */
   gtk_box_pack_start (GTK_BOX (vbox), gtk_hseparator_new(), FALSE, FALSE, 5);
+
+
+  /* informational label: */
+  const gchar* msg =
+    _("Save your color scheme to a file by clicking on the \"Save As...\"\n"
+      "button. It can be loaded on startup with the following\n"
+      "expression in the gschemrc configuration file:\n"
+      "( primitive-load \"/path/to/saved-color-scheme-file\" )");
+
+  GtkWidget* label = gtk_label_new (msg);
+  gtk_label_set_selectable (GTK_LABEL (label), TRUE);
+  gtk_box_pack_start (GTK_BOX (vbox), label, FALSE, FALSE, 0);
 
 
   g_signal_connect (G_OBJECT (widget->color_cb_),
@@ -292,6 +310,8 @@ color_edit_widget_update (GschemToplevel* w_current)
  *
  */
 
+/*! \brief Color selection combo box "changed" signal handler
+ */
 static void
 on_color_cb_changed (GtkWidget* color_cb, gpointer p)
 {
@@ -304,20 +324,20 @@ on_color_cb_changed (GtkWidget* color_cb, gpointer p)
 
 
 
+/*! \brief GtkColorSelection "color-changed" signal handler
+ */
 static void
 on_color_sel_changed (GtkColorSelection* csel, gpointer p)
 {
   ColorEditWidget* widget = (ColorEditWidget*) p;
   g_return_if_fail (widget != NULL);
+  g_return_if_fail (widget->toplevel_ != NULL);
 
-  if (widget->toplevel_ == NULL)
-    return;
+  int color_index = x_colorcb_get_index (widget->color_cb_);
+  g_return_if_fail (color_index >= 0);
 
   GdkColor color;
   gtk_color_selection_get_current_color (csel, &color);
-
-  int color_index = x_colorcb_get_index (widget->color_cb_);
-
 
   /* adjust a color in display and outline color maps: */
   x_color_set_display (color_index, &color);
@@ -325,9 +345,12 @@ on_color_sel_changed (GtkColorSelection* csel, gpointer p)
 
 
   /* update current combo box color: */
+  GtkComboBox* combo = GTK_COMBO_BOX (widget->color_cb_);
   GtkTreeIter iter;
-  gtk_combo_box_get_active_iter (GTK_COMBO_BOX (widget->color_cb_), &iter);
-  x_colorcb_set_color (&iter, &color);
+  if (gtk_combo_box_get_active_iter (combo, &iter))
+  {
+    x_colorcb_set_color (&iter, &color);
+  }
 
   /* refresh page view: */
   GschemPageView* pview =
@@ -338,6 +361,8 @@ on_color_sel_changed (GtkColorSelection* csel, gpointer p)
 
 
 
+/*! \brief "Save As" button "clicked" signal handler
+ */
 static void
 on_btn_save (GtkWidget* btn, gpointer p)
 {
@@ -490,11 +515,13 @@ dlg_confirm_overwrite (GtkWidget* parent, const gchar* fname)
 
 
 
-/*! \brief: Create GUI for transparenct control
- *  \note   Currently unused
+/*! \brief Create GUI for transparency control
+ *  \note  Currently unused
+ *  \todo  Implement transparency for outline color map
  *
  *  \param vbox Parent widget
- */
+ *
+
 static void
 mk_opacity_box (GtkWidget* vbox)
 {
@@ -512,8 +539,9 @@ mk_opacity_box (GtkWidget* vbox)
   gtk_box_pack_start (GTK_BOX (hbox2), label, TRUE, TRUE, 0);
   gtk_box_pack_start (GTK_BOX (hbox2), scale, TRUE, TRUE, 0);
 
-  /* separator: */
   gtk_box_pack_start (GTK_BOX (vbox), gtk_hseparator_new(), FALSE, FALSE, 5);
 
-} /* mk_opacity_box() */
+}
+
+*/
 

@@ -94,8 +94,7 @@ void o_place_end (GschemToplevel *w_current,
 
   if (continue_placing) {
     /* Make a copy of the place list if we want to keep it afterwards */
-    temp_dest_list = o_glist_copy_all (page->toplevel,
-                                       page->place_list,
+    temp_dest_list = o_glist_copy_all (page->place_list,
                                        temp_dest_list);
   } else {
     /* Otherwise just take it */
@@ -110,7 +109,7 @@ void o_place_end (GschemToplevel *w_current,
   for (iter = temp_dest_list; iter != NULL; iter = g_list_next (iter)) {
     o_current = (OBJECT*) iter->data;
 
-    s_page_append (page->toplevel, page, o_current);
+    s_page_append (page, o_current);
 
     /* Update object connectivity */
     s_conn_update_object (page, o_current);
@@ -363,8 +362,7 @@ void o_place_rotate (GschemToplevel *w_current)
   geda_object_list_rotate (page->place_list,
                            w_current->first_wx,
                            w_current->first_wy,
-                           90,
-                           page->toplevel);
+                           90);
 
   /* Run rotate-objects-hook */
   g_run_hook_object_list (w_current, "%rotate-objects-hook", page->place_list);
@@ -394,8 +392,7 @@ void o_place_mirror (GschemToplevel *w_current)
 
   geda_object_list_mirror (page->place_list,
                            w_current->first_wx,
-                           w_current->first_wy,
-                           page->toplevel);
+                           w_current->first_wy);
 
   /* Run mirror-objects-hook */
   g_run_hook_object_list (w_current, "%mirror-objects-hook", page->place_list);

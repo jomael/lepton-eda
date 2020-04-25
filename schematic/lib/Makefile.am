@@ -1,6 +1,5 @@
-
-rcdatadir = $(GEDARCDIR)
-rcdata_DATA = system-gschemrc gschem-gtkrc gschem-colormap-lightbg gschem-colormap-darkbg gschem-colormap-bw
+rcdatadir = $(LEPTONDATADIR)
+rcdata_DATA = system-gschemrc lepton-gtkrc gschem-colormap-lightbg gschem-colormap-darkbg gschem-colormap-bw
 
 system-gschemrc: $(top_builddir)/configure system-gschemrc.scm
 	@date_ver=$(DATE_VERSION); \
@@ -14,9 +13,6 @@ system-gschemrc: $(top_builddir)/configure system-gschemrc.scm
 	  mv system-gschemrc.new system-gschemrc; \
 	fi
 
-EXTRA_DIST = system-gschemrc.scm gschem-gtkrc gschem-colormap-lightbg gschem-colormap-darkbg gschem-colormap-bw
+EXTRA_DIST = system-gschemrc.scm lepton-gtkrc gschem-colormap-lightbg gschem-colormap-darkbg gschem-colormap-bw
 
-MOSTLYCLEANFILES = *.log *~
-CLEANFILES = *.log *~
-DISTCLEANFILES = *.log core FILE *~ system-gschemrc
-MAINTAINERCLEANFILES = system-gschemrc system-gnetlistrc system-gsymbolrc *.log *~ Makefile.in
+CLEANFILES = system-gschemrc

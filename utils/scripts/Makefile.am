@@ -1,25 +1,60 @@
-## $Id$
-##
-## Process this file with automake to produce Makefile.in
+bin_SCRIPTS = \
+	lepton-archive \
+	lepton-embed \
+	lepton-netlist \
+	lepton-pcb_backannotate \
+	lepton-refdes_renum \
+	lepton-schdiff \
+	lepton-symcheck \
+	lepton-symfix \
+	lepton-tragesym \
+	lepton-upcfg
 
-bin_SCRIPTS = lepton-refdes_renum \
-	      lepton-tragesym lepton-pcb_backannotate lepton-archive lepton-symfix \
-	      lepton-schdiff
+EXTRA_DIST = \
+	lepton-archive.in \
+	lepton-embed.in \
+	lepton-netlist.in \
+	lepton-pcb_backannotate \
+	lepton-refdes_renum \
+	lepton-schdiff \
+	lepton-symfix \
+	lepton-symcheck.in \
+	lepton-tragesym.in \
+	lepton-upcfg.in
 
-noinst_SCRIPTS = gschupdate gsymupdate
+do_subst = sed -e 's,[@]libdir[@],$(libdir),g' \
+	-e 's,[@]GUILE[@],$(GUILE),g' \
+	-e 's,[@]localedir[@],$(localedir),g'
+	-e 's,[@]ccachedir[@],@LEPTON_SCM_PRECOMPILE_DIR@,g'
 
-EXTRA_DIST = gschupdate gsymupdate lepton-refdes_renum lepton-symfix \
-	     lepton-tragesym lepton-pcb_backannotate lepton-archive.py \
-	     lepton-schdiff
+lepton-archive: lepton-archive.in
+	$(do_subst) < $(srcdir)/$@.in > $@
+	chmod +x $@
 
-##  SDB's stuff to enable lepton-archive.  This hardcodes the path to the
-##  system libraries into lepton-archive prior to installation.
-lepton-archive: $(srcdir)/lepton-archive.py
-	sed -e "s#GEDADATADIR#$(GEDADATADIR)#" $(srcdir)/lepton-archive.py > tmp$@
-	chmod a+x tmp$@
-	mv -f tmp$@ $@
+lepton-tragesym: lepton-tragesym.in
+	$(do_subst) < $(srcdir)/$@.in > $@
+	chmod +x $@
 
-MOSTLYCLEANFILES = *.log *.ps core FILE tmp *~
-CLEANFILES = *.log *.ps core FILE tmp  *~
-DISTCLEANFILES = *.log core FILE tmp *~ lepton-archive sw2asc
-MAINTAINERCLEANFILES = *.log *.ps core FILE tmp *~ Makefile.in lepton-archive
+lepton-embed: lepton-embed.in
+	$(do_subst) < $(srcdir)/$@.in > $@
+	chmod +x $@
+
+lepton-upcfg: lepton-upcfg.in
+	$(do_subst) < $(srcdir)/$@.in > $@
+	chmod +x $@
+
+lepton-symcheck: lepton-symcheck.in
+	$(do_subst) < $(srcdir)/$@.in > $@
+	chmod +x $@
+
+lepton-netlist: lepton-netlist.in Makefile
+	$(do_subst) < $(srcdir)/$@.in > $@
+	chmod +x $@
+
+CLEANFILES = \
+	lepton-archive \
+	lepton-embed \
+	lepton-tragesym \
+	lepton-upcfg \
+	lepton-symcheck \
+	lepton-netlist

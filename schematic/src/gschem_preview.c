@@ -176,7 +176,7 @@ preview_update (GschemPreview *preview)
   TOPLEVEL *preview_toplevel = preview_page->toplevel;
 
   /* delete old preview */
-  s_page_delete_objects (preview_toplevel, preview_page);
+  s_page_delete_objects (preview_page);
 
   if (preview->active) {
     g_assert ((preview->filename == NULL) || (preview->buffer == NULL));
@@ -195,13 +195,11 @@ preview_update (GschemPreview *preview)
                                        _("Preview Buffer"), &err);
 
       if (err == NULL) {
-        s_page_append_list (preview_toplevel, preview_page,
-                            objects);
+        s_page_append_list (preview_page, objects);
       }
       else {
-        s_page_append (preview_toplevel, preview_page,
-                       geda_text_object_new (preview_toplevel,
-                                             2,
+        s_page_append (preview_page,
+                       geda_text_object_new (2,
                                              100,
                                              100,
                                              LOWER_MIDDLE,
@@ -305,8 +303,7 @@ gschem_preview_init (GschemPreview *preview)
   preview_w_current->toplevel->load_newer_backup_data =
     preview_w_current;
   o_text_set_rendered_bounds_func (preview_w_current->toplevel,
-                                   o_text_get_rendered_bounds,
-                                   preview_w_current);
+                                   preview_w_current->renderer);
 
   i_vars_set (preview_w_current);
 

@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2013 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2015 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,21 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
 #include <config.h>
-
-#include <stdio.h>
-#include <sys/stat.h>
-#include <ctype.h>
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 #include "gschem.h"
 
 #include <gdk/gdkkeysyms.h>
@@ -87,14 +75,11 @@ DEFINE_G_KEYS(edit_delete)
 DEFINE_G_KEYS(edit_rotate_90)
 DEFINE_G_KEYS(edit_mirror)
 DEFINE_G_KEYS(edit_slot)
-DEFINE_G_KEYS(edit_color)
+DEFINE_G_KEYS(edit_object_properties)
 DEFINE_G_KEYS(edit_edit)
-DEFINE_G_KEYS(edit_pin_type)
 DEFINE_G_KEYS(edit_text)
 DEFINE_G_KEYS(edit_lock)
 DEFINE_G_KEYS(edit_unlock)
-DEFINE_G_KEYS(edit_linetype)
-DEFINE_G_KEYS(edit_filltype)
 DEFINE_G_KEYS(edit_translate)
 DEFINE_G_KEYS(edit_invoke_macro)
 DEFINE_G_KEYS(edit_embed)
@@ -174,8 +159,6 @@ DEFINE_G_KEYS(add_pin)
 DEFINE_G_KEYS(hierarchy_down_schematic)
 DEFINE_G_KEYS(hierarchy_down_symbol)
 DEFINE_G_KEYS(hierarchy_up)
-DEFINE_G_KEYS(attributes_attach)
-DEFINE_G_KEYS(attributes_detach)
 DEFINE_G_KEYS(attributes_show_name)
 DEFINE_G_KEYS(attributes_show_value)
 DEFINE_G_KEYS(attributes_show_both)
@@ -183,10 +166,6 @@ DEFINE_G_KEYS(attributes_visibility_toggle)
 
 /* i_callback_script_console is not currently implemented */
 DEFINE_G_KEYS(script_console)
-
-/* repeat last command doesn't make sense on options either??? (does
- * it?) */
-DEFINE_G_KEYS(options_text_size)
 
 /* repeat last command doesn't make sense on options either??? (does
  * it?) */
@@ -201,6 +180,7 @@ DEFINE_G_KEYS(options_magneticnet)
 DEFINE_G_KEYS(options_show_log_window)
 DEFINE_G_KEYS(options_show_coord_window)
 DEFINE_G_KEYS(options_select_font)
+DEFINE_G_KEYS(options_draw_grips)
 
 DEFINE_G_KEYS(help_about)
 DEFINE_G_KEYS(help_hotkeys)
@@ -214,7 +194,7 @@ DEFINE_G_KEYS(cancel)
 static scm_t_bits g_key_smob_tag;
 #define G_SCM_IS_KEY(x) SCM_SMOB_PREDICATE (g_key_smob_tag, (x))
 
-/*! Type for keybindings. Used internally by gschem key smobs. */
+/*! Type for keybindings. Used internally by lepton-schematic key smobs. */
 typedef struct {
   guint keyval;
   GdkModifierType modifiers;
@@ -266,9 +246,9 @@ g_key_is_valid (guint keyval, GdkModifierType modifiers)
 
 /*! \brief Create a new bindable key object.
  * \par Function Description
- * Create and return a new gschem key object from a \a keyval and a
- * set of \a modifiers.  If the key combination is invalid, return
- * SCM_BOOL_F.
+ * Create and return a new lepton-schematic key object from a \a
+ * keyval and a set of \a modifiers.  If the key combination is
+ * invalid, return SCM_BOOL_F.
  *
  * \param keyval     the pressed key.
  * \param modifiers  the active modifiers for the key.
@@ -290,17 +270,17 @@ g_make_key (guint keyval, GdkModifierType modifiers)
 
 /*! \brief Test if a Scheme value is a bindable key object.
  * \par Function Description
- * Returns SCM_BOOL_T if \a key_s is a gschem key object.  Otherwise,
- * returns SCM_BOOL_F.
+ * Returns SCM_BOOL_T if \a key_s is a lepton-schematic key
+ * object.  Otherwise, returns SCM_BOOL_F.
  *
  * \note Scheme API: Implements the %key? procedure in the
- * (gschem core keymap) module.
+ * (schematic core keymap) module.
  *
  * \param key_s          value to test
  * \return SCM_BOOL_T iff value is a key, otherwise SCM_BOOL_F.
  */
 SCM_DEFINE (g_keyp, "%key?", 1, 0, 0, (SCM key_s),
-            "Test if value is a gschem key.")
+            "Test if value is a lepton-schematic key.")
 {
   if (G_SCM_IS_KEY (key_s)) {
     return SCM_BOOL_T;
@@ -311,18 +291,19 @@ SCM_DEFINE (g_keyp, "%key?", 1, 0, 0, (SCM key_s),
 
 /*! \brief Create a bindable key object from a string.
  * \par Function Description
- * Parse the string key description \a str_s to create and return a
- * new gschem key object.  If \a str_s contains syntax errors, or does
- * not represent a valid bindable key combination, returns SCM_BOOL_F.
+ * Parse the string key description \a str_s to create and return
+ * a new lepton-schematic key object.  If \a str_s contains syntax
+ * errors, or does not represent a valid bindable key combination,
+ * returns SCM_BOOL_F.
  *
  * \note Scheme API: Implements the %string-key procedure in the
- * (gschem core keymap) module.
+ * (schematic core keymap) module.
  *
  * \param str_s  string to parse.
- * \return a new gschem key object, or SCM_BOOL_F.
+ * \return a new lepton-schematic key object, or SCM_BOOL_F.
  */
 SCM_DEFINE (g_string_to_key, "%string->key", 1, 0, 0, (SCM str_s),
-            "Create a gschem key by parsing a string.")
+            "Create a lepton-schematic key by parsing a string.")
 {
   SCM_ASSERT (scm_is_string (str_s), str_s, SCM_ARG1, s_g_string_to_key);
 
@@ -336,17 +317,18 @@ SCM_DEFINE (g_string_to_key, "%string->key", 1, 0, 0, (SCM str_s),
 
 /*! \brief Convert a bindable key object to a string.
  * \par Function Description
- * Returns a string representation of the gschem key object \a key_s,
- * in a format suitable for parsing with %string->key.
+ * Returns a string representation of the lepton-schematic key
+ * object \a key_s, in a format suitable for parsing with
+ * %string->key.
  *
  * \note Scheme API: Implements the %key->string procedure in the
- * (gschem core keymap) module.
+ * (schematic core keymap) module.
  *
  * \param key_s  Bindable key object to convert to string.
  * \return a string representation of the key combination.
  */
 SCM_DEFINE (g_key_to_string, "%key->string", 1, 0, 0, (SCM key_s),
-            "Create a string from a gschem key.")
+            "Create a string from a lepton-schematic key.")
 {
   SCM_ASSERT (G_SCM_IS_KEY (key_s), key_s, SCM_ARG1, s_g_key_to_string);
 
@@ -359,18 +341,18 @@ SCM_DEFINE (g_key_to_string, "%key->string", 1, 0, 0, (SCM key_s),
 
 /*! \brief Convert a bindable key object to a displayable string.
  * \par Function Description
- * Returns a string representation of the gschem key object \a key_s,
- * in a format suitable for display to the user (e.g. as accelerator
- * text in a menu).
+ * Returns a string representation of the lepton-schematic key
+ * object \a key_s, in a format suitable for display to the user
+ * (e.g. as accelerator text in a menu).
  *
  * \note Scheme API: Implements the %key->display-string procedure in
- * the (gschem core keymap) module.
+ * the (schematic core keymap) module.
  *
  * \param key_s  Bindable key object to convert to string.
  * \return a string representation of the key combination.
  */
 SCM_DEFINE (g_key_to_display_string, "%key->display-string", 1, 0, 0,
-            (SCM key_s), "Create a display string from a gschem key.")
+            (SCM key_s), "Create a display string from a lepton-schematic key.")
 {
   SCM_ASSERT (G_SCM_IS_KEY (key_s), key_s, SCM_ARG1,
               s_g_key_to_display_string);
@@ -402,8 +384,8 @@ g_key_print (SCM smob, SCM port, scm_print_state *pstate)
 
 /* \brief Test if two key combinations are equivalent.
  * \par Function Description
- * Tests if the two gschem key objects \a a and \a b represent the
- * same key event.
+ * Tests if the two lepton-schematic key objects \a a and \a b
+ * represent the same key event.
  *
  * Used internally to Guile.
  */
@@ -419,7 +401,8 @@ g_key_equalp (SCM a, SCM b)
 
 /* \brief Destroy a bindable key object
  * \par Function Description
- * Destroys the contents of a gschem key object on garbage collection.
+ * Destroys the contents of a lepton-schematic key object on
+ * garbage collection.
  *
  * Used internally to Guile.
  */
@@ -489,8 +472,8 @@ g_keys_reset (GschemToplevel *w_current)
 /*! \brief Evaluate a user keystroke.
  * \par Function Description
  * Evaluates the key combination specified by \a event using the
- * current keymap.  Updates the gschem status bar with the current key
- * sequence.
+ * current keymap.  Updates the lepton-schematic status bar with
+ * the current key sequence.
  *
  * \param w_current  The active #GschemToplevel context.
  * \param event      A GdkEventKey structure.
@@ -581,7 +564,10 @@ g_keys_execute(GschemToplevel *w_current, GdkEventKey *event)
     GSource *timer =
       g_main_context_find_source_by_id (NULL,
                                         w_current->keyaccel_string_source_id);
-    g_source_destroy (timer);
+    if (timer != NULL)
+    {
+      g_source_destroy (timer);
+    }
     w_current->keyaccel_string_source_id = 0;
   }
   if (!scm_is_eq (s_retval, prefix_sym)) {
@@ -592,13 +578,13 @@ g_keys_execute(GschemToplevel *w_current, GdkEventKey *event)
   return !scm_is_false (s_retval);
 }
 
-/*! \brief Create the (gschem core keymap) Scheme module
+/*! \brief Create the (schematic core keymap) Scheme module
  * \par Function Description
- * Defines procedures in the (gschem core keymap) module.  The module
- * can be accessed using (use-modules (gschem core keymap)).
+ * Defines procedures in the (schematic core keymap) module.  The module
+ * can be accessed using (use-modules (schematic core keymap)).
  */
 static void
-init_module_gschem_core_keymap (void *unused)
+init_module_schematic_core_keymap (void *unused)
 {
   /* Register the functions */
   #include "g_keys.x"
@@ -622,8 +608,8 @@ g_init_keys ()
   scm_set_smob_equalp (g_key_smob_tag, g_key_equalp);
   scm_set_smob_free (g_key_smob_tag, g_key_free);
 
-  scm_c_define_module ("gschem core keymap",
-                       (void (*)(void*)) init_module_gschem_core_keymap,
+  scm_c_define_module ("schematic core keymap",
+                       (void (*)(void*)) init_module_schematic_core_keymap,
                        NULL);
 }
 

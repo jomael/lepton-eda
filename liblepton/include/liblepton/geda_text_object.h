@@ -30,8 +30,7 @@ G_BEGIN_DECLS
 /* construction, destruction */
 
 GedaObject*
-geda_text_object_new (TOPLEVEL *toplevel,
-                      gint color,
+geda_text_object_new (gint color,
                       gint x,
                       gint y,
                       gint alignment,
@@ -42,7 +41,7 @@ geda_text_object_new (TOPLEVEL *toplevel,
                       gint show_name_value);
 
 GedaObject*
-geda_text_object_copy (TOPLEVEL *toplevel, const GedaObject *object);
+geda_text_object_copy (const GedaObject *object);
 
 /* methods */
 
@@ -76,14 +75,12 @@ gint
 geda_text_object_get_y (const GedaObject *object);
 
 void
-geda_text_object_mirror (TOPLEVEL *toplevel,
-                         int world_centerx,
+geda_text_object_mirror (int world_centerx,
                          int world_centery,
                          OBJECT *object);
 
 void
-geda_text_object_rotate (TOPLEVEL *toplevel,
-                         int world_centerx,
+geda_text_object_rotate (int world_centerx,
                          int world_centery,
                          int angle,
                          OBJECT *object);
@@ -119,19 +116,18 @@ geda_text_object_translate (GedaObject *object, int dx, int dy);
 /* older methods, need renaming */
 
 void
-o_text_recreate (TOPLEVEL *toplevel, OBJECT *o_current);
+o_text_recreate (OBJECT *o_current);
 
 void
-o_text_set_string (TOPLEVEL *toplevel, OBJECT *obj, const gchar *new_string);
+o_text_set_string (OBJECT *obj,
+                   const gchar *new_string);
 
 void
 o_text_set_rendered_bounds_func (TOPLEVEL *toplevel,
-                                 RenderedBoundsFunc func,
                                  void *user_data);
 
 OBJECT*
-o_text_read (TOPLEVEL *toplevel,
-             const char *first_line,
+o_text_read (const char *first_line,
              TextBuffer *tb,
              unsigned int release_ver,
              unsigned int fileformat_ver,

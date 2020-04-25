@@ -1,6 +1,6 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+/* Lepton EDA library
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -666,7 +666,7 @@ static void refresh_command (CLibSource *source)
   if (cmdout == NULL) return;
 
   /* Use a TextBuffer to help reading out the lines of the output */
-  tb = s_textbuffer_new (cmdout, -1);
+  tb = s_textbuffer_new (cmdout, -1, "s_clib.c::refresh_command()");
 
   while (1) {
     line = s_textbuffer_next_line (tb);
@@ -1450,14 +1450,14 @@ GList *s_toplevel_get_symbols (const TOPLEVEL *toplevel)
          o_iter != NULL;
          o_iter = g_list_next (o_iter)) {
       o = (OBJECT *)o_iter->data;
-      if (o->type != OBJ_COMPLEX) continue;
-      if (o->complex_basename == NULL)  continue;
+      if (o->type != OBJ_COMPONENT) continue;
+      if (o->component_basename == NULL)  continue;
 
       /* Since we're not looking at embedded symbols, the first
        * component with the given name will be the one we need.
        * N.b. we don't use s_clib_get_symbol_by_name() because it's
        * spammeh. */
-      symlist = s_clib_search (o->complex_basename, CLIB_EXACT);
+      symlist = s_clib_search (o->component_basename, CLIB_EXACT);
       if (symlist == NULL) continue;
       sym = (CLibSymbol *) symlist->data;
       g_list_free (symlist);

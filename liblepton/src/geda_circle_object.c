@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +49,6 @@
  *  line type with a width of 0, and no filling. It can be changed after
  *  with #o_set_line_options() and #o_set_fill_options().
  *
- *  \param [in]     toplevel     The TOPLEVEL object.
  *  \param [in]     color        Circle line color.
  *  \param [in]     center_x     Center x coordinate.
  *  \param [in]     center_y     Center y coordinate.
@@ -57,8 +56,7 @@
  *  \return A pointer to the new end of the object list.
  */
 GedaObject*
-geda_circle_object_new (TOPLEVEL *toplevel,
-                        gint color,
+geda_circle_object_new (gint color,
                         gint center_x,
                         gint center_y,
                         gint radius)
@@ -77,25 +75,20 @@ geda_circle_object_new (TOPLEVEL *toplevel,
   new_node->circle->radius   = radius;
 
   /* line type and filling initialized to default */
-  o_set_line_options (toplevel,
-                      new_node,
+  o_set_line_options (new_node,
                       DEFAULT_OBJECT_END,
                       TYPE_SOLID,
                       LINE_WIDTH,
                       -1,
                       -1);
 
-  o_set_fill_options (toplevel,
-                      new_node,
+  o_set_fill_options (new_node,
                       FILLING_HOLLOW,
                       -1,
                       -1,
                       -1,
                       -1,
                       -1);
-
-  /* compute the bounding box coords */
-  new_node->w_bounds_valid_for = NULL;
 
   return new_node;
 }
@@ -105,12 +98,11 @@ geda_circle_object_new (TOPLEVEL *toplevel,
  *  The function #geda_circle_object_copy() creates a verbatim copy of the object
  *  pointed by <B>o_current</B> describing a circle.
  *
- *  \param [in]  toplevel  The TOPLEVEL object.
  *  \param [in]  o_current  Circle OBJECT to copy.
  *  \return The new OBJECT
  */
 GedaObject*
-geda_circle_object_copy (TOPLEVEL *toplevel, const GedaObject *object)
+geda_circle_object_copy (const GedaObject *object)
 {
   GedaObject *new_obj;
 
@@ -118,32 +110,25 @@ geda_circle_object_copy (TOPLEVEL *toplevel, const GedaObject *object)
   g_return_val_if_fail (object->circle != NULL, NULL);
   g_return_val_if_fail (object->type == OBJ_CIRCLE, NULL);
 
-  new_obj = geda_circle_object_new (toplevel,
-                                    object->color,
+  new_obj = geda_circle_object_new (object->color,
                                     object->circle->center_x,
                                     object->circle->center_y,
                                     object->circle->radius);
 
-  o_set_line_options (toplevel,
-                      new_obj,
+  o_set_line_options (new_obj,
                       object->line_end,
                       object->line_type,
                       object->line_width,
                       object->line_length,
                       object->line_space);
 
-  o_set_fill_options (toplevel,
-                      new_obj,
+  o_set_fill_options (new_obj,
                       object->fill_type,
                       object->fill_width,
                       object->fill_pitch1,
                       object->fill_angle1,
                       object->fill_pitch2,
                       object->fill_angle2);
-
-  new_obj->w_bounds_valid_for = NULL;
-
-  /*	new_obj->attribute = 0;*/
 
   return new_obj;
 }
@@ -256,7 +241,6 @@ geda_circle_object_set_radius (GedaObject *object, gint radius)
  *  The bounding box of the circle object is updated after the modification of its
  *  parameters.
  *
- *  \param [in]     toplevel  The TOPLEVEL object.
  *  \param [in,out] object     Circle OBJECT to modify.
  *  \param [in]     x          New center x coordinate, or radius value.
  *  \param [in]     y          New center y coordinate.
@@ -270,13 +254,12 @@ geda_circle_object_set_radius (GedaObject *object, gint radius)
  *  </DL>
  */
 void
-geda_circle_object_modify (TOPLEVEL *toplevel,
-                           GedaObject *object,
+geda_circle_object_modify (GedaObject *object,
                            gint x,
                            gint y,
                            gint whichone)
 {
-  o_emit_pre_change_notify (toplevel, object);
+  o_emit_pre_change_notify (object);
 
   switch(whichone) {
     case CIRCLE_CENTER:
@@ -292,9 +275,7 @@ geda_circle_object_modify (TOPLEVEL *toplevel,
       break;
   }
 
-  /* recalculate the boundings */
-  object->w_bounds_valid_for = NULL;
-  o_emit_change_notify (toplevel, object);
+  o_emit_change_notify (object);
 }
 
 /*! \brief Create circle OBJECT from character string.
@@ -309,15 +290,13 @@ geda_circle_object_modify (TOPLEVEL *toplevel,
  *    <DT>*</DT><DD>the file format used for the releases after 20000704.
  *  </DL>
  *
- *  \param [in]  toplevel       The TOPLEVEL object.
  *  \param [in]  buf             Character string with circle description.
  *  \param [in]  release_ver     libgeda release version number.
  *  \param [in]  fileformat_ver  libgeda file format version number.
  *  \return A pointer to the new circle object, or NULL on error.
  */
 GedaObject*
-o_circle_read (TOPLEVEL *toplevel,
-               const char buf[],
+o_circle_read (const char buf[],
                unsigned int release_ver,
                unsigned int fileformat_ver,
                GError ** err)
@@ -396,23 +375,21 @@ o_circle_read (TOPLEVEL *toplevel,
    * Its filling and line type are set according to the values of the field
    * on the line.
    */
-  new_obj = geda_circle_object_new (toplevel, color, x1, y1, radius);
+  new_obj = geda_circle_object_new (color, x1, y1, radius);
 
-  o_set_line_options(toplevel,
-                     new_obj,
-                     (OBJECT_END) circle_end,
-                     (OBJECT_TYPE) circle_type,
-                     circle_width,
-                     circle_length,
-                     circle_space);
-  o_set_fill_options(toplevel,
-                     new_obj,
-                     (OBJECT_FILLING) circle_fill,
-                     fill_width,
-                     pitch1,
-                     angle1,
-                     pitch2,
-                     angle2);
+  o_set_line_options (new_obj,
+                      (OBJECT_END) circle_end,
+                      (OBJECT_TYPE) circle_type,
+                      circle_width,
+                      circle_length,
+                      circle_space);
+  o_set_fill_options (new_obj,
+                      (OBJECT_FILLING) circle_fill,
+                      fill_width,
+                      pitch1,
+                      angle1,
+                      pitch2,
+                      angle2);
 
   return new_obj;
 }
@@ -476,10 +453,6 @@ geda_circle_object_translate (GedaObject *object, gint dx, gint dy)
   /* Do world coords */
   object->circle->center_x = object->circle->center_x + dx;
   object->circle->center_y = object->circle->center_y + dy;
-
-  /* recalc the screen coords and the bounding box */
-  object->w_bounds_valid_for = NULL;
-
 }
 
 /*! \brief Rotate Circle OBJECT using WORLD coordinates.
@@ -489,15 +462,13 @@ geda_circle_object_translate (GedaObject *object, gint dx, gint dy)
  *  angle <B>angle</B> degrees.
  *  The center of rotation is in world unit.
  *
- *  \param [in]      toplevel      The TOPLEVEL object.
  *  \param [in]      world_centerx  Rotation center x coordinate in WORLD units.
  *  \param [in]      world_centery  Rotation center y coordinate in WORLD units.
  *  \param [in]      angle          Rotation angle in degrees (See note below).
  *  \param [in,out]  object         Circle OBJECT to rotate.
  */
 void
-geda_circle_object_rotate (TOPLEVEL *toplevel,
-                           gint world_centerx,
+geda_circle_object_rotate (gint world_centerx,
                            gint world_centery,
                            gint angle,
                            GedaObject *object)
@@ -536,8 +507,6 @@ geda_circle_object_rotate (TOPLEVEL *toplevel,
   /* translate back in position */
   object->circle->center_x += world_centerx;
   object->circle->center_y += world_centery;
-
-  object->w_bounds_valid_for = NULL;
 }
 
 /*! \brief Mirror circle using WORLD coordinates.
@@ -548,14 +517,12 @@ geda_circle_object_rotate (TOPLEVEL *toplevel,
  *  The circle coordinates and its bounding are recalculated as well as the
  *  OBJECT specific (line width, filling ...).
  *
- *  \param [in]     toplevel       The TOPLEVEL object.
  *  \param [in]     world_centerx  Origin x coordinate in WORLD units.
  *  \param [in]     world_centery  Origin y coordinate in WORLD units.
  *  \param [in,out] object         Circle OBJECT to mirror.
  */
 void
-geda_circle_object_mirror (TOPLEVEL *toplevel,
-                           gint world_centerx,
+geda_circle_object_mirror (gint world_centerx,
                            gint world_centery,
                            GedaObject *object)
 {
@@ -571,9 +538,6 @@ geda_circle_object_mirror (TOPLEVEL *toplevel,
 
   /* translate back in position */
   object->circle->center_x += world_centerx;
-
-  /* recalc boundings and screen coords */
-  object->w_bounds_valid_for = NULL;
 }
 
 /*! \brief Get circle bounding rectangle in WORLD coordinates.
@@ -582,13 +546,11 @@ geda_circle_object_mirror (TOPLEVEL *toplevel,
  *  parameters to the boundings of the circle object described in <B>*circle</B>
  *  in world units.
  *
- *  \param [in]  toplevel  The TOPLEVEL object.
  *  \param [in]  object    Circle OBJECT to read coordinates from.
  *  \param [out] bounds    The bounds of the circle object.
  */
 void
-geda_circle_object_calculate_bounds (TOPLEVEL *toplevel,
-                                     const GedaObject *object,
+geda_circle_object_calculate_bounds (const GedaObject *object,
                                      GedaBounds *bounds)
 {
   gint expand;

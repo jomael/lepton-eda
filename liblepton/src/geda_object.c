@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,13 +30,13 @@
  *  in the object struct.
  *  The subobjects are picture (st_picture), path (st_path), arcs (st_arc),
  *  a line (st_line), box (st_box), circle (st_circle), text (st_text) and
- *  a complex type (st_complex).
+ *  a component type (st_component).
  *
  *  Pins, nets and busses are just a kind of a line.
  *
- *  The complex object can carry many primary objects. If the complex
- *  object is a symbol, then the complex symbol contains all the pins,
- *  the text and the graphics.
+ *  The component object can carry many primary objects. If the
+ *  component object is a symbol, then the component symbol contains
+ *  all the pins, the text and the graphics.
  *
  *  \image html o_object_relations.png
  *  \image latex o_object_relations.pdf "object relations" width=14cm
@@ -158,63 +158,61 @@ s_basic_new_object (int type, char const *prefix)
  *  look at above.. this returns what was passed in!!!!
  *  copies selected to list_head (!! returns new list)
  *
- *  \param [in]  toplevel   The TOPLEVEL object.
  *  \param [in]  selected
  *  \return OBJECT pointer.
  */
-OBJECT *o_object_copy (TOPLEVEL *toplevel,
-                       OBJECT *selected)
+OBJECT*
+o_object_copy (OBJECT *selected)
 {
   OBJECT *new_obj;
 
-  g_return_val_if_fail (toplevel != NULL, NULL);
   g_return_val_if_fail (selected != NULL, NULL);
 
   switch(selected->type) {
 
     case(OBJ_LINE):
-      new_obj = geda_line_object_copy (toplevel, selected);
+      new_obj = geda_line_object_copy (selected);
       break;
 
     case(OBJ_NET):
-      new_obj = geda_net_object_copy (toplevel, selected);
+      new_obj = geda_net_object_copy (selected);
       break;
 
     case(OBJ_BUS):
-      new_obj = geda_bus_object_copy (toplevel, selected);
+      new_obj = geda_bus_object_copy (selected);
       break;
 
     case(OBJ_BOX):
-      new_obj = geda_box_object_copy (toplevel, selected);
+      new_obj = geda_box_object_copy (selected);
       break;
 
     case(OBJ_PICTURE):
-      new_obj = o_picture_copy (toplevel, selected);
+      new_obj = o_picture_copy (selected);
       break;
 
     case(OBJ_CIRCLE):
-      new_obj = geda_circle_object_copy (toplevel, selected);
+      new_obj = geda_circle_object_copy (selected);
       break;
 
-    case(OBJ_COMPLEX):
+    case(OBJ_COMPONENT):
     case(OBJ_PLACEHOLDER):
-      new_obj = o_complex_copy (toplevel, selected);
+      new_obj = o_component_copy (selected);
       break;
 
     case(OBJ_TEXT):
-      new_obj = geda_text_object_copy (toplevel, selected);
+      new_obj = geda_text_object_copy (selected);
       break;
 
     case(OBJ_PATH):
-      new_obj = geda_path_object_copy (toplevel, selected);
+      new_obj = geda_path_object_copy (selected);
       break;
 
     case(OBJ_PIN):
-      new_obj = geda_pin_object_copy (toplevel, selected);
+      new_obj = geda_pin_object_copy (selected);
       break;
 
     case(OBJ_ARC):
-      new_obj = geda_arc_object_copy (toplevel, selected);
+      new_obj = geda_arc_object_copy (selected);
       break;
 
     default:
@@ -241,19 +239,19 @@ OBJECT *o_object_copy (TOPLEVEL *toplevel,
  *
  */
 void
-s_delete_object(TOPLEVEL *toplevel, OBJECT *o_current)
+s_delete_object (OBJECT *o_current)
 {
   if (o_current != NULL) {
     /* If currently attached to a page, remove it from the page */
     if (o_current->page != NULL) {
-      s_page_remove (toplevel, o_current->page, o_current);
+      s_page_remove (o_current->page, o_current);
     }
 
-    s_conn_remove_object_connections (toplevel, o_current);
+    s_conn_remove_object_connections (o_current);
 
     if (o_current->attached_to != NULL) {
       /* do the actual remove */
-      o_attrib_remove(toplevel, &o_current->attached_to->attribs, o_current);
+      o_attrib_remove (&o_current->attached_to->attribs, o_current);
     }
 
     /* printf("sdeleting line\n"); */
@@ -293,23 +291,23 @@ s_delete_object(TOPLEVEL *toplevel, OBJECT *o_current)
     o_current->name = NULL;
 
 
-    /*	printf("sdeleting complex_basename\n");*/
-    g_free(o_current->complex_basename);
-    o_current->complex_basename = NULL;
+    /*	printf("sdeleting component_basename\n");*/
+    g_free(o_current->component_basename);
+    o_current->component_basename = NULL;
 
-    if (o_current->complex) {
+    if (o_current->component) {
 
-      if (o_current->complex->prim_objs) {
-        /* printf("sdeleting complex->primitive_objects\n");*/
-        geda_object_list_delete (toplevel, o_current->complex->prim_objs);
-        o_current->complex->prim_objs = NULL;
+      if (o_current->component->prim_objs) {
+        /* printf("sdeleting component's primitive objects\n");*/
+        geda_object_list_delete (o_current->component->prim_objs);
+        o_current->component->prim_objs = NULL;
       }
 
-      g_free(o_current->complex);
-      o_current->complex = NULL;
+      g_free(o_current->component);
+      o_current->component = NULL;
     }
 
-    o_attrib_detach_all (toplevel, o_current);
+    o_attrib_detach_all (o_current);
 
     o_current->weak_refs = s_weakref_notify (o_current, o_current->weak_refs);
 
@@ -404,7 +402,6 @@ s_object_remove_weak_ptr (OBJECT *object,
  *  See #OBJECT_END and #OBJECT_TYPE for information on valid
  *  object end and type values.
  *
- *  \param [in]     toplevel  The TOPLEVEL object.
  *  \param [in,out] o_current  OBJECT to set line options on.
  *  \param [in]     end        An OBJECT_END.
  *  \param [in]     type       An OBJECT_TYPE.
@@ -415,9 +412,13 @@ s_object_remove_weak_ptr (OBJECT *object,
  *  \todo Make space an unsigned int and check for a max value instead.
  *        If a max value is not required, then it would simplify the code.
  */
-void o_set_line_options(TOPLEVEL *toplevel, OBJECT *o_current,
-			OBJECT_END end, OBJECT_TYPE type,
-			int width, int length, int space)
+void
+o_set_line_options (OBJECT *o_current,
+                    OBJECT_END end,
+                    OBJECT_TYPE type,
+                    int width,
+                    int length,
+                    int space)
 {
   g_return_if_fail (o_current != NULL);
 
@@ -448,7 +449,7 @@ void o_set_line_options(TOPLEVEL *toplevel, OBJECT *o_current,
     break;
   }
 
-  o_emit_pre_change_notify (toplevel, o_current);
+  o_emit_pre_change_notify (o_current);
 
   o_current->line_width = width;
   o_current->line_end   = end;
@@ -457,9 +458,7 @@ void o_set_line_options(TOPLEVEL *toplevel, OBJECT *o_current,
   o_current->line_length = length;
   o_current->line_space  = space;
 
-  /* Recalculate the object's bounding box */
-  o_current->w_bounds_valid_for = NULL;
-  o_emit_change_notify (toplevel, o_current);
+  o_emit_change_notify (o_current);
 
 }
 
@@ -503,7 +502,6 @@ gboolean o_get_line_options(OBJECT *object,
  *  This function allows an #OBJECT's fill options to be configured.
  *  See #OBJECT_FILLING for information on valid fill types.
  *
- *  \param [in]      toplevel  The TOPLEVEL object.
  *  \param [in,out]  o_current  OBJECT to be updated.
  *  \param [in]      type       OBJECT_FILLING type.
  *  \param [in]      width      fill width.
@@ -513,10 +511,14 @@ gboolean o_get_line_options(OBJECT *object,
  *  \param [in]      angle2     cross hatch angle
  *
  */
-void o_set_fill_options(TOPLEVEL *toplevel, OBJECT *o_current,
-			OBJECT_FILLING type, int width,
-			int pitch1, int angle1,
-			int pitch2, int angle2)
+void
+o_set_fill_options (OBJECT *o_current,
+                    OBJECT_FILLING type,
+                    int width,
+                    int pitch1,
+                    int angle1,
+                    int pitch2,
+                    int angle2)
 {
   if(o_current == NULL) {
     return;
@@ -551,7 +553,7 @@ void o_set_fill_options(TOPLEVEL *toplevel, OBJECT *o_current,
     pitch2 = -1;
   }
 
-  o_emit_pre_change_notify (toplevel, o_current);
+  o_emit_pre_change_notify (o_current);
 
   o_current->fill_type = type;
   o_current->fill_width = width;
@@ -562,7 +564,7 @@ void o_set_fill_options(TOPLEVEL *toplevel, OBJECT *o_current,
   o_current->fill_pitch2 = pitch2;
   o_current->fill_angle2 = angle2;
 
-  o_emit_change_notify (toplevel, o_current);
+  o_emit_change_notify (o_current);
 }
 
 /*! \brief get #OBJECT's fill properties.
@@ -604,7 +606,6 @@ gboolean o_get_fill_options(OBJECT *object,
  *  \par Function Description
  *  This function gets the position of an object in world coordinates.
  *
- *  \param [in] toplevel The toplevel environment.
  *  \param [out] x       pointer to the x-position
  *  \param [out] y       pointer to the y-position
  *  \param [in] object   The object to get the position.
@@ -625,7 +626,8 @@ geda_object_get_position (const GedaObject *object, gint *x, gint *y)
       case OBJ_PICTURE: func = geda_picture_object_get_position; break;
       case OBJ_CIRCLE:  func = geda_circle_object_get_position;  break;
       case OBJ_PLACEHOLDER:
-      case OBJ_COMPLEX: func = geda_complex_object_get_position; break;
+      case OBJ_COMPONENT:
+                        func = geda_component_object_get_position; break;
       case OBJ_TEXT:    func = geda_text_object_get_position;    break;
       case OBJ_PATH:    func = geda_path_object_get_position;    break;
       case OBJ_PIN:     func = geda_pin_object_get_position;     break;
@@ -664,7 +666,8 @@ geda_object_translate (GedaObject *object, gint dx, gint dy)
       case OBJ_PICTURE: func = geda_picture_object_translate; break;
       case OBJ_CIRCLE:  func = geda_circle_object_translate;  break;
       case OBJ_PLACEHOLDER:
-      case OBJ_COMPLEX: func = geda_complex_object_translate; break;
+      case OBJ_COMPONENT:
+                        func = geda_component_object_translate; break;
       case OBJ_TEXT:    func = geda_text_object_translate;    break;
       case OBJ_PATH:    func = geda_path_object_translate;    break;
       case OBJ_PIN:     func = geda_pin_object_translate;     break;
@@ -685,15 +688,18 @@ geda_object_translate (GedaObject *object, gint dx, gint dy)
  *  This function rotates the object <B>object</B> about the coordinates
  *  <B>world_centerx</B> and <B>world_centery</B>, by <B>angle</B>degrees.
  *
- *  \param [in] toplevel The toplevel environment.
  *  \param [in] world_centerx  X coordinate of rotation center (world coords)
  *  \param [in] world_centery  Y coordinate of rotation center (world coords)
  *  \param [in] angle          Angle of rotation (degrees)
  *  \param [in] object         The object to rotate.
  */
-void geda_object_rotate (TOPLEVEL *toplevel, int world_centerx, int world_centery, int angle, OBJECT *object)
+void
+geda_object_rotate (int world_centerx,
+                    int world_centery,
+                    int angle,
+                    OBJECT *object)
 {
-  void (*func) (TOPLEVEL*, int, int, int, OBJECT*) = NULL;
+  void (*func) (int, int, int, OBJECT*) = NULL;
 
   switch (object->type) {
       case OBJ_LINE:    func = geda_line_object_rotate;    break;
@@ -703,7 +709,8 @@ void geda_object_rotate (TOPLEVEL *toplevel, int world_centerx, int world_center
       case OBJ_PICTURE: func = geda_picture_object_rotate; break;
       case OBJ_CIRCLE:  func = geda_circle_object_rotate;  break;
       case OBJ_PLACEHOLDER:
-      case OBJ_COMPLEX: func = geda_complex_object_rotate; break;
+      case OBJ_COMPONENT:
+                        func = geda_component_object_rotate; break;
       case OBJ_TEXT:    func = geda_text_object_rotate;    break;
       case OBJ_PATH:    func = geda_path_object_rotate;    break;
       case OBJ_PIN:     func = geda_pin_object_rotate;     break;
@@ -714,7 +721,7 @@ void geda_object_rotate (TOPLEVEL *toplevel, int world_centerx, int world_center
   }
 
   if (func != NULL) {
-    (*func) (toplevel, world_centerx, world_centery, angle, object);
+    (*func) (world_centerx, world_centery, angle, object);
   }
 }
 
@@ -724,14 +731,16 @@ void geda_object_rotate (TOPLEVEL *toplevel, int world_centerx, int world_center
  *  This function mirrors an object about the point
  *  (<B>world_centerx</B>,<B>world_centery</B>) in world units.
  *
- *  \param [in]     toplevel       The TOPLEVEL object.
  *  \param [in]     world_centerx  Origin x coordinate in WORLD units.
  *  \param [in]     world_centery  Origin y coordinate in WORLD units.
  *  \param [in,out] object         The OBJECT to mirror.
  */
-void geda_object_mirror (TOPLEVEL *toplevel, int world_centerx, int world_centery, OBJECT *object)
+void
+geda_object_mirror (int world_centerx,
+                    int world_centery,
+                    OBJECT *object)
 {
-  void (*func) (TOPLEVEL*, int, int, OBJECT*) = NULL;
+  void (*func) (int, int, OBJECT*) = NULL;
 
   switch (object->type) {
       case OBJ_LINE:    func = geda_line_object_mirror;    break;
@@ -741,7 +750,8 @@ void geda_object_mirror (TOPLEVEL *toplevel, int world_centerx, int world_center
       case OBJ_PICTURE: func = geda_picture_object_mirror; break;
       case OBJ_CIRCLE:  func = geda_circle_object_mirror;  break;
       case OBJ_PLACEHOLDER:
-      case OBJ_COMPLEX: func = geda_complex_object_mirror; break;
+      case OBJ_COMPONENT:
+                        func = geda_component_object_mirror; break;
       case OBJ_TEXT:    func = geda_text_object_mirror;    break;
       case OBJ_PATH:    func = geda_path_object_mirror;    break;
       case OBJ_PIN:     func = geda_pin_object_mirror;     break;
@@ -752,7 +762,7 @@ void geda_object_mirror (TOPLEVEL *toplevel, int world_centerx, int world_center
   }
 
   if (func != NULL) {
-    (*func) (toplevel, world_centerx, world_centery, object);
+    (*func) (world_centerx, world_centery, object);
   }
 }
 
@@ -806,7 +816,7 @@ geda_object_shortest_distance_full (TOPLEVEL *toplevel, OBJECT *object,
     case OBJ_PICTURE:     func = geda_picture_object_shortest_distance;  break;
     case OBJ_CIRCLE:      func = geda_circle_object_shortest_distance;   break;
     case OBJ_PLACEHOLDER:
-    case OBJ_COMPLEX:     func = geda_complex_object_shortest_distance;  break;
+    case OBJ_COMPONENT:   func = geda_component_object_shortest_distance;  break;
     case OBJ_TEXT:        func = geda_text_object_shortest_distance;     break;
     case OBJ_PATH:        func = geda_path_object_shortest_distance;     break;
     case OBJ_ARC:         func = geda_arc_object_shortest_distance;      break;
@@ -822,47 +832,23 @@ geda_object_shortest_distance_full (TOPLEVEL *toplevel, OBJECT *object,
   return shortest_distance;
 }
 
-/*! \brief Mark an OBJECT's cached bounds as invalid
- *  \par Function Description
- *  Recursively marks the cached bounds of the given OBJECT and its
- *  parents as having been invalidated and in need of an update. They
- *  will be recalculated next time the OBJECT's bounds are requested
- *  (e.g. via geda_object_calculate_visible_bounds() ).
- *  \param [in] toplevel
- *  \param [in] object
- *
- *  \todo Turn this into a macro?
- */
-void
-o_bounds_invalidate (TOPLEVEL *toplevel, GedaObject *object)
-{
-  GedaObject *iter = object;
-
-  while (iter != NULL) {
-    iter->w_bounds_valid_for = NULL;
-    iter = iter->parent;
-  }
-}
-
 
 /*! \brief Change the color of an object
  *
- *  \par Function Description
- *  This function changes the color of an object.
- *
- *  \param [in] toplevel  The TOPLEVEL structure.
  *  \param [in] object    The OBJECT to change color.
  *  \param [in] color     The new color.
  */
-void o_set_color (TOPLEVEL *toplevel, OBJECT *object, int color)
+void
+o_set_color (OBJECT *object,
+             int color)
 {
   g_return_if_fail (object != NULL);
 
   object->color = color;
 
-  if (object->type == OBJ_COMPLEX ||
+  if (object->type == OBJ_COMPONENT ||
       object->type == OBJ_PLACEHOLDER)
-    geda_object_list_set_color (object->complex->prim_objs, color, toplevel);
+    geda_object_list_set_color (object->component->prim_objs, color);
 }
 
 
@@ -873,33 +859,31 @@ void o_set_color (TOPLEVEL *toplevel, OBJECT *object, int color)
  * not currently associated with a PAGE, returns NULL. If \a object is
  * part of a compound object, recurses upward.
  *
- * \param [in] toplevel  The TOPLEVEL structure.
  * \param [in] object    The OBJECT for which to retrieve the parent PAGE.
  * \return The PAGE which owns \a object or NULL.
  *
  * \sa s_page_append_object() s_page_append() s_page_remove()
  */
 PAGE *
-o_get_page (TOPLEVEL *toplevel, OBJECT *object)
+o_get_page (OBJECT *object)
 {
   if (object->parent != NULL) {
-    return o_get_page (toplevel, object->parent);
+    return o_get_page (object->parent);
   }
   return object->page;
 }
 
-/*! \brief Get an object's containing complex object.
+/*! \brief Get an object's containing component object.
  *
  * \par Function Description
- * If \a object is part of a complex #OBJECT, returns that
+ * If \a object is part of a component #OBJECT, returns that
  * #OBJECT. Otherwise, returns NULL.
  *
- * \param [in] toplevel  The TOPLEVEL structure.
  * \param [in] object    The OBJECT for which to get the containing OBJECT.
- * \return The complex OBJECT which owns \a object, or NULL.
+ * \return The component OBJECT which owns \a object, or NULL.
  */
 OBJECT *
-o_get_parent (TOPLEVEL *toplevel, OBJECT *object)
+o_get_parent (OBJECT *object)
 {
   g_return_val_if_fail ((object != NULL), NULL);
 
@@ -984,18 +968,30 @@ o_remove_change_notify (TOPLEVEL *toplevel,
 
 /*! \brief Emit an object pre-change notification.
  * \par Function Description
- * Calls each pre-change callback function registered with #TOPLEVEL
- * to notify listeners that \a object is about to be modified.  All
- * libgeda functions that modify #OBJECT structures should call this
- * just before making a change to an #OBJECT.
  *
- * \param toplevel #TOPLEVEL structure to emit notifications from.
+ * Calls each pre-change callback function registered with \a
+ * object's #TOPLEVEL to notify listeners that \a object is about
+ * to be modified.  All liblepton functions that modify #OBJECT
+ * structures should call this just before making a change to an
+ * #OBJECT.
+ *
  * \param object   #OBJECT structure to emit notifications for.
  */
 void
-o_emit_pre_change_notify (TOPLEVEL *toplevel, OBJECT *object)
+o_emit_pre_change_notify (OBJECT *object)
 {
   GList *iter;
+
+  if (object->page == NULL) {
+    return;
+  }
+
+  TOPLEVEL *toplevel = object->page->toplevel;
+
+  if (toplevel == NULL) {
+    return;
+  }
+
   for (iter = toplevel->change_notify_funcs;
        iter != NULL; iter = g_list_next (iter)) {
 
@@ -1010,18 +1006,30 @@ o_emit_pre_change_notify (TOPLEVEL *toplevel, OBJECT *object)
 
 /*! \brief Emit an object change notification.
  * \par Function Description
- * Calls each change callback function registered with #TOPLEVEL to
- * notify listeners that \a object has just been modified.  All
- * libgeda functions that modify #OBJECT structures should call this
- * just after making a change to an #OBJECT.
  *
- * \param toplevel #TOPLEVEL structure to emit notifications from.
+ * Calls each change callback function registered with \a object's
+ * #TOPLEVEL to notify listeners that \a object has just been
+ * modified.  All liblepton functions that modify #OBJECT
+ * structures should call this just after making a change to an
+ * #OBJECT.
+ *
  * \param object   #OBJECT structure to emit notifications for.
  */
 void
-o_emit_change_notify (TOPLEVEL *toplevel, OBJECT *object)
+o_emit_change_notify (OBJECT *object)
 {
   GList *iter;
+
+  if (object->page == NULL) {
+    return;
+  }
+
+  TOPLEVEL *toplevel = object->page->toplevel;
+
+  if (toplevel == NULL) {
+    return;
+  }
+
   for (iter = toplevel->change_notify_funcs;
        iter != NULL; iter = g_list_next (iter)) {
 
@@ -1038,12 +1046,11 @@ o_emit_change_notify (TOPLEVEL *toplevel, OBJECT *object)
  *  \par Function Description
  *  Attribute getter for the visible field within the object.
  *
- *  \param toplevel The TOPLEVEL structure
  *  \param object   The OBJECT structure to be queried
  *  \return TRUE when VISIBLE, FALSE otherwise
  */
 gboolean
-o_is_visible (const TOPLEVEL *toplevel, const OBJECT *object)
+o_is_visible (const OBJECT *object)
 {
   g_return_val_if_fail (object != NULL, FALSE);
   return object->visibility == VISIBLE;
@@ -1063,22 +1070,15 @@ geda_object_get_visible (const GedaObject *object)
 }
 
 /*! \brief Set visibility of the object.
- *  \par Function Description
- *  Set value of visibility field within the object.
- *  If resulting visibility value is changed,
- *  invalidate the bounds of the object and parent objects.
  *
- *  \param toplevel The #TOPLEVEL structure
- *  \param object   The #OBJECT structure to be modified
+ *  \param object     The #OBJECT structure to be modified
+ *  \param visibility If the object should be visible
  */
 void
-o_set_visibility (TOPLEVEL *toplevel, OBJECT *object, int visibility)
+o_set_visibility (OBJECT *object, int visibility)
 {
   g_return_if_fail (object != NULL);
-  if (object->visibility != visibility) {
-    object->visibility = visibility;
-    o_bounds_invalidate (toplevel, object);
-  }
+  object->visibility = visibility;
 }
 
 /*! \brief Return the bounds of the given object.
@@ -1108,108 +1108,105 @@ geda_object_calculate_visible_bounds (TOPLEVEL *toplevel,
   /* only do bounding boxes for visible or doing show_hidden_text*/
   /* you might lose some attrs though */
   if (o_current->type == OBJ_TEXT &&
-      ! (o_is_visible (toplevel, o_current) || toplevel->show_hidden_text)) {
+      ! (o_is_visible (o_current) || toplevel->show_hidden_text)) {
     return 0;
   }
 
-  if (o_current->w_bounds_valid_for != toplevel) {
-    GedaBounds bounds;
+  GedaBounds bounds;
 
-    switch(o_current->type) {
+  switch(o_current->type) {
 
-      case(OBJ_LINE):
-        if (o_current->line == NULL) {
-          return 0;
-        }
-        geda_line_object_calculate_bounds (toplevel, o_current, &bounds);
-        break;
-
-      case(OBJ_NET):
-        if (o_current->line == NULL) {
-          return 0;
-        }
-        geda_net_object_calculate_bounds (toplevel, o_current, &bounds);
-        break;
-
-      case(OBJ_BUS):
-        if (o_current->line == NULL) {
-          return 0;
-        }
-        geda_bus_object_calculate_bounds(toplevel, o_current, &bounds);
-        break;
-
-      case(OBJ_BOX):
-        if (o_current->box == NULL) {
-          return 0;
-        }
-        geda_box_object_calculate_bounds (toplevel, o_current, &bounds);
-        break;
-
-      case(OBJ_PATH):
-        g_return_val_if_fail (o_current->path != NULL, 0);
-        if (o_current->path->num_sections <= 0) {
-          return 0;
-        }
-        geda_path_object_calculate_bounds (toplevel, o_current, &bounds);
-        break;
-
-      case(OBJ_PICTURE):
-        if (o_current->picture == NULL) {
-          return 0;
-        }
-        geda_picture_object_calculate_bounds (toplevel, o_current, &bounds);
-        break;
-
-      case(OBJ_CIRCLE):
-        if (o_current->circle == NULL) {
-          return 0;
-        }
-        geda_circle_object_calculate_bounds (toplevel, o_current, &bounds);
-        break;
-
-      case(OBJ_COMPLEX):
-      case(OBJ_PLACEHOLDER):
-        /* realc routine Add this somewhere */
-        /* libhack */
-        /* o_recalc(toplevel, o_current->complex);*/
-
-        if (o_current->complex->prim_objs == NULL)
-          return 0;
-
-        geda_complex_object_calculate_bounds(toplevel, o_current, &bounds);
-        break;
-
-      case(OBJ_PIN):
-        if (o_current->line == NULL) {
-          return 0;
-        }
-        geda_pin_object_calculate_bounds (toplevel, o_current, &bounds);
-        break;
-
-      case(OBJ_ARC):
-        if (o_current->arc == NULL) {
-          return 0;
-        }
-        geda_arc_object_calculate_bounds (toplevel, o_current,
-                                          &bounds.min_x,
-                                          &bounds.min_y,
-                                          &bounds.max_x,
-                                          &bounds.max_y);
-        break;
-
-      case(OBJ_TEXT):
-        if (!geda_text_object_calculate_bounds(toplevel, o_current, &bounds)) {
-          return 0;
-        }
-        break;
-
-      default:
-        return 0;
+  case(OBJ_LINE):
+    if (o_current->line == NULL) {
+      return 0;
     }
+    geda_line_object_calculate_bounds (o_current, &bounds);
+    break;
 
-    o_current->bounds = bounds;
-    o_current->w_bounds_valid_for = toplevel;
+  case(OBJ_NET):
+    if (o_current->line == NULL) {
+      return 0;
+    }
+    geda_net_object_calculate_bounds (o_current, &bounds);
+    break;
+
+  case(OBJ_BUS):
+    if (o_current->line == NULL) {
+      return 0;
+    }
+    geda_bus_object_calculate_bounds (o_current, &bounds);
+    break;
+
+  case(OBJ_BOX):
+    if (o_current->box == NULL) {
+      return 0;
+    }
+    geda_box_object_calculate_bounds (o_current, &bounds);
+    break;
+
+  case(OBJ_PATH):
+    g_return_val_if_fail (o_current->path != NULL, 0);
+    if (o_current->path->num_sections <= 0) {
+      return 0;
+    }
+    geda_path_object_calculate_bounds (o_current, &bounds);
+    break;
+
+  case(OBJ_PICTURE):
+    if (o_current->picture == NULL) {
+      return 0;
+    }
+    geda_picture_object_calculate_bounds (o_current, &bounds);
+    break;
+
+  case(OBJ_CIRCLE):
+    if (o_current->circle == NULL) {
+      return 0;
+    }
+    geda_circle_object_calculate_bounds (o_current, &bounds);
+    break;
+
+  case(OBJ_COMPONENT):
+  case(OBJ_PLACEHOLDER):
+    /* realc routine Add this somewhere */
+    /* libhack */
+    /* o_recalc(toplevel, o_current->component);*/
+
+    if (o_current->component->prim_objs == NULL)
+      return 0;
+
+    geda_component_object_calculate_bounds(toplevel, o_current, &bounds);
+    break;
+
+  case(OBJ_PIN):
+    if (o_current->line == NULL) {
+      return 0;
+    }
+    geda_pin_object_calculate_bounds (o_current, &bounds);
+    break;
+
+  case(OBJ_ARC):
+    if (o_current->arc == NULL) {
+      return 0;
+    }
+    geda_arc_object_calculate_bounds (o_current,
+                                      &bounds.min_x,
+                                      &bounds.min_y,
+                                      &bounds.max_x,
+                                      &bounds.max_y);
+    break;
+
+  case(OBJ_TEXT):
+    if (!geda_text_object_calculate_bounds(toplevel, o_current, &bounds)) {
+      return 0;
+    }
+    break;
+
+  default:
+    return 0;
   }
+
+  o_current->bounds = bounds;
 
   if (rleft != NULL) {
     *rleft = o_current->bounds.min_x;
@@ -1254,7 +1251,6 @@ s_basic_init_object (OBJECT *new_node, int type, char const *name)
 
   /* Setup the bounding box */
   geda_bounds_init (&(new_node->bounds));
-  new_node->w_bounds_valid_for = NULL;
 
   /* Setup line/circle structs */
   new_node->line = NULL;
@@ -1264,11 +1260,11 @@ s_basic_init_object (OBJECT *new_node, int type, char const *name)
   new_node->box = NULL;
   new_node->picture = NULL;
   new_node->text = NULL;
-  new_node->complex = NULL;
+  new_node->component = NULL;
 
   new_node->conn_list = NULL;
 
-  new_node->complex_basename = NULL;
+  new_node->component_basename = NULL;
   new_node->parent = NULL;
 
   /* Setup the color */

@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2011 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -416,7 +417,7 @@ void autonumber_get_used(GschemToplevel *w_current, AUTONUMBER_TEXT *autotext)
 	      slot = g_new(AUTONUMBER_SLOT,1);
 	      slot->number = number;
 	      slot->slotnr = slotnr;
-	      slot->symbolname = o_parent->complex_basename;
+	      slot->symbolname = o_parent->component_basename;
 
 
 	      slot_item = g_list_find_custom(autotext->used_slots,
@@ -492,7 +493,7 @@ void autonumber_get_new_numbers(AUTONUMBER_TEXT *autotext, OBJECT *o_current,
   o_parent = o_current->attached_to;
   if (autotext->slotting && o_parent != NULL) {
     freeslot = g_new(AUTONUMBER_SLOT,1);
-    freeslot->symbolname = o_parent->complex_basename;
+    freeslot->symbolname = o_parent->component_basename;
     freeslot->number = 0;
     freeslot->slotnr = 0;
     freeslot_item = g_list_find_custom(autotext->free_slots,
@@ -542,7 +543,7 @@ void autonumber_get_new_numbers(AUTONUMBER_TEXT *autotext, OBJECT *o_current,
 	*slot = 1;
 	for (i=2; i <=numslots; i++) {
 	  freeslot = g_new(AUTONUMBER_SLOT,1);
-	  freeslot->symbolname = o_parent->complex_basename;
+	  freeslot->symbolname = o_parent->component_basename;
 	  freeslot->number = new_number;
 	  freeslot->slotnr = i;
 	  autotext->free_slots = g_list_insert_sorted(autotext->free_slots,
@@ -570,7 +571,7 @@ void autonumber_remove_number(AUTONUMBER_TEXT * autotext, OBJECT *o_current)
 
   /* replace old text */
   str = g_strdup_printf("%s?", autotext->current_searchtext);
-  o_text_set_string (autotext->w_current->toplevel, o_current, str);
+  o_text_set_string (o_current, str);
   g_free (str);
 
   /* remove the slot attribute if slotting is active */
@@ -596,7 +597,7 @@ void autonumber_remove_number(AUTONUMBER_TEXT * autotext, OBJECT *o_current)
  *  \par Function Description
  *  This function updates the text content of the <B>o_current</B> object.
  *  If the <B>slot</B> value is not zero. It updates the slot attribut of the
- *  complex element that is also the parent object of the o_current element.
+ *  component element that is also the parent object of the o_current element.
  */
 void autonumber_apply_new_text(AUTONUMBER_TEXT * autotext, OBJECT *o_current,
 			       gint number, gint slot)
@@ -612,7 +613,7 @@ void autonumber_apply_new_text(AUTONUMBER_TEXT * autotext, OBJECT *o_current,
 
   /* replace old text */
   str = g_strdup_printf("%s%d", autotext->current_searchtext, number);
-  o_text_set_string (autotext->w_current->toplevel, o_current, str);
+  o_text_set_string (o_current, str);
   g_free (str);
 
   gschem_toplevel_page_content_changed (autotext->w_current,
@@ -671,7 +672,7 @@ void autonumber_text_autonumber(AUTONUMBER_TEXT *autotext)
      in the searchtext list */
 
   if (strlen(scope_text) == 0) {
-    s_log_message(_("No searchstring given in autonumber text."));
+    s_log_message(_("No search string given in autonumber text."));
     return; /* error */
   }
   else if (g_str_has_suffix(scope_text,"?") == TRUE) {
@@ -882,15 +883,16 @@ void autonumber_sortorder_create(GschemToplevel *w_current, GtkWidget *sort_orde
   store = gtk_list_store_new(2, G_TYPE_STRING, GDK_TYPE_PIXBUF);
 
   for (i=0; filenames[i] != NULL; i++) {
-    path=g_build_filename(w_current->toplevel->bitmap_directory,
+    path=g_build_filename(BITMAP_DIRECTORY,
 		     filenames[i], NULL);
     pixbuf = gdk_pixbuf_new_from_file(path, &error);
     g_free(path);
     gtk_list_store_append(store, &iter);
     gtk_list_store_set(store, &iter,
 		       0, _(names[i]),
-		       1, pixbuf,
+		       1, pixbuf ? pixbuf : NULL,
 		       -1);
+    g_clear_error (&error);
   }
 
   gtk_combo_box_set_model(GTK_COMBO_BOX(sort_order), GTK_TREE_MODEL(store));

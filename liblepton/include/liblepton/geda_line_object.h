@@ -30,21 +30,19 @@ G_BEGIN_DECLS
 /* construction, destruction */
 
 GedaObject*
-geda_line_object_new (TOPLEVEL *toplevel,
-                      gint color,
+geda_line_object_new (gint color,
                       gint x1,
                       gint y1,
                       gint x2,
                       gint y2);
 
 OBJECT*
-geda_line_object_copy (TOPLEVEL *toplevel, OBJECT *o_current);
+geda_line_object_copy (OBJECT *o_current);
 
 /* methods */
 
 void
-geda_line_object_calculate_bounds (TOPLEVEL *toplevel,
-                                   const OBJECT *object,
+geda_line_object_calculate_bounds (const OBJECT *object,
                                    GedaBounds *bounds);
 
 gboolean
@@ -66,21 +64,18 @@ double
 geda_line_object_length (OBJECT *object);
 
 void
-geda_line_object_mirror (TOPLEVEL *toplevel,
-                         int world_centerx,
+geda_line_object_mirror (int world_centerx,
                          int world_centery,
                          OBJECT *object);
 
 void
-geda_line_object_modify (TOPLEVEL *toplevel,
-                         OBJECT *object,
+geda_line_object_modify (OBJECT *object,
                          int x,
                          int y,
                          int whichone);
 
 void
-geda_line_object_rotate (TOPLEVEL *toplevel,
-                         int world_centerx,
+geda_line_object_rotate (int world_centerx,
                          int world_centery,
                          int angle,
                          OBJECT *object);
@@ -111,8 +106,7 @@ void
 geda_line_object_translate (GedaObject *object, int dx, int dy);
 
 OBJECT*
-o_line_read (TOPLEVEL *toplevel,
-             const char buf[],
+o_line_read (const char buf[],
              unsigned int release_ver,
              unsigned int fileformat_ver,
              GError **err);

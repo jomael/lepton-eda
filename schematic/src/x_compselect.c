@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2015 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -114,15 +115,15 @@ x_compselect_callback_response (GtkDialog *dialog,
                       "behavior", &behavior,
                       NULL);
 
-        w_current->include_complex = w_current->embed_complex = 0;
+        w_current->include_component = w_current->embed_component = 0;
         switch (behavior) {
             case COMPSELECT_BEHAVIOR_REFERENCE:
               break;
             case COMPSELECT_BEHAVIOR_EMBED:
-              w_current->embed_complex   = 1;
+              w_current->embed_component = 1;
               break;
             case COMPSELECT_BEHAVIOR_INCLUDE:
-              w_current->include_complex = 1;
+              w_current->include_component = 1;
               break;
             default:
               g_assert_not_reached ();
@@ -133,8 +134,7 @@ x_compselect_callback_response (GtkDialog *dialog,
           if (w_current->rubber_visible)
             o_place_invalidate_rubber (w_current, FALSE);
           w_current->rubber_visible = 0;
-          geda_object_list_delete (toplevel,
-                                   toplevel->page_current->place_list);
+          geda_object_list_delete (toplevel->page_current->place_list);
           toplevel->page_current->place_list = NULL;
         } else {
           /* Cancel whatever other action is currently in progress */
@@ -147,7 +147,7 @@ x_compselect_callback_response (GtkDialog *dialog,
           i_action_stop (w_current);
         } else {
           /* Otherwise set the new symbol to place */
-          o_complex_prepare_place (w_current, symbol);
+          o_component_prepare_place (w_current, symbol);
         }
         break;
       }
@@ -155,7 +155,7 @@ x_compselect_callback_response (GtkDialog *dialog,
       case COMPSELECT_RESPONSE_HIDE:
         /* Response when clicking on the "hide" button */
 
-        /* If there is no component in the complex place list, set the current one */
+        /* If there is no component in the place list, set the current one */
         if (toplevel->page_current->place_list == NULL) {
           gtk_dialog_response (GTK_DIALOG (compselect),
                                COMPSELECT_RESPONSE_PLACE);
@@ -476,7 +476,7 @@ update_attributes_model (Compselect *compselect, TOPLEVEL *preview_toplevel)
                               s_page_objects (preview_toplevel->page_current));
 
   cfg = eda_config_get_context_for_path (s_page_get_filename (preview_toplevel->page_current));
-  filter_list = eda_config_get_string_list (cfg, "gschem.library",
+  filter_list = eda_config_get_string_list (cfg, "schematic.library",
                                             "component-attributes", &n, NULL);
 
   if (filter_list == NULL || (n > 0 && strcmp (filter_list[0], "*") == 0)) {
@@ -852,7 +852,7 @@ create_lib_tree_model (Compselect *compselect)
   GList *srchead, *srclist;
   PAGE *page = GSCHEM_DIALOG(compselect)->w_current->toplevel->page_current;
   EdaConfig *cfg = eda_config_get_context_for_path (s_page_get_filename (page));
-  gboolean sort = eda_config_get_boolean (cfg, "gschem.library", "sort", NULL);
+  gboolean sort = eda_config_get_boolean (cfg, "schematic.library", "sort", NULL);
 
   store = (GtkTreeStore*)gtk_tree_store_new (3, G_TYPE_POINTER,
                                                 G_TYPE_STRING,
@@ -1120,12 +1120,9 @@ create_lib_treeview (Compselect *compselect)
                                           NULL));
 
   /* create the entry label */
-  label = GTK_WIDGET (g_object_new (GTK_TYPE_LABEL,
-                                    /* GtkMisc */
-                                    "xalign", 0.0,
-                                    /* GtkLabel */
-                                    "label",  _("Filter:"),
-                                    NULL));
+  label = gtk_label_new_with_mnemonic (_("_Filter:"));
+  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+
   /* add the search label to the filter area */
   gtk_box_pack_start (GTK_BOX (hbox), label,
                       FALSE, FALSE, 0);
@@ -1139,6 +1136,8 @@ create_lib_treeview (Compselect *compselect)
                     "changed",
                     G_CALLBACK (compselect_callback_filter_entry_changed),
                     compselect);
+
+  gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
 
   /* now that that we have an entry, set the filter func of model */
   gtk_tree_model_filter_set_visible_func ((GtkTreeModelFilter*)model,
@@ -1165,6 +1164,9 @@ create_lib_treeview (Compselect *compselect)
   gtk_container_add (GTK_CONTAINER (button),
                      gtk_image_new_from_stock (GTK_STOCK_CLEAR,
                                                GTK_ICON_SIZE_SMALL_TOOLBAR));
+
+  gtk_widget_set_tooltip_text (button, _("Reset filter"));
+
   g_signal_connect (button,
                     "clicked",
                     G_CALLBACK (compselect_callback_filter_button_clicked),
@@ -1172,6 +1174,7 @@ create_lib_treeview (Compselect *compselect)
   /* add the clear button to the filter area */
   gtk_box_pack_start (GTK_BOX (hbox), button,
                       FALSE, FALSE, 0);
+
   /* set clear button of compselect */
   compselect->button_clear = GTK_BUTTON (button);
 
@@ -1185,6 +1188,8 @@ create_lib_treeview (Compselect *compselect)
   gtk_container_add (GTK_CONTAINER (button),
                      gtk_image_new_from_stock (GTK_STOCK_REFRESH,
                                             GTK_ICON_SIZE_SMALL_TOOLBAR));
+  gtk_widget_set_tooltip_text (button, _("Reload all libraries"));
+
   /* add the refresh button to the filter area */
   gtk_box_pack_start (GTK_BOX (hbox), button, FALSE, FALSE, 0);
   g_signal_connect (button,
@@ -1223,7 +1228,7 @@ create_attributes_treeview (Compselect *compselect)
 
   /* two columns for name and value of the attributes */
   renderer = GTK_CELL_RENDERER (g_object_new (GTK_TYPE_CELL_RENDERER_TEXT,
-                                              "editable", FALSE,
+                                              "editable", TRUE,
                                               NULL));
 
   column = GTK_TREE_VIEW_COLUMN (g_object_new (GTK_TYPE_TREE_VIEW_COLUMN,
@@ -1462,11 +1467,11 @@ compselect_constructor (GType type,
 
   inuseview = create_inuse_treeview (compselect);
   gtk_notebook_append_page (GTK_NOTEBOOK (notebook), inuseview,
-                            gtk_label_new (_("In Use")));
+                            gtk_label_new_with_mnemonic (_("In Us_e")));
 
   libview = create_lib_treeview (compselect);
   gtk_notebook_append_page (GTK_NOTEBOOK (notebook), libview,
-                            gtk_label_new (_("Libraries")));
+                            gtk_label_new_with_mnemonic (_("Lib_raries")));
 
   /* include the vertical box in horizontal box */
   gtk_paned_pack1 (GTK_PANED (hpaned), notebook, TRUE, FALSE);

@@ -3,14 +3,14 @@
 lepton-netlist - Lepton EDA Netlist Extraction and Generation
 .SH SYNOPSIS
 .B lepton-netlist
-[\fIOPTION\fR ...] [\fB-g\fR \fIBACKEND\fR] [\fI--\fR] \fIFILE\fR ...
+[\fIOPTION\fR ...] [\fB-g\fR \fIBACKEND\fR | \fB-f\fR \fIFILE\fR] [\fI--\fR] \fIFILE\fR ...
 
 .SH DESCRIPTION
 .PP
 
 \fBlepton-netlist\fR is a netlist extraction and generation tool, and is
 part of the Lepton EDA (Electronic Design Automation) toolset.  It takes
-one or electronic schematics as input, and outputs a netlist.  A
+one or more electronic schematics as input, and outputs a netlist.  A
 netlist is a machine-interpretable description of the way that
 components in an electronic circuit are connected together, and is
 commonly used as the input to a PCB layout program such as
@@ -39,10 +39,15 @@ Scheme files.
 \fB-g\fR \fIBACKEND\fR
 Specify the netlist backend to be used.
 .TP 8
+\fB-f\fR \fIFILE\fR
+Load and use netlist backend from \fIFILE\fR.
+\fIFILE\fR is expected to have name like "gnet-NAME.scm" and contain entry
+point function NAME (where NAME is the backend's name).
+.TP 8
 \fB-O\fR \fISTRING\fR
 Pass an option string to the backend.
 .TP 8
-\fB--list-backends\fR
+\fB-b\fR, \fB--list-backends\fR
 Print a list of available netlist backends.
 .TP 8
 \fB-o\fR \fIFILE\fR
@@ -166,6 +171,9 @@ Structural SystemC code generation.
 \fBtango\fR
 Tango netlist format.
 .TP 8
+\fBtEDAx\fR
+Trivial EDA eXchange (tEDAx) format.
+.TP 8
 \fBvams\fR
 VHDL-AMS code generation.
 .TP 8
@@ -231,15 +239,6 @@ use the `\-i' option.
 .PP
 \fBlepton-netlist\fR will load `stack_1.sh', and then enter an interactive
 Scheme read-eval-print loop.
-
-.SH ENVIRONMENT
-.TP 8
-.B GEDADATA
-specifies the search directory for Scheme and rc files.  The default
-is `${prefix}/share/lepton-eda'.
-.TP 8
-.B GEDADATARC
-specifies the search directory for rc files.  The default is `$GEDADATA'.
 
 .SH AUTHORS
 See the `AUTHORS' file included with this program.

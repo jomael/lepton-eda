@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2015 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -159,13 +160,12 @@ o_undo_savestate (GschemToplevel *w_current, PAGE *page, int flag)
     /* This is where the net consolidation call would have been
      * triggered before it was removed from o_save_buffer().
      */
-    if (toplevel->net_consolidate == TRUE)
-      geda_net_object_consolidate (toplevel, page);
+    geda_net_object_consolidate (page);
   }
 
   if (w_current->undo_type == UNDO_DISK && flag == UNDO_ALL) {
 
-    filename = g_strdup_printf("%s%cgschem.save%d_%d.sch",
+    filename = g_strdup_printf("%s%clepton-schematic.save%d_%d.sch",
                                tmp_path, G_DIR_SEPARATOR,
                                prog_pid, undo_file_index++);
 
@@ -173,20 +173,19 @@ o_undo_savestate (GschemToplevel *w_current, PAGE *page, int flag)
     /* f_save manages the creaton of backup copies.
        This way, f_save is called only when saving a file, and not when
        saving an undo backup copy */
-    o_save (toplevel, s_page_objects (page), filename, NULL);
+    o_save (s_page_objects (page), filename, NULL);
 
   } else if (w_current->undo_type == UNDO_MEMORY && flag == UNDO_ALL) {
-    object_list = o_glist_copy_all (toplevel,
-                                    s_page_objects (page),
+    object_list = o_glist_copy_all (s_page_objects (page),
                                     object_list);
   }
 
   /* Clear Anything above current */
   if (page->undo_current) {
-    s_undo_remove_rest(toplevel, page->undo_current->next);
+    s_undo_remove_rest (page->undo_current->next);
     page->undo_current->next = NULL;
   } else { /* undo current is NULL */
-    s_undo_remove_rest(toplevel, page->undo_bottom);
+    s_undo_remove_rest (page->undo_bottom);
     page->undo_bottom = NULL;
   }
 
@@ -270,7 +269,7 @@ o_undo_savestate (GschemToplevel *w_current, PAGE *page, int flag)
       }
 
       if (u_current->object_list) {
-        geda_object_list_delete (toplevel, u_current->object_list);
+        geda_object_list_delete (u_current->object_list);
         u_current->object_list = NULL;
       }
 
@@ -394,7 +393,7 @@ o_undo_callback (GschemToplevel *w_current, PAGE *page, int type)
   g_return_if_fail (page != NULL);
 
   if (w_current->undo_control == FALSE) {
-    s_log_message(_("Undo/Redo disabled in rc file"));
+    s_log_message(_("Undo/Redo is disabled in configuration"));
     return;
   }
 
@@ -443,19 +442,19 @@ o_undo_callback (GschemToplevel *w_current, PAGE *page, int type)
 
   if (w_current->undo_type == UNDO_DISK && u_current->filename) {
     /* delete objects of page */
-    s_page_delete_objects (toplevel, page);
+    s_page_delete_objects (page);
 
     /* Free the objects in the place list. */
-    geda_object_list_delete (toplevel, page->place_list);
+    geda_object_list_delete (page->place_list);
     page->place_list = NULL;
 
     gschem_toplevel_page_content_changed (w_current, page);
   } else if (w_current->undo_type == UNDO_MEMORY && u_current->object_list) {
     /* delete objects of page */
-    s_page_delete_objects (toplevel, page);
+    s_page_delete_objects (page);
 
     /* Free the objects in the place list. */
-    geda_object_list_delete (toplevel, page->place_list);
+    geda_object_list_delete (page->place_list);
     page->place_list = NULL;
 
     gschem_toplevel_page_content_changed (w_current, page);
@@ -476,8 +475,8 @@ o_undo_callback (GschemToplevel *w_current, PAGE *page, int type)
 
   } else if (w_current->undo_type == UNDO_MEMORY && u_current->object_list) {
 
-    s_page_append_list (toplevel, page,
-                        o_glist_copy_all (toplevel, u_current->object_list,
+    s_page_append_list (page,
+                        o_glist_copy_all (u_current->object_list,
                                           NULL));
   }
 
@@ -511,7 +510,7 @@ o_undo_callback (GschemToplevel *w_current, PAGE *page, int type)
   g_free(save_filename);
 
   /* final redraw */
-  x_pagesel_update (w_current);
+  page_select_widget_update (w_current);
   x_multiattrib_update (w_current);
   i_update_menus(w_current);
 
@@ -563,7 +562,7 @@ void o_undo_cleanup(void)
   char *filename;
 
   for (i = 0 ; i < undo_file_index; i++) {
-    filename = g_strdup_printf("%s%cgschem.save%d_%d.sch", tmp_path,
+    filename = g_strdup_printf("%s%clepton-schematic.save%d_%d.sch", tmp_path,
                                G_DIR_SEPARATOR, prog_pid, i);
     unlink(filename);
     g_free(filename);

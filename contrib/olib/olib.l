@@ -1,8 +1,8 @@
 %{
-/*  $Id$
-
-    olib.lex - Orcad to gEDA lib converter
+/*  olib.lex - Orcad to gEDA lib converter
     Copyright (C) 2002 Mario Pascucci <m.pas@libero.it>
+    Copyright (C) 2002-2014 gEDA Contributors
+    Copyright (C) 2019 Lepton EDA Contributors
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -113,7 +113,7 @@ static int vector_found;
 
 
 /* type of pin */
-static char *pintypestr[] = {
+static const char *pintypestr[] = {
   "???",
   "I/O",
   "IN",
@@ -126,7 +126,7 @@ static char *pintypestr[] = {
 };
 
 
-static char *edapintype[] = {
+static const char *edapintype[] = {
   "???",
   "io",
   "in",

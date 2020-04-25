@@ -35,13 +35,6 @@ application_in_files = \
 	x-lepton-schematic.desktop.in \
 	x-lepton-symbol.desktop.in
 
-if ENABLE_KDE_DESKTOP_DATA
-kdedatadir=@KDEDATADIR@
-mimelnkdir = $(kdedatadir)/mimelnk
-applicationdir = $(mimelnkdir)/application
-application_DATA = $(application_in_files:.desktop.in=.desktop)
-endif ENABLE_KDE_DESKTOP_DATA
-
 install_icon_exec = \
 	$(ICON_THEME_INSTALLER) \
 	-t $(theme) \
@@ -71,8 +64,7 @@ if ENABLE_UPDATE_XDG_DATABASE
 endif
 	$(install_icon_exec) -u $(theme_icons)
 
-MAINTAINERCLEANFILES = *.log core FILE *~ Makefile.in
-DISTCLEANFILES = $(xml_DATA) $(application_DATA)
 EXTRA_DIST = $(mime_icon_files) $(mime_icon_sources) \
-             $(xml_in_files) $(application_in_files)
+	     $(xml_in_files) $(application_in_files)
 
+CLEANFILES = $(xml_DATA)

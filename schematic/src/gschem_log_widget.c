@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2015 gEDA Contributors
+ * Copyright (C) 2017-2019 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,80 +24,40 @@
  */
 
 #include <config.h>
-
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_FCNTL_H
-#include <fcntl.h>
-#endif
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-
 #include "gschem.h"
+
+
+/* convenience macro - gobject type implementation:
+*/
+G_DEFINE_TYPE (GschemLogWidget, gschem_log_widget, GSCHEM_TYPE_BIN);
 
 
 static void
 changed_cb (GtkTextBuffer *buffer, GschemLogWidget *widget);
 
-static void
-class_init (GschemLogWidgetClass *klass);
-
 static GtkTextBuffer*
 create_text_buffer();
 
 static void
-instance_init (GschemLogWidget *log);
-
-static void
 log_message (GschemLogWidgetClass *klass, const gchar *message, const gchar *style);
 
+static gboolean
+scroll_to_bottom (gpointer p);
+
 static void
-scroll_to_bottom (GtkTextBuffer* buffer, GschemLogWidget* widget);
+log_window_clear (GtkMenuItem* item, gpointer data);
 
+static void
+log_window_wrap (GtkCheckMenuItem* item, gpointer data);
 
-/*!
- *  \brief Get the Log class type
- *
- *  \par Function Description
- *
- * On first call, registers the Log class with the GType dynamic type system.
- * On subsequent calls, returns the saved value from first execution.
- * \returns the type identifier for the Log class
- */
-GType
-gschem_log_widget_get_type ()
-{
-  static GType type = 0;
+static void
+populate_popup_menu (GtkTextView* txtview,
+                     GtkMenu*     menu,
+                     gpointer     data);
 
-  if (type == 0) {
-    static const GTypeInfo info = {
-      sizeof(GschemLogWidgetClass),
-      NULL,                                 /* base_init */
-      NULL,                                 /* base_finalize */
-      (GClassInitFunc) class_init,
-      NULL,                                 /* class_finalize */
-      NULL,                                 /* class_data */
-      sizeof(GschemLogWidget),
-      0,                                    /* n_preallocs */
-      (GInstanceInitFunc) instance_init,
-    };
+static void
+finalize (GObject* object);
 
-    type = g_type_register_static (GSCHEM_TYPE_BIN,
-                                   "GschemLogWidget",
-                                   &info,
-                                   (GTypeFlags) 0);
-  }
-
-  return type;
-}
 
 
 /*! \brief create a new status log widget
@@ -133,17 +94,6 @@ x_log_message (const gchar *log_domain, GLogLevelFlags log_level, const gchar *m
   log_message (klass, message, style);
 }
 
-
-/*!
- *  \brief Open the Log window
- *
- *  Selects the notebook tab that contains the status log widget
- */
-void
-x_log_open (GschemToplevel *w_current)
-{
-  x_widgets_show_log (w_current);
-}
 
 
 /*!
@@ -197,17 +147,23 @@ changed_cb (GtkTextBuffer *buffer, GschemLogWidget *widget)
   g_return_if_fail (widget != NULL);
   g_return_if_fail (widget->viewer != NULL);
 
-  scroll_to_bottom (buffer, widget);
+  /* There is known issue with GtkTextView widget:
+   * to set scroll position in the text view properly,
+   * it should be done in an idle handler
+  */
+  g_idle_add (&scroll_to_bottom, widget);
 }
 
 
 /*! \brief initialize class
  */
 static void
-class_init (GschemLogWidgetClass *klass)
+gschem_log_widget_class_init (GschemLogWidgetClass *klass)
 {
   gchar *contents;
-/*   GObjectClass *gobject_class = G_OBJECT_CLASS (klass); */
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+
+  gobject_class->finalize = &finalize;
 
   klass->buffer = create_text_buffer ();
 
@@ -273,12 +229,13 @@ create_text_buffer()
 }
 
 
+
 /*! \brief initialize instance
  *
  *  \param [in] widget an instance of the widget
  */
 static void
-instance_init (GschemLogWidget *widget)
+gschem_log_widget_init (GschemLogWidget *widget)
 {
   GschemLogWidgetClass *klass = GSCHEM_LOG_WIDGET_GET_CLASS (widget);
   GtkWidget *scrolled;
@@ -300,6 +257,11 @@ instance_init (GschemLogWidget *widget)
                                                 "buffer",   klass->buffer,
                                                 "editable", FALSE,
                                                 NULL));
+
+
+  /* Set text wrapping:
+  */
+  widget->wrap = FALSE;
 
 
   /*
@@ -345,50 +307,197 @@ instance_init (GschemLogWidget *widget)
 
   gtk_container_add (GTK_CONTAINER (scrolled), GTK_WIDGET (widget->viewer));
 
+
   g_signal_connect (klass->buffer,
                     "changed",
                     G_CALLBACK (&changed_cb),
                     widget);
 
-  scroll_to_bottom (klass->buffer, widget);
-}
+  g_signal_connect (widget->viewer,
+                    "populate-popup",
+                    G_CALLBACK (&populate_popup_menu),
+                    widget);
+
+} /* instance_init() */
 
 
 
 /*! \brief scroll to the bottom of the log window
+ *  \note  Should be executed as an idle handler (g_idle_add())
  *
- *  \param [in] buffer  The text buffer
- *  \param [in] widget  The log widget
+ *  \param [in] p The log widget
  */
-static void
-scroll_to_bottom (GtkTextBuffer* buffer, GschemLogWidget* widget)
+static gboolean
+scroll_to_bottom (gpointer p)
 {
-  g_return_if_fail (buffer != NULL);
-  g_return_if_fail (widget != NULL);
-  g_return_if_fail (widget->viewer != NULL);
+  GschemLogWidget* widget = (GschemLogWidget*) p;
+  g_return_val_if_fail (widget != NULL, FALSE);
+  g_return_val_if_fail (widget->viewer != NULL, FALSE);
 
-  /* gtk_text_view_scroll_to_iter()
-   * relies upon the results of computations
-   * performed in an idle handler.
-   * Give that handler an opportunity to run -
-   * process pending events before the call, - so that
-   * the view will be scrolled correctly (to the bottom).
-   *
-   * \note using gtk_text_view_scroll_to_mark() instead
-   * of gtk_text_view_scroll_to_iter() (as suggested in the
-   * documentation of gtk_text_view_scroll_to_iter() doesn't help.
-  */
-  while (gtk_events_pending())
-    gtk_main_iteration();
+  GschemLogWidgetClass* cls = GSCHEM_LOG_WIDGET_GET_CLASS (widget);
+  g_return_val_if_fail (cls != NULL, FALSE);
+
+  GtkTextBuffer* buffer = cls->buffer;
+  g_return_val_if_fail (buffer != NULL, FALSE);
 
   GtkTextIter iter;
   gtk_text_buffer_get_end_iter (buffer, &iter);
-
   gtk_text_view_scroll_to_iter (widget->viewer,
                                 &iter,
                                 0.0,  /* within_margin */
                                 TRUE, /* use_align */
                                 0.0,  /* xalign: 0 => left */
                                 1.0); /* yalign: 1 => bottom */
+
+  return FALSE; /* execute only once when called as an idle handler */
+
+} /* scroll_to_bottom() */
+
+
+
+/*! \brief "activate" signal handler for "clear log window" menu item
+ *
+ *  \par Function Description
+ *  Deletes content of the log text view
+ *
+ *  \param item     menu item
+ *  \param data     user data (log text view widget)
+ */
+static void
+log_window_clear (GtkMenuItem* item, gpointer data)
+{
+  GtkTextView* txtview = (GtkTextView*) data;
+  g_return_if_fail (txtview != NULL);
+
+  GtkTextBuffer* buffer = gtk_text_view_get_buffer (txtview);
+  g_return_if_fail (buffer != NULL);
+
+  GtkTextIter start;
+  gtk_text_buffer_get_start_iter (buffer, &start);
+
+  GtkTextIter end;
+  gtk_text_buffer_get_end_iter (buffer, &end);
+
+
+  GtkWidget* dlg = gtk_message_dialog_new (NULL,
+                                           (GtkDialogFlags) 0,
+                                           GTK_MESSAGE_QUESTION,
+                                           GTK_BUTTONS_OK_CANCEL,
+                                           _("Clear log window?"));
+
+  gtk_dialog_set_default_response (GTK_DIALOG (dlg), GTK_RESPONSE_CANCEL);
+
+  gtk_dialog_set_alternative_button_order (GTK_DIALOG (dlg),
+                                           GTK_RESPONSE_OK,
+                                           GTK_RESPONSE_CANCEL,
+                                           -1);
+
+
+  if (gtk_dialog_run (GTK_DIALOG (dlg)) == GTK_RESPONSE_OK)
+  {
+    gtk_text_buffer_delete (buffer, &start, &end);
+  }
+
+  gtk_widget_destroy (dlg);
+
+} /* log_window_clear() */
+
+
+
+/*! \brief "toggled" signal handler for "wrap long lines" menu item
+ *
+ *  \par Function Description
+ *  Toggles long lines wrapping in the log text view
+ *
+ *  \param item  menu item
+ *  \param data  user data (GschemLogWidget*)
+ */
+static void
+log_window_wrap (GtkCheckMenuItem* item, gpointer data)
+{
+  GschemLogWidget* widget = (GschemLogWidget*) data;
+  g_return_if_fail (widget != NULL);
+
+  widget->wrap = !widget->wrap;
+
+  gtk_text_view_set_wrap_mode (widget->viewer,
+                               widget->wrap
+                               ? GTK_WRAP_WORD
+                               : GTK_WRAP_NONE);
 }
 
+
+
+/*! \brief "populate-popup" signal handler for the log text view
+ *
+ *  \par Function Description
+ *  Extends popup menu for the log text view
+ *
+ *  \param txtview  log text view widget
+ *  \param menu     context menu to be extended
+ *  \param data     user data (GschemLogWidget*)
+ */
+static void
+populate_popup_menu (GtkTextView* txtview,
+                     GtkMenu*     menu,
+                     gpointer     data)
+{
+  GschemLogWidget* widget = (GschemLogWidget*) data;
+  g_return_if_fail (widget != NULL);
+
+
+  /* Add separator:
+  */
+  GtkWidget* separ1 = gtk_separator_menu_item_new();
+  gtk_menu_shell_prepend (GTK_MENU_SHELL (menu), separ1);
+  gtk_widget_show (separ1);
+
+  /* Add "Wrap Long Lines" menu item:
+  */
+  GtkWidget* itemWrap = gtk_check_menu_item_new_with_mnemonic (_("_Wrap Long Lines"));
+  gtk_menu_shell_prepend (GTK_MENU_SHELL (menu), itemWrap);
+  gtk_widget_show (itemWrap);
+
+  gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (itemWrap),
+                                  widget->wrap);
+
+  g_signal_connect (G_OBJECT (itemWrap),
+                    "toggled",
+                    G_CALLBACK (&log_window_wrap),
+                    widget);
+
+
+  /* Add separator:
+  */
+  GtkWidget* separ2 = gtk_separator_menu_item_new();
+  gtk_menu_shell_append (GTK_MENU_SHELL (menu), separ2);
+  gtk_widget_show (separ2);
+
+  /* Add "Clear Log Window" menu item:
+  */
+  GtkWidget* itemClear = gtk_menu_item_new_with_mnemonic (_("Clea_r Log Window"));
+  gtk_menu_shell_append (GTK_MENU_SHELL (menu), itemClear);
+  gtk_widget_show (itemClear);
+
+  g_signal_connect (G_OBJECT (itemClear),
+                    "activate",
+                    G_CALLBACK (&log_window_clear),
+                    txtview);
+
+} /* populate_popup_menu() */
+
+
+
+/*! \brief "destructor" function for gobject instance
+ */
+static void
+finalize (GObject* object)
+{
+  GschemLogWidgetClass* cls = GSCHEM_LOG_WIDGET_GET_CLASS (object);
+
+  /* disconnect the "changed" signal handler:
+  */
+  g_signal_handlers_disconnect_by_func (cls->buffer, (gpointer) changed_cb, object);
+
+  G_OBJECT_CLASS (gschem_log_widget_parent_class)->finalize (object);
+}

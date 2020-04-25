@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +48,6 @@
  *  It can be changed after with the #o_set_line_options() and
  *  #o_set_fill_options().
  *
- *  \param [in]     toplevel     The TOPLEVEL object.
  *  \param [in]     type         Must be OBJ_LINE.
  *  \param [in]     color        Circle line color.
  *  \param [in]     x1           Upper x coordinate.
@@ -58,8 +57,7 @@
  *  \return A pointer to the new end of the object list.
  */
 GedaObject*
-geda_line_object_new (TOPLEVEL *toplevel,
-                      gint color,
+geda_line_object_new (gint color,
                       gint x1,
                       gint y1,
                       gint x2,
@@ -80,25 +78,20 @@ geda_line_object_new (TOPLEVEL *toplevel,
   new_node->line->y[1] = y2;
 
   /* line type and filling initialized to default */
-  o_set_line_options (toplevel,
-                      new_node,
+  o_set_line_options (new_node,
                       DEFAULT_OBJECT_END,
                       TYPE_SOLID,
                       LINE_WIDTH,
                       -1,
                       -1);
 
-  o_set_fill_options (toplevel,
-                      new_node,
+  o_set_fill_options (new_node,
                       FILLING_HOLLOW,
                       -1,
                       -1,
                       -1,
                       -1,
                       -1);
-
-  /* compute bounding box */
-  new_node->w_bounds_valid_for = NULL;
 
   return new_node;
 }
@@ -108,41 +101,35 @@ geda_line_object_new (TOPLEVEL *toplevel,
  *  This function creates a verbatim copy of the
  *  object pointed by <B>o_current</B> describing a line.
  *
- *  \param [in]  toplevel  The TOPLEVEL object.
  *  \param [in]  o_current  Line OBJECT to copy.
  *  \return The new OBJECT
  */
 OBJECT*
-geda_line_object_copy (TOPLEVEL *toplevel, OBJECT *o_current)
+geda_line_object_copy (OBJECT *o_current)
 {
   OBJECT *new_obj;
 
-  new_obj = geda_line_object_new (toplevel,
-                                  o_current->color,
+  new_obj = geda_line_object_new (o_current->color,
                                   o_current->line->x[0],
                                   o_current->line->y[0],
                                   o_current->line->x[1],
                                   o_current->line->y[1]);
 
   /* copy the line type and filling options */
-  o_set_line_options (toplevel,
-                      new_obj,
+  o_set_line_options (new_obj,
                       o_current->line_end,
                       o_current->line_type,
                       o_current->line_width,
                       o_current->line_length,
                       o_current->line_space);
 
-  o_set_fill_options(toplevel,
-                     new_obj,
-                     o_current->fill_type,
-                     o_current->fill_width,
-                     o_current->fill_pitch1,
-                     o_current->fill_angle1,
-                     o_current->fill_pitch2,
-                     o_current->fill_angle2);
-
-  o_current->w_bounds_valid_for = NULL;
+  o_set_fill_options (new_obj,
+                      o_current->fill_type,
+                      o_current->fill_width,
+                      o_current->fill_pitch1,
+                      o_current->fill_angle1,
+                      o_current->fill_pitch2,
+                      o_current->fill_angle2);
 
   return new_obj;
 }
@@ -309,7 +296,6 @@ geda_line_object_set_y1 (GedaObject *object, gint y)
  *  The coordinates of the end of line is modified in the world
  *  coordinate system. Screen coordinates and boundings are then updated.
  *
- *  \param [in]     toplevel  The TOPLEVEL object.
  *  \param [in,out] object     Line OBJECT to modify.
  *  \param [in]     x          New x coordinate.
  *  \param [in]     y          New y coordinate.
@@ -322,10 +308,10 @@ geda_line_object_set_y1 (GedaObject *object, gint y)
  *  </DL>
  */
 void
-geda_line_object_modify (TOPLEVEL *toplevel, OBJECT *object,
+geda_line_object_modify (OBJECT *object,
                          int x, int y, int whichone)
 {
-  o_emit_pre_change_notify (toplevel, object);
+  o_emit_pre_change_notify (object);
 
   switch (whichone) {
     case LINE_END1:
@@ -342,9 +328,7 @@ geda_line_object_modify (TOPLEVEL *toplevel, OBJECT *object,
       return;
   }
 
-  /* recalculate the bounding box */
-  object->w_bounds_valid_for = NULL;
-  o_emit_change_notify (toplevel, object);
+  o_emit_change_notify (object);
 }
 
 /*! \brief Create line OBJECT from character string.
@@ -362,14 +346,16 @@ geda_line_object_modify (TOPLEVEL *toplevel, OBJECT *object,
  *    <DT>*</DT><DD>the file format used for the releases after 20010704.
  *  </DL>
  *
- *  \param [in]  toplevel       The TOPLEVEL object.
  *  \param [in]  buf             Character string with line description.
  *  \param [in]  release_ver     libgeda release version number.
  *  \param [in]  fileformat_ver  libgeda file format version number.
  *  \return A pointer to the new line object, or NULL on error.
  */
-OBJECT *o_line_read (TOPLEVEL *toplevel, const char buf[],
-                     unsigned int release_ver, unsigned int fileformat_ver, GError ** err)
+OBJECT*
+o_line_read (const char buf[],
+             unsigned int release_ver,
+             unsigned int fileformat_ver,
+             GError ** err)
 {
   OBJECT *new_obj;
   char type;
@@ -435,23 +421,21 @@ OBJECT *o_line_read (TOPLEVEL *toplevel, const char buf[],
    * type is set according to the values of the fields on the line.
    */
   /* create and add the line to the list */
-  new_obj = geda_line_object_new (toplevel,
-                                  color,
+  new_obj = geda_line_object_new (color,
                                   x1,
                                   y1,
                                   x2,
                                   y2);
 
   /* set its line options */
-  o_set_line_options (toplevel,
-                      new_obj,
+  o_set_line_options (new_obj,
                       (OBJECT_END) line_end,
                       (OBJECT_TYPE) line_type,
                       line_width,
                       line_length,
                       line_space);
   /* filling is irrelevant for line, just set to default */
-  o_set_fill_options (toplevel, new_obj,
+  o_set_fill_options (new_obj,
                       FILLING_HOLLOW, -1, -1, -1, -1, -1);
 
   return new_obj;
@@ -513,9 +497,6 @@ geda_line_object_translate (GedaObject *object, int dx, int dy)
   object->line->y[0] = object->line->y[0] + dy;
   object->line->x[1] = object->line->x[1] + dx;
   object->line->y[1] = object->line->y[1] + dy;
-
-  /* Update bounding box */
-  object->w_bounds_valid_for = NULL;
 }
 
 /*! \brief Rotate Line OBJECT using WORLD coordinates.
@@ -525,14 +506,15 @@ geda_line_object_translate (GedaObject *object, int dx, int dy)
  *  point by <B>angle</B> degrees.
  *  The center of rotation is in world units.
  *
- *  \param [in]      toplevel      The TOPLEVEL object.
  *  \param [in]      world_centerx  Rotation center x coordinate in WORLD units.
  *  \param [in]      world_centery  Rotation center y coordinate in WORLD units.
  *  \param [in]      angle          Rotation angle in degrees (See note below).
  *  \param [in,out]  object         Line OBJECT to rotate.
  */
-void geda_line_object_rotate (TOPLEVEL *toplevel,
-			 int world_centerx, int world_centery, int angle,
+void
+geda_line_object_rotate (int world_centerx,
+                         int world_centery,
+                         int angle,
 			 OBJECT *object)
 {
   int newx, newy;
@@ -585,13 +567,14 @@ void geda_line_object_rotate (TOPLEVEL *toplevel,
  *  The line if first translated to the origin, then mirrored
  *  and finally translated back at its previous position.
  *
- *  \param [in]     toplevel      The TOPLEVEL object.
  *  \param [in]     world_centerx  Origin x coordinate in WORLD units.
  *  \param [in]     world_centery  Origin y coordinate in WORLD units.
  *  \param [in,out] object         Line OBJECT to mirror.
  */
-void geda_line_object_mirror (TOPLEVEL *toplevel, int world_centerx,
-			 int world_centery, OBJECT *object)
+void
+geda_line_object_mirror (int world_centerx,
+			 int world_centery,
+                         OBJECT *object)
 {
   g_return_if_fail (object != NULL);
   g_return_if_fail (object->line != NULL);
@@ -613,13 +596,11 @@ void geda_line_object_mirror (TOPLEVEL *toplevel, int world_centerx,
  *
  *  On failure, this function sets the bounds to empty.
  *
- *  \param [in]  toplevel Unused
  *  \param [in]  object   The line object
  *  \param [out] bounds   The bounds of the line
  */
 void
-geda_line_object_calculate_bounds (TOPLEVEL *toplevel,
-                                   const OBJECT *object,
+geda_line_object_calculate_bounds (const OBJECT *object,
                                    GedaBounds *bounds)
 {
   gint expand;

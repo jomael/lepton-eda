@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,14 +48,13 @@ extern int global_sid;
  *  objects are unselected before they are copied and then reselected
  *  this is necessary to preserve the color info
  *
- *  \param [in] toplevel       The TOPLEVEL object.
  *  \param [in] src_list       The GList to copy from.
  *  \param [in] dest_list      The GList to copy to.
  *  \return the dest_list GList with objects appended to it.
  */
-GList *o_glist_copy_all (TOPLEVEL *toplevel,
-                         const GList *src_list,
-                         GList *dest_list)
+GList*
+o_glist_copy_all (const GList *src_list,
+                  GList *dest_list)
 {
   const GList *src;
   GList *dest;
@@ -77,17 +76,17 @@ GList *o_glist_copy_all (TOPLEVEL *toplevel,
     /* unselect the object before the copy */
     selected_save = src_object->selected;
     if (selected_save)
-      o_selection_unselect (toplevel, src_object);
+      o_selection_unselect (src_object);
 
     if (src_object->type != OBJ_TEXT) {
-      dst_object = o_object_copy (toplevel, src_object);
+      dst_object = o_object_copy (src_object);
       dst_object->sid = global_sid++;
       dest = g_list_prepend (dest, dst_object);
     }
 
     /* reselect it */
     if (selected_save)
-      o_selection_select (toplevel, src_object);
+      o_selection_select (src_object);
 
     src = g_list_next(src);
   }
@@ -101,27 +100,28 @@ GList *o_glist_copy_all (TOPLEVEL *toplevel,
     /* unselect the object before the copy */
     selected_save = src_object->selected;
     if (selected_save)
-      o_selection_unselect (toplevel, src_object);
+      o_selection_unselect (src_object);
 
     if (src_object->type == OBJ_TEXT) {
-      dst_object = o_object_copy (toplevel, src_object);
+      dst_object = o_object_copy (src_object);
       dst_object->sid = global_sid++;
       dest = g_list_prepend (dest, dst_object);
 
       if (src_object->attached_to != NULL &&
           src_object->attached_to->copied_to != NULL) {
-        o_attrib_attach(toplevel, dst_object,
-                        src_object->attached_to->copied_to, FALSE);
+        o_attrib_attach (dst_object,
+                         src_object->attached_to->copied_to,
+                         FALSE);
         /* handle slot= attribute, it's a special case */
         if (g_ascii_strncasecmp (geda_text_object_get_string (dst_object),
                                  "slot=", 5) == 0)
-          s_slot_update_object (toplevel, src_object->attached_to->copied_to);
+          s_slot_update_object (src_object->attached_to->copied_to);
       }
     }
 
     /* reselect it */
     if (selected_save)
-      o_selection_select (toplevel, src_object);
+      o_selection_select (src_object);
 
     src = g_list_next(src);
   }
@@ -144,11 +144,10 @@ GList *o_glist_copy_all (TOPLEVEL *toplevel,
  *
  *  This function deletes everything, including the GList.
  *
- *  \param [in] toplevel The toplevel object.
  *  \param [in] objects A GList of objects to delete.
  */
 void
-geda_object_list_delete (TOPLEVEL *toplevel, GList *objects)
+geda_object_list_delete (GList *objects)
 {
   OBJECT *o_current=NULL;
   GList *ptr;
@@ -158,7 +157,7 @@ geda_object_list_delete (TOPLEVEL *toplevel, GList *objects)
   /* do the delete backwards */
   while(ptr != NULL) {
     o_current = (OBJECT *) ptr->data;
-    s_delete_object(toplevel, o_current);
+    s_delete_object (o_current);
     ptr = g_list_previous (ptr);
   }
   g_list_free(objects);
@@ -184,8 +183,8 @@ geda_object_list_print (GList *objects)
     printf("Type: %d\n", o_current->type);
     printf("Sid: %d\n", o_current->sid);
 
-    if (o_current->type == OBJ_COMPLEX || o_current->type == OBJ_PLACEHOLDER) {
-      geda_object_list_print (o_current->complex->prim_objs);
+    if (o_current->type == OBJ_COMPONENT || o_current->type == OBJ_PLACEHOLDER) {
+      geda_object_list_print (o_current->component->prim_objs);
     }
 
     o_attrib_print (o_current->attribs);
@@ -220,17 +219,16 @@ geda_object_list_translate (const GList *objects, int dx, int dy)
  *  \param [in]     x        The x center of rotation.
  *  \param [in]     y        The y center of rotation.
  *  \param [in]     angle    The angle rotation in multiples of 90 degrees.
- *  \param [in]     toplevel The toplevel object. (used for change notification)
  */
 void
-geda_object_list_rotate (const GList *objects, int x, int y, int angle, TOPLEVEL *toplevel)
+geda_object_list_rotate (const GList *objects, int x, int y, int angle)
 {
   const GList *iter = objects;
 
   while (iter != NULL) {
     GedaObject *object = (GedaObject*)iter->data;
 
-    geda_object_rotate (toplevel, x, y, angle, object);
+    geda_object_rotate (x, y, angle, object);
     iter = g_list_next (iter);
   }
 }
@@ -240,17 +238,16 @@ geda_object_list_rotate (const GList *objects, int x, int y, int angle, TOPLEVEL
  *  \param [in,out] objects  A GList of objects to mirror.
  *  \param [in]     x        The x center of mirroring
  *  \param [in]     y        Unused, essentially
- *  \param [in]     toplevel The toplevel object. (used for change notification)
  */
 void
-geda_object_list_mirror (const GList *objects, int x, int y, TOPLEVEL *toplevel)
+geda_object_list_mirror (const GList *objects, int x, int y)
 {
   const GList *iter = objects;
 
   while (iter != NULL) {
     GedaObject *object = (GedaObject*)iter->data;
 
-    geda_object_mirror (toplevel, x, y, object);
+    geda_object_mirror (x, y, object);
     iter = g_list_next (iter);
   }
 }
@@ -260,17 +257,17 @@ geda_object_list_mirror (const GList *objects, int x, int y, TOPLEVEL *toplevel)
  *
  *  \param [in,out] objects  A GList of objects to mirror.
  *  \param [in]     color    The new color.
- *  \param [in]     toplevel The toplevel object. (used for change notification)
  */
 void
-geda_object_list_set_color (const GList *objects, int color, TOPLEVEL *toplevel)
+geda_object_list_set_color (const GList *objects,
+                            int color)
 {
   const GList *iter = objects;
 
   while (iter != NULL) {
     GedaObject *object = (GedaObject*)iter->data;
 
-    o_set_color (toplevel, object, color);
+    o_set_color (object, color);
     iter = g_list_next (iter);
   }
 }
@@ -299,7 +296,6 @@ geda_object_list_set_selectable (const GList *objects, gboolean selectable)
  *  format. The buffer should be freed when no longer needed.
  *
  *  \param [in] objects The head of a GList of OBJECTs to save.
- *  \param [in] toplevel The current TOPLEVEL.
  *  \returns a buffer containing schematic data or NULL on failure.
  */
 gchar*
@@ -347,7 +343,6 @@ static const gchar
  *  we recurse for saving out those attributes, the function must be called
  *  with save_attribs passed as TRUE.
  *
- *  \param [in] toplevel      A TOPLEVEL structure.
  *  \param [in] object_list   The head of a GList of objects to save.
  *  \param [in] save_attribs  Should attribute objects encounterd be saved?
  *  \returns a buffer containing schematic data or NULL on failure.
@@ -392,16 +387,16 @@ o_save_objects (const GList *object_list, gboolean save_attribs)
           out = geda_circle_object_to_buffer (o_current);
           break;
 
-        case(OBJ_COMPLEX):
-          out = geda_complex_object_to_buffer (o_current);
+        case(OBJ_COMPONENT):
+          out = geda_component_object_to_buffer (o_current);
           g_string_append_printf(acc, "%s\n", out);
           already_wrote = TRUE;
           g_free(out); /* need to free here because of the above flag */
 
-          if (o_complex_is_embedded(o_current)) {
+          if (o_component_is_embedded (o_current)) {
             g_string_append(acc, "[\n");
 
-            out = o_save_objects(o_current->complex->prim_objs, FALSE);
+            out = o_save_objects(o_current->component->prim_objs, FALSE);
             g_string_append (acc, out);
             g_free(out);
 
@@ -410,7 +405,7 @@ o_save_objects (const GList *object_list, gboolean save_attribs)
           break;
 
         case(OBJ_PLACEHOLDER):  /* new type by SDB 1.20.2005 */
-          out = geda_complex_object_to_buffer (o_current);
+          out = geda_component_object_to_buffer (o_current);
           break;
 
         case(OBJ_TEXT):

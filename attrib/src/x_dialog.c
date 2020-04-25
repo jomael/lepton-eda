@@ -1,6 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * gattrib -- gEDA component and net attribute manipulation using spreadsheet.
+/* Lepton EDA attribute editor
  * Copyright (C) 2003-2010 Stuart D. Brorson.
+ * Copyright (C) 2003-2014 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -171,7 +172,7 @@ void x_dialog_delattrib()
 void x_dialog_missing_sym()
 {
   GtkWidget *dialog;
-  const char *string = _("One or more components have been found with missing symbol files!\n\nThis probably happened because lepton-attrib couldn't find your component libraries, perhaps because your gafrc or gattribrc files are misconfigured.\n\nChoose \"Quit\" to leave lepton-attrib and fix the problem, or\n\"Forward\" to continue working with lepton-attrib.\n");
+  const char *string = _("One or more components have been found with missing symbol files!\n\nThis probably happened because lepton-attrib couldn't find your component libraries, perhaps because your gafrc files are misconfigured.\n\nChoose \"Quit\" to leave lepton-attrib and fix the problem, or\n\"Forward\" to continue working with lepton-attrib.\n");
 
   /* Create the dialog */
   dialog = gtk_message_dialog_new (NULL, GTK_DIALOG_MODAL,
@@ -209,14 +210,13 @@ void x_dialog_missing_sym()
 void x_dialog_unsaved_data()
 {
   GtkWidget *dialog;
-  gchar *tmp;
   gchar *str;
 
-  tmp = _("Save the changes before closing?");
-  str = g_strconcat (N_("<big><b>"), tmp, N_("</b></big>"), NULL);
+  const gchar* tmp1 = _("Save the changes before closing?");
+  str = g_strconcat (N_("<big><b>"), tmp1, N_("</b></big>"), NULL);
 
-  tmp = _("If you don't save, all your changes will be permanently lost.");
-  str = g_strconcat (str, "\n\n", tmp, NULL);
+  const gchar* tmp2 = _("If you don't save, all your changes will be permanently lost.");
+  str = g_strconcat (str, "\n\n", tmp2, NULL);
 
   dialog = gtk_message_dialog_new (GTK_WINDOW (window),
                                    (GtkDialogFlags) (GTK_DIALOG_MODAL |
@@ -295,7 +295,7 @@ void x_dialog_unimplemented_feature()
  *  \param [in] return_code the exit code
  *  \todo Is the GPOINTER_TO_INT() call needed in exit()?
  */
-void x_dialog_fatal_error(gchar *string, gint return_code)
+void x_dialog_fatal_error(const gchar *string, gint return_code)
 {
   GtkWidget *dialog;
   

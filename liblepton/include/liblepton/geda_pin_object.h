@@ -27,8 +27,7 @@ G_BEGIN_DECLS
 /* construction, destruction */
 
 OBJECT*
-geda_pin_object_new (TOPLEVEL *toplevel,
-                     int color,
+geda_pin_object_new (int color,
                      int x1,
                      int y1,
                      int x2,
@@ -37,13 +36,12 @@ geda_pin_object_new (TOPLEVEL *toplevel,
                      int whichend);
 
 OBJECT*
-geda_pin_object_copy (TOPLEVEL *toplevel, OBJECT *o_current);
+geda_pin_object_copy (OBJECT *o_current);
 
 /* methods */
 
 void
-geda_pin_object_calculate_bounds (TOPLEVEL *toplevel,
-                                  const OBJECT *object,
+geda_pin_object_calculate_bounds (const OBJECT *object,
                                   GedaBounds *bounds);
 
 gboolean
@@ -65,27 +63,25 @@ gint
 geda_pin_object_get_y1 (const GedaObject *object);
 
 void
-geda_pin_object_mirror (TOPLEVEL *toplevel,
-                        int world_centerx,
+geda_pin_object_mirror (int world_centerx,
                         int world_centery,
                         OBJECT *object);
 
 void
-geda_pin_object_modify (TOPLEVEL *toplevel,
-                        OBJECT *object,
+geda_pin_object_modify (OBJECT *object,
                         int x,
                         int y,
                         int whichone);
 
 void
-geda_pin_object_rotate (TOPLEVEL *toplevel,
-                        int world_centerx,
+geda_pin_object_rotate (int world_centerx,
                         int world_centery,
                         int angle,
                         OBJECT *object);
 
 void
-geda_pin_object_set_type (TOPLEVEL *toplevel, OBJECT *o_current, int pin_type);
+geda_pin_object_set_type (OBJECT *o_current,
+                          int pin_type);
 
 void
 geda_pin_object_set_x0 (GedaObject *object, gint x);
@@ -111,8 +107,7 @@ geda_pin_object_update_whichend (TOPLEVEL *toplevel,
                                  int num_pins);
 
 OBJECT*
-o_pin_read (TOPLEVEL *toplevel,
-            const char buf[],
+o_pin_read (const char buf[],
             unsigned int release_ver,
             unsigned int fileformat_ver,
             GError **err);

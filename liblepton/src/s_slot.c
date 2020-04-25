@@ -1,7 +1,8 @@
 /* gEDA - GPL Electronic Design Automation
  * libgeda - gEDA's library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2013 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -114,10 +115,10 @@ static char *s_slot_search_slotdef (OBJECT *object, int slotnumber)
  *  parts, but on slotted parts, this is what sets the
  *  pinnumber= attribute on slots 2, 3, 4....
  *
- *  \param [in]     toplevel  The TOPLEVEL object.
  *  \param [in,out] object     The OBJECT to update.
  */
-void s_slot_update_object (TOPLEVEL *toplevel, OBJECT *object)
+void
+s_slot_update_object (OBJECT *object)
 {
   OBJECT *o_pin_object;
   OBJECT *o_pinnum_attrib;
@@ -188,7 +189,7 @@ void s_slot_update_object (TOPLEVEL *toplevel, OBJECT *object)
   while (current_pin != NULL) {
     /* get pin on this component with pinseq == pin_counter */
     pinseq = g_strdup_printf ("%d", pin_counter);
-    o_pin_object = o_complex_find_pin_by_attribute (object, "pinseq", pinseq);
+    o_pin_object = o_component_find_pin_by_attribute (object, "pinseq", pinseq);
     g_free (pinseq);
 
     if (o_pin_object != NULL) {
@@ -199,8 +200,7 @@ void s_slot_update_object (TOPLEVEL *toplevel, OBJECT *object)
       g_list_free (attributes);
 
       if (o_pinnum_attrib != NULL) {
-        o_text_set_string (toplevel,
-                           o_pinnum_attrib,
+        o_text_set_string (o_pinnum_attrib,
                            g_strdup_printf ("pinnumber=%s", current_pin));
       }
 

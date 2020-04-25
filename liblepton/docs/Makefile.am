@@ -1,11 +1,11 @@
 SUBDIRS = images
 
-EXTRA_DIST = 		libgeda-main.txt what-is-geda.html \
+EXTRA_DIST =		libgeda-main.txt what-is-geda.html \
 			what-is-libgeda.html logo.png liblepton.dox
 
-SUFFIXES = 		.html .tex .pdf
+SUFFIXES =		.html .tex .pdf
 
-all: 
+all:
 	@echo 'Type: make doxygen  to create doxygen documentation for libgeda'
 
 doxygen: liblepton.dox
@@ -13,16 +13,11 @@ doxygen: liblepton.dox
 if ENABLE_DOXYGEN
 	-(cd images && $(MAKE) images)
 	$(DOXYGEN) liblepton.dox
-	-(cd latex && $(MAKE))
 else
 	@echo 'configure was not run with the --enable-doxygen switch.'
 	@echo 'The documentation cannot be built from the sources.'
 endif
 
-MOSTLYCLEANFILES = 	*.log *~
-CLEANFILES = 		*.log *~
-DISTCLEANFILES =        *.log
-MAINTAINERCLEANFILES = 	*.log *~ Makefile.in
 
 distclean-local:
 	-rm -rf html latex

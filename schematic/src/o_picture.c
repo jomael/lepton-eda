@@ -1,6 +1,7 @@
 /* Lepton EDA Schematic Capture
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2011 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2015 gEDA Contributors
+ * Copyright (C) 2017-2019 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -101,14 +102,13 @@ void o_picture_end(GschemToplevel *w_current, int w_x, int w_y)
   if ((picture_width != 0) && (picture_height != 0)) {
 
     /* create the object */
-    new_obj = o_picture_new(toplevel,
-                            NULL, 0, w_current->pixbuf_filename,
-                            OBJ_PICTURE,
-                            picture_left, picture_top,
-                            picture_left + picture_width,
-                            picture_top - picture_height,
-                            0, FALSE, FALSE);
-    s_page_append (toplevel, toplevel->page_current, new_obj);
+    new_obj = o_picture_new (NULL, 0, w_current->pixbuf_filename,
+                             OBJ_PICTURE,
+                             picture_left, picture_top,
+                             picture_left + picture_width,
+                             picture_top - picture_height,
+                             0, FALSE, FALSE);
+    s_page_append (toplevel->page_current, new_obj);
 
     /* Run %add-objects-hook */
     g_run_hook_object (w_current, "%add-objects-hook", new_obj);
@@ -177,9 +177,7 @@ void picture_selection_dialog (GschemToplevel *w_current)
 #endif
 
       o_invalidate_rubber(w_current);
-      i_update_middle_button (w_current,
-                              (void (*) (gpointer, guint, GtkWidget*)) i_callback_add_picture,
-                              _("Picture"));
+
       i_action_stop (w_current);
 
       o_picture_set_pixbuf(w_current, pixbuf, filename);
@@ -316,7 +314,7 @@ o_picture_exchange (GschemToplevel *w_current,
       /* Erase previous picture */
       o_invalidate (w_current, object);
 
-      status = o_picture_set_from_file (toplevel, object, filename, error);
+      status = o_picture_set_from_file (object, filename, error);
       if (!status) return FALSE;
 
       /* Draw new picture */

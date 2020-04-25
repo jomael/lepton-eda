@@ -1,0 +1,1495 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Lepton Developers
+# This file is distributed under the same license as the lepton-eda package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: lepton-eda 1.9.10\n"
+"Report-Msgid-Bugs-To: https://github.com/lepton-eda/lepton-eda/issues\n"
+"POT-Creation-Date: 2020-04-02 19:27+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: liblepton/data/liblepton.xml.in:3
+msgid "Lepton EDA circuit schematic"
+msgstr ""
+
+#: liblepton/data/liblepton.xml.in:4
+msgid "Lepton EDA schematic symbol"
+msgstr ""
+
+#: liblepton/data/liblepton.xml.in:5
+msgid "Lepton EDA sch2pcb project"
+msgstr ""
+
+#: liblepton/data/x-lepton-sch2pcb-project.desktop.in:3
+msgid "Lepton EDA sch2pcb Project"
+msgstr ""
+
+#: liblepton/data/x-lepton-schematic.desktop.in:3
+msgid "Lepton EDA Circuit Schematic"
+msgstr ""
+
+#: liblepton/data/x-lepton-symbol.desktop.in:3
+msgid "Lepton EDA Schematic Symbol"
+msgstr ""
+
+#: liblepton/src/a_basic.c:57 liblepton/src/f_basic.c:382
+#, c-format
+msgid "File %1$s is read-only"
+msgstr ""
+
+#: liblepton/src/a_basic.c:114
+msgid "Schematic data was not valid UTF-8"
+msgstr ""
+
+#: liblepton/src/a_basic.c:246
+#, c-format
+msgid ""
+"Read unexpected attach symbol start marker in [%1$s] :\n"
+">>\n"
+"%2$s<<\n"
+msgstr ""
+
+#: liblepton/src/a_basic.c:263
+#, c-format
+msgid ""
+"Read unexpected embedded symbol start marker in [%1$s] :\n"
+">>\n"
+"%2$s<<\n"
+msgstr ""
+
+#: liblepton/src/a_basic.c:292
+#, c-format
+msgid ""
+"Read unexpected embedded symbol end marker in [%s] :\n"
+">>\n"
+"%s<<\n"
+msgstr ""
+
+#: liblepton/src/a_basic.c:327
+#, c-format
+msgid ""
+"Read an old format sym/sch file!\n"
+"Please run g[sym|sch]update on:\n"
+"[%1$s]"
+msgstr ""
+
+#: liblepton/src/a_basic.c:333
+#, c-format
+msgid ""
+"Read garbage in [%1$s] :\n"
+">>\n"
+"%2$s<<\n"
+msgstr ""
+
+#: liblepton/src/f_basic.c:120 liblepton/src/f_basic.c:133
+#, c-format
+msgid "Failed to stat [%1$s]: %2$s"
+msgstr ""
+
+#: liblepton/src/f_basic.c:212
+#, c-format
+msgid "Cannot find file %1$s: %2$s"
+msgstr ""
+
+#: liblepton/src/f_basic.c:261
+#, c-format
+msgid ""
+"\n"
+"WARNING: Found an autosave backup file:\n"
+"  %1$s.\n"
+"\n"
+msgstr ""
+
+#: liblepton/src/f_basic.c:263
+msgid "I could not guess if it is newer, so you have to do it manually.\n"
+msgstr ""
+
+#: liblepton/src/f_basic.c:265
+msgid ""
+"The backup copy is newer than the schematic, so it seems you should load it "
+"instead of the original file.\n"
+msgstr ""
+
+#: liblepton/src/f_basic.c:267
+msgid ""
+"lepton-schematic usually makes backup copies automatically, and this "
+"situation happens when it crashed or it was forced to exit abruptly.\n"
+msgstr ""
+
+#: liblepton/src/f_basic.c:270
+msgid ""
+"\n"
+"Run lepton-schematic and correct the situation.\n"
+"\n"
+msgstr ""
+
+#: liblepton/src/f_basic.c:372
+#, c-format
+msgid "Can't get the real filename of %1$s: %2$s"
+msgstr ""
+
+#: liblepton/src/f_basic.c:403
+#, c-format
+msgid "Could NOT set previous backup file [%1$s] read-write."
+msgstr ""
+
+#: liblepton/src/f_basic.c:409
+#, c-format
+msgid "Can't save backup file: %1$s."
+msgstr ""
+
+#: liblepton/src/f_basic.c:419
+#, c-format
+msgid "Could NOT set backup file [%1$s] readonly."
+msgstr ""
+
+#: liblepton/src/f_basic.c:467
+#, c-format
+msgid "Failed to restore permissions on '%1$s': %2$s\n"
+msgstr ""
+
+#: liblepton/src/f_basic.c:472
+#, c-format
+msgid "Failed to restore ownership on '%1$s': %2$s\n"
+msgstr ""
+
+#: liblepton/src/f_basic.c:482
+#, c-format
+msgid "Could NOT save file: %1$s"
+msgstr ""
+
+#: liblepton/src/g_basic.c:260
+msgid ""
+"\n"
+"Backtrace:\n"
+msgstr ""
+
+#: liblepton/src/g_rc.c:74
+msgid "RC file already loaded"
+msgstr ""
+
+#: liblepton/src/g_rc.c:118
+#, c-format
+msgid "Failed to load config from '%1$s': %2$s\n"
+msgstr ""
+
+#: liblepton/src/g_rc.c:142
+#, c-format
+msgid "Loaded RC file [%1$s]"
+msgstr ""
+
+#: liblepton/src/g_rc.c:146
+#, c-format
+msgid "Failed to load RC file [%1$s]: "
+msgstr ""
+
+#: liblepton/src/g_rc.c:276
+msgid "ERROR: An unknown error occurred while parsing configuration files."
+msgstr ""
+
+#: liblepton/src/g_rc.c:288
+#, c-format
+msgid "ERROR: %1$s"
+msgstr ""
+
+#: liblepton/src/g_rc.c:289
+#, c-format
+msgid "ERROR: %1$s\n"
+msgstr ""
+
+#: liblepton/src/g_rc.c:295
+#, c-format
+msgid "ERROR: The %1$s log may contain more information.\n"
+msgstr ""
+
+#: liblepton/src/g_rc.c:450
+#, c-format
+msgid "Invalid path [%1$s] passed to component-library\n"
+msgstr ""
+
+#: liblepton/src/geda_page.c:197
+#, c-format
+msgid "Can't get the real filename of %1$s."
+msgstr ""
+
+#: liblepton/src/geda_page.c:209
+#, c-format
+msgid "Unable to delete backup file %1$s."
+msgstr ""
+
+#: liblepton/src/geda_page.c:532
+#, c-format
+msgid "Saved [%1$s]"
+msgstr ""
+
+#: liblepton/src/geda_page.c:538
+#, c-format
+msgid "Could NOT save [%1$s]"
+msgstr ""
+
+#: liblepton/src/geda_arc_object.c:403 liblepton/src/geda_arc_object.c:416
+msgid "Failed to parse arc object"
+msgstr ""
+
+#: liblepton/src/geda_arc_object.c:423
+#, c-format
+msgid "Found a zero radius arc [ %1$c %2$d %3$d %4$d %5$d %6$d %7$d ]"
+msgstr ""
+
+#: liblepton/src/geda_arc_object.c:430 liblepton/src/geda_box_object.c:317
+#: liblepton/src/geda_bus_object.c:362 liblepton/src/geda_circle_object.c:378
+#: liblepton/src/geda_line_object.c:420 liblepton/src/geda_net_object.c:307
+#: liblepton/src/geda_path_object.c:208 liblepton/src/geda_pin_object.c:367
+#: liblepton/src/geda_text_object.c:552
+#, c-format
+msgid "Found an invalid color [ %1$s ]"
+msgstr ""
+
+#: liblepton/src/geda_arc_object.c:431 liblepton/src/geda_box_object.c:318
+#: liblepton/src/geda_bus_object.c:363 liblepton/src/geda_circle_object.c:379
+#: liblepton/src/geda_line_object.c:421 liblepton/src/geda_net_object.c:308
+#: liblepton/src/geda_path_object.c:209 liblepton/src/geda_pin_object.c:368
+#: liblepton/src/geda_text_object.c:554
+msgid "Setting color to default color."
+msgstr ""
+
+#: liblepton/src/o_attrib.c:111
+#, c-format
+msgid "Attribute [%1$s] already attached\n"
+msgstr ""
+
+#: liblepton/src/o_attrib.c:117
+msgid "Attempt to attach non text item as an attribute!\n"
+msgstr ""
+
+#: liblepton/src/o_attrib.c:122
+#, c-format
+msgid "Attempt to attach attribute [%1$s] to more than one object\n"
+msgstr ""
+
+#: liblepton/src/o_attrib.c:329
+msgid "Tried to attach a non-text item as an attribute"
+msgstr ""
+
+#: liblepton/src/o_attrib.c:336
+msgid "Unexpected end-of-file in attribute list"
+msgstr ""
+
+#: liblepton/src/geda_box_object.c:276 liblepton/src/geda_box_object.c:305
+msgid "Failed to parse box object"
+msgstr ""
+
+#: liblepton/src/geda_box_object.c:311
+#, c-format
+msgid "Found a zero width/height box [ %1$c %2$d %3$d %4$d %5$d %6$d ]"
+msgstr ""
+
+#: liblepton/src/geda_bus_object.c:343 liblepton/src/geda_bus_object.c:350
+msgid "Failed to parse bus object"
+msgstr ""
+
+#: liblepton/src/geda_bus_object.c:356
+#, c-format
+msgid "Found a zero length bus [ %1$c %2$d %3$d %4$d %5$d %6$d ]"
+msgstr ""
+
+#: liblepton/src/geda_bus_object.c:368
+#, c-format
+msgid "Found an invalid bus ripper direction [ %1$s ]"
+msgstr ""
+
+#: liblepton/src/geda_bus_object.c:369
+msgid "Resetting direction to neutral (no direction)."
+msgstr ""
+
+#: liblepton/src/geda_circle_object.c:334
+#: liblepton/src/geda_circle_object.c:363
+msgid "Failed to parse circle object"
+msgstr ""
+
+#: liblepton/src/geda_circle_object.c:370
+#, c-format
+msgid "Found a zero or negative radius circle [ %1$c %2$d %3$d %4$d %5$d ]"
+msgstr ""
+
+#: liblepton/src/geda_circle_object.c:373
+msgid "Setting radius to 0."
+msgstr ""
+
+#: liblepton/src/geda_color.c:217
+msgid "Color map entry must be a two-element list"
+msgstr ""
+
+#: liblepton/src/geda_color.c:225
+msgid "Index in color map entry must be an integer"
+msgstr ""
+
+#: liblepton/src/geda_color.c:251
+msgid "Value in color map entry must be #f or a string"
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:454
+#, c-format
+msgid ""
+"Component not found:\n"
+" %1$s"
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:664
+msgid "Failed to parse component object"
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:677
+#, c-format
+msgid ""
+"Found a component with an invalid rotation [ %1$c %2$d %3$d %4$d %5$d %6$d "
+"%7$s ]"
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:680
+#: liblepton/src/geda_picture_object.c:403
+msgid "Setting angle to 0."
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:692
+#, c-format
+msgid ""
+"Found a component with an invalid mirror flag [ %1$c %2$d %3$d %4$d %5$d "
+"%6$d %7$s ]"
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:695
+msgid "Setting mirror to 0."
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:1021
+#, c-format
+msgid ""
+"WARNING: Symbol version parse error on refdes %1$s:\n"
+"\tCould not parse symbol file symversion=%2$s"
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:1025
+#, c-format
+msgid ""
+"WARNING: Symbol version parse error on refdes %1$s:\n"
+"\tCould not parse symbol file symversion="
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:1041
+#, c-format
+msgid ""
+"WARNING: Symbol version parse error on refdes %1$s:\n"
+"\tCould not parse attached symversion=%2$s"
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:1066
+#, c-format
+msgid ""
+"WARNING: Symbol version oddity on refdes %1$s:\n"
+"\tsymversion=%2$s attached to instantiated symbol, but no symversion= inside "
+"symbol file."
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:1080
+#, c-format
+msgid ""
+"WARNING: Symbol version mismatch on refdes %1$s (%2$s):\n"
+"\tSymbol in library is newer than instantiated symbol."
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:1108
+#, c-format
+msgid "\tMAJOR VERSION CHANGE (file %1$.3f, instantiated %2$.3f, %3$s)!"
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:1126
+#, c-format
+msgid "\tMinor version change (file %1$.3f, instantiated %2$.3f)"
+msgstr ""
+
+#: liblepton/src/geda_component_object.c:1137
+#, c-format
+msgid ""
+"WARNING: Symbol version oddity on refdes %1$s:\n"
+"\tInstantiated symbol is newer than symbol in library."
+msgstr ""
+
+#: liblepton/src/o_embed.c:61
+#, c-format
+msgid "Component [%1$s] has been embedded."
+msgstr ""
+
+#: liblepton/src/o_embed.c:112
+#, c-format
+msgid ""
+"Could not find component [%1$s], while trying to unembed. Component is still "
+"embedded."
+msgstr ""
+
+#: liblepton/src/o_embed.c:120
+#, c-format
+msgid "Component [%1$s] has been successfully unembedded."
+msgstr ""
+
+#: liblepton/src/geda_line_object.c:384 liblepton/src/geda_line_object.c:402
+msgid "Failed to parse line object"
+msgstr ""
+
+#: liblepton/src/geda_line_object.c:414
+#, c-format
+msgid "Found a zero length line [ %1$c %2$d %3$d %4$d %5$d %6$d ]"
+msgstr ""
+
+#: liblepton/src/geda_net_object.c:296
+msgid "Failed to parse net object"
+msgstr ""
+
+#: liblepton/src/geda_net_object.c:301
+#, c-format
+msgid "Found a zero length net [ %1$c %2$d %3$d %4$d %5$d %6$d ]"
+msgstr ""
+
+#: liblepton/src/geda_path_object.c:200
+msgid "Failed to parse path object"
+msgstr ""
+
+#: liblepton/src/geda_path_object.c:226
+msgid "Unexpected end-of-file when reading path"
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:369
+msgid "Failed to parse picture definition"
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:374
+#, c-format
+msgid "Found a zero width/height picture [ %1$c %2$d %3$d %4$d %5$d ]"
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:380
+#, c-format
+msgid "Found a picture with a wrong 'mirrored' parameter: %1$d."
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:382
+msgid "Setting mirrored to 0."
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:387
+#, c-format
+msgid "Found a picture with a wrong 'embedded' parameter: %1$d."
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:389
+msgid "Setting embedded to 0."
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:402
+#, c-format
+msgid "Found an unsupported picture angle [ %1$d ]"
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:414
+msgid "Found an image with no filename."
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:445
+#, c-format
+msgid "Failed to load image from embedded data [%1$s]: %2$s"
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:446
+msgid "Base64 decoding failed."
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:447
+msgid "Falling back to file loading. Picture unembedded."
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:506
+msgid "ERROR: unable to encode the picture."
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:606
+#, c-format
+msgid "Failed to load buffer image [%1$s]: %2$s"
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:619
+#, c-format
+msgid "Failed to load image from [%1$s]: %2$s"
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:707
+#, c-format
+msgid "Picture %1$p has invalid angle %2$i\n"
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:1046
+#, c-format
+msgid "Picture [%1$s] has no image data."
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:1047
+msgid "Falling back to file loading. Picture is still unembedded."
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:1055
+#, c-format
+msgid "Picture [%1$s] has been embedded."
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:1079
+#, c-format
+msgid "Failed to load image from file [%1$s]: %2$s"
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:1081
+msgid "Picture is still embedded."
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:1089
+#, c-format
+msgid "Picture [%1$s] has been unembedded."
+msgstr ""
+
+#: liblepton/src/geda_picture_object.c:1320
+msgid "Failed to load fallback image.\n"
+msgstr ""
+
+#: liblepton/src/geda_pin_object.c:344 liblepton/src/geda_pin_object.c:352
+msgid "Failed to parse pin object"
+msgstr ""
+
+#: liblepton/src/geda_pin_object.c:358
+msgid ""
+"Found a pin which did not have the whichend field set.\n"
+"Verify and correct manually."
+msgstr ""
+
+#: liblepton/src/geda_pin_object.c:361
+#, c-format
+msgid "Found an invalid whichend on a pin (reseting to zero): %d"
+msgstr ""
+
+#: liblepton/src/geda_text_object.c:492 liblepton/src/geda_text_object.c:502
+#: liblepton/src/geda_text_object.c:512
+msgid "Failed to parse text object"
+msgstr ""
+
+#: liblepton/src/geda_text_object.c:519
+#, c-format
+msgid "Found an invalid text size [ %1$s ]"
+msgstr ""
+
+#: liblepton/src/geda_text_object.c:521
+#, c-format
+msgid "Setting text size to %1$d."
+msgstr ""
+
+#: liblepton/src/geda_text_object.c:525
+#, c-format
+msgid "Found an unsupported text angle [ %1$s ]"
+msgstr ""
+
+#: liblepton/src/geda_text_object.c:527
+#, c-format
+msgid "Setting angle to %1$d."
+msgstr ""
+
+#: liblepton/src/geda_text_object.c:544
+#, c-format
+msgid "Found an unsupported text alignment [ %1$s ]"
+msgstr ""
+
+#: liblepton/src/geda_text_object.c:547
+msgid "Setting alignment to LOWER_LEFT."
+msgstr ""
+
+#: liblepton/src/geda_text_object.c:567
+#, c-format
+msgid "Unexpected end-of-file after %1$d lines"
+msgstr ""
+
+#: liblepton/src/s_clib.c:460
+#, c-format
+msgid "Library command failed [%1$s]: %2$s"
+msgstr ""
+
+#: liblepton/src/s_clib.c:465
+#, c-format
+msgid "Library command failed [%1$s]: Uncaught signal %2$i."
+msgstr ""
+
+#: liblepton/src/s_clib.c:469
+#, c-format
+msgid "Library command failed [%1$s]"
+msgstr ""
+
+#: liblepton/src/s_clib.c:470
+#, c-format
+msgid ""
+"Error output was:\n"
+"%1$s"
+msgstr ""
+
+#: liblepton/src/s_clib.c:556
+#, c-format
+msgid "Library name [%1$s] already in use.  Using [%2$s]."
+msgstr ""
+
+#: liblepton/src/s_clib.c:593
+#, c-format
+msgid "Failed to open directory [%1$s]: %2$s"
+msgstr ""
+
+#: liblepton/src/s_clib.c:729
+#, c-format
+msgid "Failed to scan library [%1$s]: Scheme function returned non-list."
+msgstr ""
+
+#: liblepton/src/s_clib.c:737
+#, c-format
+msgid "Non-string symbol name while scanning library [%1$s]"
+msgstr ""
+
+#: liblepton/src/s_clib.c:893 liblepton/src/s_clib.c:940
+msgid "Cannot add library: name not specified."
+msgstr ""
+
+#: liblepton/src/s_clib.c:900
+#, c-format
+msgid ""
+"Cannot add library [%1$s]: both 'list' and 'get' commands must be specified."
+msgstr ""
+
+#: liblepton/src/s_clib.c:948
+#, c-format
+msgid "Cannot add Scheme-library [%1$s]: callbacks must be closures."
+msgstr ""
+
+#: liblepton/src/s_clib.c:1075
+#, c-format
+msgid "Failed to load symbol from file [%1$s]: %2$s"
+msgstr ""
+
+#: liblepton/src/s_clib.c:1135
+#, c-format
+msgid "Failed to load symbol data [%1$s] from source [%2$s]"
+msgstr ""
+
+#: liblepton/src/s_clib.c:1377
+#, c-format
+msgid "Component [%1$s] was not found in the component library."
+msgstr ""
+
+#: liblepton/src/s_clib.c:1383
+#, c-format
+msgid "More than one component found with name [%1$s]."
+msgstr ""
+
+#: liblepton/src/s_hierarchy.c:78 liblepton/src/s_hierarchy.c:240
+msgid "Schematic not found in source library."
+msgstr ""
+
+#: liblepton/src/s_hierarchy.c:100
+msgid "Hierarchy contains a circular dependency."
+msgstr ""
+
+#: liblepton/src/s_hierarchy.c:200
+msgid "There are no schematics above the current one!"
+msgstr ""
+
+#: liblepton/src/s_hierarchy.c:341
+#, c-format
+msgid "Failed to descend hierarchy into '%1$s': %2$s"
+msgstr ""
+
+#: liblepton/src/s_slot.c:159
+msgid "Did not find slotdef=#:#,#,#... attribute."
+msgstr ""
+
+#: liblepton/src/s_slot.c:165
+msgid "Improper slotdef syntax: missing \":\"."
+msgstr ""
+
+#: liblepton/src/s_slot.c:180
+msgid "Did not find proper slotdef=#:#,#,#... attribute."
+msgstr ""
+
+#: liblepton/src/s_slot.c:210
+msgid "component missing pinseq= attribute."
+msgstr ""
+
+#: liblepton/src/edaconfig.c:843 liblepton/src/edaconfig.c:929
+msgid "Undefined configuration filename"
+msgstr ""
+
+#: liblepton/src/edaconfig.c:1254 liblepton/src/edaconfig.c:1318
+#, c-format
+msgid "Configuration does not have group '%s'"
+msgstr ""
+
+#: liblepton/src/edaconfig.c:1332
+#, c-format
+msgid "Configuration does not have key '%s'"
+msgstr ""
+
+#: liblepton/src/scheme_attrib.c:67 liblepton/src/scheme_attrib.c:101
+msgid "~A is not a valid attribute: invalid string '~A'."
+msgstr ""
+
+#: liblepton/src/scheme_attrib.c:205
+msgid "Objects ~A and ~A are not part of the same page and/or component object"
+msgstr ""
+
+#: liblepton/src/scheme_attrib.c:212 liblepton/src/scheme_attrib.c:217
+msgid "Object ~A is already attached as an attribute"
+msgstr ""
+
+#: liblepton/src/scheme_attrib.c:266
+msgid "Object ~A is attribute of wrong object"
+msgstr ""
+
+#: liblepton/src/scheme_component.c:151
+msgid "Invalid component angle ~A. Must be 0, 90, 180, or 270 degrees"
+msgstr ""
+
+#: liblepton/src/scheme_component.c:271 liblepton/src/scheme_page.c:246
+msgid "Object ~A is already attached to something"
+msgstr ""
+
+#: liblepton/src/scheme_component.c:331
+msgid "Object ~A is attached to a different component"
+msgstr ""
+
+#: liblepton/src/scheme_component.c:338
+msgid "Object ~A is attached to a page"
+msgstr ""
+
+#: liblepton/src/scheme_component.c:345 liblepton/src/scheme_page.c:298
+msgid "Object ~A is attached as an attribute"
+msgstr ""
+
+#: liblepton/src/scheme_component.c:352 liblepton/src/scheme_page.c:305
+msgid "Object ~A has attributes"
+msgstr ""
+
+#: liblepton/src/scheme_object.c:236
+msgid "Object ~A has bad type '~A'"
+msgstr ""
+
+#: liblepton/src/scheme_object.c:369
+msgid "Object ~A has invalid stroke cap style ~A"
+msgstr ""
+
+#: liblepton/src/scheme_object.c:382
+msgid "Object ~A has invalid stroke dash style ~A"
+msgstr ""
+
+#: liblepton/src/scheme_object.c:446
+msgid "Invalid stroke cap style ~A."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:457
+msgid "Invalid stroke dash style ~A."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:467
+msgid "Missing dash length parameter for dash style ~A."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:477
+msgid "Missing dot/dash space parameter for dash style ~A."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:545
+msgid "Object ~A has invalid fill style ~A"
+msgstr ""
+
+#: liblepton/src/scheme_object.c:594
+msgid "Invalid fill style ~A."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:602
+msgid "Missing second space parameter for fill style ~A."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:611
+msgid "Missing second angle parameter for fill style ~A."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:621
+msgid "Missing stroke width parameter for fill style ~A."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:630
+msgid "Missing space parameter for fill style ~A."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:639
+msgid "Missing angle parameter for fill style ~A."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:1111
+msgid "Invalid pin type ~A, must be 'net or 'bus"
+msgstr ""
+
+#: liblepton/src/scheme_object.c:1160
+msgid "Object ~A has invalid pin type."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:1566
+msgid "Invalid text alignment ~A."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:1582
+msgid "Invalid text angle ~A. Must be 0, 90, 180, or 270 degrees"
+msgstr ""
+
+#: liblepton/src/scheme_object.c:1601
+msgid "Invalid text name/value visibility ~A."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:1675
+msgid "Text object ~A has invalid text alignment ~A"
+msgstr ""
+
+#: liblepton/src/scheme_object.c:1684
+msgid "Text object ~A has invalid visibility ~A"
+msgstr ""
+
+#: liblepton/src/scheme_object.c:1694
+msgid "Text object ~A has invalid text attribute visibility ~A"
+msgstr ""
+
+#: liblepton/src/scheme_object.c:1734
+msgid "Object ~A is not included in a page."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:1887
+msgid "Path object ~A has invalid element type ~A at index ~A"
+msgstr ""
+
+#: liblepton/src/scheme_object.c:2001
+msgid "Invalid path element type ~A."
+msgstr ""
+
+#: liblepton/src/scheme_object.c:2173
+msgid "Invalid picture angle ~A. Must be 0, 90, 180, or 270 degrees"
+msgstr ""
+
+#: liblepton/src/scheme_page.c:291
+msgid "Object ~A is attached to a component or different page"
+msgstr ""
+
+#: liblepton/src/scheme_page.c:438
+msgid "Parse error: ~s"
+msgstr ""
+
+#: liblepton/src/edascmhookproxy.c:82
+msgid "Scheme hook"
+msgstr ""
+
+#: liblepton/src/edascmhookproxy.c:83
+msgid "The Scheme-level hook to proxy"
+msgstr ""
+
+#: liblepton/scheme/lepton/attrib.scm:57
+#, scheme-format
+msgid "Object ~A is not part of a page"
+msgstr ""
+
+#: liblepton/scheme/lepton/library.scm:102
+#, scheme-format
+msgid "Invalid path ~S or source not readable.\n"
+msgstr ""
+
+#: liblepton/scheme/lepton/library.scm:104
+msgid "Source library path must be a string.\n"
+msgstr ""
+
+#: liblepton/scheme/lepton/library.scm:163
+#, scheme-format
+msgid "File ~S is not readable.\n"
+msgstr ""
+
+#: liblepton/scheme/lepton/library/component.scm:78
+#, scheme-format
+msgid "Library at ~S has been already added."
+msgstr ""
+
+#: liblepton/scheme/lepton/repl.scm:48
+msgid "Welcome to Lepton REPL!\n"
+msgstr ""
+
+#: liblepton/scheme/lepton/repl.scm:53
+msgid "WARNING: Readline library is not supported in your configuration.\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:106
+msgid ""
+"Copyright (C) 1998-2016 gEDA developers\n"
+"Copyright (C) 2017-2020 Lepton EDA Contributors\n"
+"This is free software, and you are welcome to redistribute it under\n"
+"certain conditions. For details, see the file `COPYING', which is\n"
+"included in the Lepton EDA distribution.\n"
+"There is NO WARRANTY, to the extent permitted by law.\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:183
+#, scheme-format
+msgid ""
+"Possible attribute conflict for refdes: ~A\n"
+"name: ~A\n"
+"values: ~A\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:249
+#, scheme-format
+msgid "Refdes ~a: Bad slot number: ~a.\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:292
+msgid "Couldn't wrap string  at requested position\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:593
+#, scheme-format
+msgid ""
+"There is a net name collision!\n"
+"The net called \"~A\" will be remapped\n"
+"to \"~A\" which is already used\n"
+"by the net called \"~A\".\n"
+"This may be caused by netname attributes colliding with other netnames\n"
+"due to truncation of the name, case insensitivity, or\n"
+"other limitations imposed by this netlist format.\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:630
+#, scheme-format
+msgid ""
+"There is a refdes name collision!\n"
+"The refdes \"~A\" will be mapped\n"
+"to \"~A\" which is already used\n"
+"by \"~A\".\n"
+"This may be caused by refdes attributes colliding with others\n"
+"due to truncation of the refdes, case insensitivity, or\n"
+"other limitations imposed by this netlist format.\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:823
+#, scheme-format
+msgid "Can't open directory ~S.\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:834
+#, scheme-format
+msgid ""
+"Usage: ~A [OPTION ...] [-g BACKEND] [--] FILE ...\n"
+"\n"
+"Generate a netlist from one or more Lepton EDA schematic FILEs.\n"
+"\n"
+"General options:\n"
+"  -q                  Quiet mode.\n"
+"  -v, --verbose       Verbose mode.\n"
+"  -o FILE             Filename for netlist data output.\n"
+"  -L DIR              Add DIR to Scheme search path.\n"
+"  -g BACKEND          Specify netlist backend to use.\n"
+"  -f FILE             Specify path to netlist backend file to use.\n"
+"  -O STRING           Pass an option string to backend.\n"
+"  -l FILE             Load Scheme file before loading backend.\n"
+"  -m FILE             Load Scheme file after loading backend.\n"
+"  -c EXPR             Evaluate Scheme expression at startup.\n"
+"  -i                  Enter interactive Scheme REPL after loading.\n"
+"  -b, --list-backends Print a list of available netlist backends.\n"
+"  -h, --help          Help; this message.\n"
+"  -V, --version       Show version information.\n"
+"  --                  Treat all remaining arguments as filenames.\n"
+"\n"
+"Report bugs at <https://github.com/lepton-eda/lepton-eda/issues>\n"
+"Lepton EDA homepage: <https://github.com/lepton-eda/lepton-eda>\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:873
+#, scheme-format
+msgid ""
+"\n"
+"Just got an error '~A':\n"
+"        ~A\n"
+"\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:914
+msgid "You gave neither backend to execute nor interactive mode!\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:918
+#, scheme-format
+msgid ""
+"No schematic files specified for processing.\n"
+"~\n"
+"                         Run `~A --help' for more information.\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:924
+#, scheme-format
+msgid ""
+"Could not find backend `~A' in load path.\n"
+"~\n"
+"                         Run `~A --list-backends' for a full list of "
+"available backends.\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:930
+#, scheme-format
+msgid ""
+"Can't load backend file ~S.\n"
+"~\n"
+"                         Backend files are expected to have names like "
+"\"gnet-NAME.scm\"\n"
+"~\n"
+"                         and contain entry point function NAME (where NAME "
+"is the backend's name).\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:937
+#, scheme-format
+msgid "Netlist mode requested by backend is not supported: ~A\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:997
+msgid "Failed to evaluate Scheme expression at startup.\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:1031
+msgid "Failed to load Scheme file before loading backend.\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:1060
+msgid "Failed to load backend file.\n"
+msgstr ""
+
+#: liblepton/scheme/netlist.scm:1073
+msgid "Failed to load Scheme file after loading backend.\n"
+msgstr ""
+
+#: liblepton/scheme/netlist/attrib/refdes.scm:42
+#, scheme-format
+msgid "Invalid hierarchy tag: ~S"
+msgstr ""
+
+#: liblepton/scheme/netlist/attrib/refdes.scm:57
+#, scheme-format
+msgid "Netlist mode ~S is not supported."
+msgstr ""
+
+#: liblepton/scheme/netlist/attrib/refdes.scm:77
+#, scheme-format
+msgid ""
+"\n"
+"Non-graphical symbol ~S\n"
+"at ~A on page ~S\n"
+"has neither refdes= nor net=."
+msgstr ""
+
+#: liblepton/scheme/netlist/net.scm:77
+#, scheme-format
+msgid "Invalid attribute (missing ':'): net=~A"
+msgstr ""
+
+#: liblepton/scheme/netlist/net.scm:133
+#, scheme-format
+msgid "Attached net ~A:~A overrides inherited net ~A:~A"
+msgstr ""
+
+#: liblepton/scheme/netlist/package.scm:125
+#, scheme-format
+msgid "Possible ~A attribute conflict for ~A: ~A=~A ~A=~A\n"
+msgstr ""
+
+#: liblepton/scheme/netlist/subschematic.scm:216
+#, scheme-format
+msgid "Loading subcircuit ~S."
+msgstr ""
+
+#: liblepton/scheme/netlist/subschematic.scm:219
+#, scheme-format
+msgid "Failed to load subcircuit ~S."
+msgstr ""
+
+#: liblepton/scheme/netlist/subschematic.scm:247
+#, scheme-format
+msgid "Pin ~S of the component ~S has no \"pinlabel\" attribute."
+msgstr ""
+
+#: liblepton/scheme/netlist/subschematic.scm:254
+#, scheme-format
+msgid "Port component ~S has no pins."
+msgstr ""
+
+#: liblepton/scheme/netlist/subschematic.scm:261
+#, scheme-format
+msgid "Source schematic of the component ~S has no port with \"refdes=~A\"."
+msgstr ""
+
+#: liblepton/scheme/netlist/subschematic.scm:269
+#, scheme-format
+msgid ""
+"There are several subschematic components for the pin with \"pinlabel=~A\" "
+"of the component ~S."
+msgstr ""
+
+#: liblepton/scheme/netlist/subschematic.scm:278
+#, scheme-format
+msgid ""
+"Pins with numbers ~A of the component ~S have the same \"pinlabel\" "
+"attribute."
+msgstr ""
+
+#: liblepton/scheme/symbol/check/alignment.scm:56
+#, scheme-format
+msgid "Connectible end of pin is off grid (x~A=~A,y~A=~A)"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/alignment.scm:60
+#, scheme-format
+msgid "Non-connectible end of pin is off grid (x~A=~A,y~A=~A)"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/arc.scm:34
+#, scheme-format
+msgid "Zero radius arc at ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/arc.scm:46
+#, scheme-format
+msgid "Zero angle arc at ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/attrib.scm:52
+#, scheme-format
+msgid ""
+"Set 'graphical=1' if you want the symbol to be graphical, current value: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/attrib.scm:69
+msgid "Graphical symbols should have device=none"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/attrib.scm:81
+#, scheme-format
+msgid "Forbidden attribute: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/attrib.scm:86
+#, scheme-format
+msgid "Obsolete attribute: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/attrib.scm:94
+#, scheme-format
+msgid "Misplaced pin attribute: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/attrib.scm:106
+#, scheme-format
+msgid "Wrongly attached attribute: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/attrib.scm:111
+#, scheme-format
+msgid "Unknown attribute: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/attrib.scm:119
+#, scheme-format
+msgid "Duplicate floating attribute: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/attrib.scm:156
+#, scheme-format
+msgid "Missing required attribute: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/box.scm:35
+#, scheme-format
+msgid "Zero sized box at ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/circle.scm:33
+#, scheme-format
+msgid "Zero radius circle at ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/connection.scm:32
+#, scheme-format
+msgid "Object with forbidden connections: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/forbidden.scm:38
+#, scheme-format
+msgid "Object forbidden inside symbols: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/line.scm:35
+#, scheme-format
+msgid "Zero length ~A at ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/log.scm:35
+msgid "Wrong check log destination!"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/net-attrib.scm:56
+#, scheme-format
+msgid "Missing pin number after \":\" or \",\": ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/net-attrib.scm:74
+#, scheme-format
+msgid "Duplicate pin number in one net= attribute ~A: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/net-attrib.scm:104
+#, scheme-format
+msgid "Invalid net attribute: net=~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/net-attrib.scm:116
+#, scheme-format
+msgid "Duplicate pin number in net= attribute ~A: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/net-attrib.scm:154
+#, scheme-format
+msgid "Duplicate pin number ~A: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/obsolete.scm:41
+#, scheme-format
+msgid "Obsolete pin#=# attribute: ~A=~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/obsolete.scm:49
+#, scheme-format
+msgid "Obsolete slot#=# attribute: ~A=~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/path.scm:60
+#, scheme-format
+msgid "Zero length path element: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/picture.scm:36
+#, scheme-format
+msgid "Zero sized picture at ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/picture.scm:52
+#, scheme-format
+msgid "Picture file ~S does not exist or is not readable."
+msgstr ""
+
+#: liblepton/scheme/symbol/check/pin.scm:108
+#, scheme-format
+msgid "Duplicate pin attribute on one pin: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/pin.scm:126
+#, scheme-format
+msgid "Prohibited zero value pin attribute: ~A=0"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/pin.scm:133
+#, scheme-format
+msgid "Invalid pin attribute value: pintype=~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/pin.scm:147
+#, scheme-format
+msgid "Missing pin attribute: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/pin-attrib.scm:62
+#, scheme-format
+msgid "Duplicate pin attribute in the symbol: ~A=~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/primitive.scm:59
+#, scheme-format
+msgid "Object: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/slot.scm:90
+#, scheme-format
+msgid "Found ~A=~A attribute"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/slot.scm:96
+#, scheme-format
+msgid "Invalid slotdef=~A attribute (the format is #:#,#,#,...)"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/slot.scm:111
+#, scheme-format
+msgid "Negative attribute: numslots=~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/slot.scm:114
+msgid "numslots set to 0, symbol does not have slots"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/slot.scm:123
+#, scheme-format
+msgid "Zero pin number in slotdef=~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/slot.scm:140
+#, scheme-format
+msgid "Found a zero slot in slotdef=~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/slot.scm:144
+#, scheme-format
+msgid ""
+"Slot number ~A (slotdef=~A) is greater than the maximum slot number (~A)"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/slot.scm:193
+#, scheme-format
+msgid "Superfluous slotdef=~A:... (there should be ~A slotdef= attributes)"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/slot.scm:204
+#, scheme-format
+msgid "Missing slotdef=~A:... (there should be ~A slotdef= attributes)"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/slot.scm:219
+#, scheme-format
+msgid "Not enough pins in slotdef=~A (must be ~A)"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/slot.scm:225
+#, scheme-format
+msgid "Too many pins in slotdef=~A (must be ~A)"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/slot.scm:239
+#, scheme-format
+msgid "Duplicate slot number ~A: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/slot.scm:259
+#, scheme-format
+msgid "Found ~A distinct pins in slots"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/text.scm:41
+#, scheme-format
+msgid "Simple text object with only SHOW_NAME or SHOW_VALUE set: ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/text.scm:80
+#, scheme-format
+msgid "Text with a trailing '\\', consider to escape it with '\\\\': ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/text.scm:82
+#, scheme-format
+msgid "Text with unbalanced overbar markers '\\_' in it': ~A"
+msgstr ""
+
+#: liblepton/scheme/symbol/check/text.scm:84
+#, scheme-format
+msgid "Text with a '\\' in it, consider to escape it with '\\\\': ~A"
+msgstr ""
+
+#: liblepton/scheme/symcheck/check.scm:38
+#, scheme-format
+msgid ""
+"Usage: ~A [OPTIONS] FILE ...\n"
+"\n"
+"Check one or more Lepton EDA symbol FILEs.\n"
+"\n"
+"General options:\n"
+"  -h, --help        Print usage\n"
+"  -V, --version     Show version information\n"
+"  -q, --quiet       Quiet mode\n"
+"  -v, --verbose     Verbose mode (cumulative, i.e. -v will show error\n"
+"                    messages, -vv will show errors and warnings, and\n"
+"                    -vvv displays also informational messages)\n"
+"\n"
+"Report bugs at <~A>\n"
+"Lepton EDA homepage: <~A>\n"
+msgstr ""
+
+#: liblepton/scheme/symcheck/check.scm:69
+#, scheme-format
+msgid "Loading schematic ~S"
+msgstr ""
+
+#: liblepton/scheme/symcheck/check.scm:76
+#, scheme-format
+msgid "Checking: ~A\n"
+msgstr ""
+
+#: liblepton/scheme/symcheck/check.scm:82
+#, scheme-format
+msgid ""
+"No schematic files specified for processing.\n"
+"Run `~A --help' for more information.\n"
+msgstr ""
+
+#: liblepton/scheme/symcheck/report.scm:42
+#, scheme-format
+msgid "Info: ~A"
+msgstr ""
+
+#: liblepton/scheme/symcheck/report.scm:46
+#, scheme-format
+msgid "Warning: ~A"
+msgstr ""
+
+#: liblepton/scheme/symcheck/report.scm:50
+#, scheme-format
+msgid "ERROR: ~A"
+msgstr ""
+
+#: liblepton/scheme/symcheck/report.scm:53
+#, scheme-format
+msgid "Unrecognized info: ~A\n"
+msgstr ""
+
+#: liblepton/scheme/symcheck/report.scm:78
+#, scheme-format
+msgid "~A warning found"
+msgstr ""
+
+#: liblepton/scheme/symcheck/report.scm:83
+msgid "(use -vv to view details)"
+msgstr ""
+
+#: liblepton/scheme/symcheck/report.scm:86
+msgid "No errors found"
+msgstr ""
+
+#: liblepton/scheme/symcheck/report.scm:88
+#, scheme-format
+msgid "~A ERROR found"
+msgstr ""
+
+#: liblepton/scheme/symcheck/report.scm:93
+msgid "(use -v to view details)"
+msgstr ""

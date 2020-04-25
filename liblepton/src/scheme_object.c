@@ -1,6 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library - Scheme API
+/* Lepton EDA library - Scheme API
  * Copyright (C) 2010-2012 Peter Brett <peter@peter-b.co.uk>
+ * Copyright (C) 2011-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,9 +74,9 @@ SCM_SYMBOL (lineto_sym , "lineto");
 SCM_SYMBOL (curveto_sym , "curveto");
 SCM_SYMBOL (closepath_sym , "closepath");
 
-void o_page_changed (TOPLEVEL *t, OBJECT *o)
+void o_page_changed (OBJECT *o)
 {
-  PAGE *p = o_get_page (t, o);
+  PAGE *p = o_get_page (o);
   if (p != NULL) p->CHANGED = TRUE;
 }
 
@@ -174,7 +175,7 @@ edascm_is_object_type (SCM smob, int type)
  * smob.
  *
  * \note Scheme API: Implements the %copy-object procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param [in] obj_s an #OBJECT smob.
  * \return a new #OBJECT smob containing a copy of the #OBJECT in \a obj_s.
@@ -186,10 +187,9 @@ SCM_DEFINE (copy_object, "%copy-object", 1, 0, 0,
   SCM_ASSERT (EDASCM_OBJECTP (obj_s), obj_s,
               SCM_ARG1, s_copy_object);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
 
-  result = edascm_from_object (o_object_copy (toplevel, obj));
+  result = edascm_from_object (o_object_copy (obj));
 
   /* At the moment, the only pointer to the object is owned by the
    * smob. */
@@ -203,7 +203,7 @@ SCM_DEFINE (copy_object, "%copy-object", 1, 0, 0,
  * Returns a symbol describing the type of the #OBJECT smob \a obj_s.
  *
  * \note Scheme API: Implements the %object-type procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param [in] obj_s an #OBJECT smob.
  * \return a Scheme symbol representing the object type.
@@ -225,7 +225,8 @@ SCM_DEFINE (object_type, "%object-type", 1, 0, 0,
   case OBJ_PICTURE: result = picture_sym;    break;
   case OBJ_CIRCLE:  result = circle_sym;     break;
   case OBJ_PLACEHOLDER:
-  case OBJ_COMPLEX: result = complex_sym;    break;
+  case OBJ_COMPONENT:
+                    result = complex_sym;    break;
   case OBJ_TEXT:    result = text_sym;       break;
   case OBJ_PATH:    result = path_sym;       break;
   case OBJ_PIN:     result = pin_sym;        break;
@@ -244,7 +245,7 @@ SCM_DEFINE (object_type, "%object-type", 1, 0, 0,
  * Returns an internal id number of the #OBJECT smob \a obj_s.
  *
  * \note Scheme API: Implements the %object-id procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param [in] obj_s an #OBJECT smob.
  * \return a Scheme symbol representing the object type.
@@ -278,7 +279,7 @@ SCM_DEFINE (object_id, "%object-id", 1, 0, 0,
  * objects, not the visible bounds.
  *
  * \note Scheme API: Implements the %object-bounds procedure in the
- * (geda core object) module.  The procedure takes any number of
+ * (lepton core object) module.  The procedure takes any number of
  * #OBJECT smobs as arguments.
  *
  * \param [in] rst_s Variable-length list of #OBJECT arguments.
@@ -296,23 +297,12 @@ SCM_DEFINE (object_bounds, "%object-bounds", 0, 0, 1,
     success = world_get_object_glist_bounds (toplevel, obj_list,
                                              &left, &top, &right, &bottom);
   } else {
-    GList *list;
     toplevel->show_hidden_text = TRUE;
-
-    for (list = obj_list; list != NULL; list = g_list_next(list)) {
-      OBJECT *o_current = (OBJECT *) list->data;
-      o_current->w_bounds_valid_for = NULL;
-    }
 
     success = world_get_object_glist_bounds (toplevel, obj_list,
                                              &left, &top, &right, &bottom);
 
     toplevel->show_hidden_text = FALSE;
-
-    for (list = obj_list; list != NULL; list = g_list_next(list)) {
-      OBJECT *o_current = (OBJECT *) list->data;
-      o_current->w_bounds_valid_for = NULL;
-    }
   }
 
   SCM result = SCM_BOOL_F;
@@ -343,7 +333,7 @@ SCM_DEFINE (object_bounds, "%object-bounds", 0, 0, 1,
  *    -# For other styles, dot/dash spacing and dash length.
  *
  * \note Scheme API: Implements the %object-stroke procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param obj_s object to get stroke settings for.
  * \return a list of stroke parameters.
@@ -412,7 +402,7 @@ SCM_DEFINE (object_stroke, "%object-stroke", 1, 0, 0,
  * SCM_UNDEFINED if not required by the dash style \a dash_s.
  *
  * \note Scheme API: Implements the %object-stroke procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param obj_s object to set stroke settings for.
  * \param width_s new stroke width for \a obj_s.
@@ -434,7 +424,6 @@ SCM_DEFINE (set_object_stroke_x, "%set-object-stroke!", 4, 2, 0,
                || edascm_is_object_type (obj_s, OBJ_PATH)),
               obj_s, SCM_ARG1, s_set_object_stroke_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
   int cap, type, width, length = -1, space = -1;
 
@@ -492,14 +481,13 @@ SCM_DEFINE (set_object_stroke_x, "%set-object-stroke!", 4, 2, 0,
     /* This case intentionally falls through */
   }
 
-  o_set_line_options (toplevel,
-                      obj,
+  o_set_line_options (obj,
                       (OBJECT_END) cap,
                       (OBJECT_TYPE) type,
                       width,
                       length,
                       space);
-  o_page_changed (toplevel, obj);
+  o_page_changed (obj);
 
   return obj_s;
 }
@@ -518,7 +506,7 @@ SCM_DEFINE (set_object_stroke_x, "%set-object-stroke!", 4, 2, 0,
  *      spacing for mesh fills.
  *
  * \note Scheme API: Implements the %object-fill procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param obj_s object to get fill settings for.
  * \return a list of fill parameters.
@@ -575,7 +563,7 @@ SCM_DEFINE (object_fill, "%object-fill", 1, 0, 0,
  * space2_s
  *
  * \note Scheme API: Implements the %object-fill procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param obj_s object to set fill settings for.
  * \return \a obj_s.
@@ -590,7 +578,6 @@ SCM_DEFINE (set_object_fill_x, "%set-object-fill!", 2, 5, 0,
                || edascm_is_object_type (obj_s, OBJ_PATH)),
               obj_s, SCM_ARG1, s_set_object_fill_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
   int type, width = -1, angle1 = -1, space1 = -1, angle2 = -1, space2 = -1;
 
@@ -654,15 +641,14 @@ SCM_DEFINE (set_object_fill_x, "%set-object-fill!", 2, 5, 0,
     /* This case intentionally falls through */
   }
 
-  o_set_fill_options (toplevel,
-                      obj,
+  o_set_fill_options (obj,
                       (OBJECT_FILLING) type,
                       width,
                       space1,
                       angle1,
                       space2,
                       angle2);
-  o_page_changed (toplevel, obj);
+  o_page_changed (obj);
 
   return obj_s;
 }
@@ -674,7 +660,7 @@ SCM_DEFINE (set_object_fill_x, "%set-object-fill!", 2, 5, 0,
  * object types.
  *
  * \note Scheme API: Implements the %object-color procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param [in] obj_s #OBJECT smob to inspect.
  * \return The colormap index used by \a obj_s.
@@ -696,7 +682,7 @@ SCM_DEFINE (object_color, "%object-color", 1, 0, 0,
  * for some object types.
  *
  * \note Scheme API: Implements the %set-object-color! procedure in
- * the (geda core object) module.
+ * the (lepton core object) module.
  *
  * \param obj_s   #OBJECT smob to modify.
  * \param color_s new colormap index to use for \a obj_s.
@@ -710,30 +696,186 @@ SCM_DEFINE (set_object_color_x, "%set-object-color!", 2, 0, 0,
   SCM_ASSERT (scm_is_integer (color_s), color_s,
               SCM_ARG2, s_set_object_color_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
-  o_set_color (toplevel, obj, scm_to_int (color_s));
+  o_set_color (obj, scm_to_int (color_s));
 
-  o_page_changed (toplevel, obj);
+  o_page_changed (obj);
 
   return obj_s;
 }
+
+
+
+/*! \brief Check whether an object is locked.
+ *
+ * \par Function Description
+ * Check the state of an object's selectable flag: if it's true, the
+ * object is considered to be unlocked, otherwise it is locked.
+ *
+ * \note Scheme API: Implements the %object-selectable? procedure in the
+ * (lepton core object) module.
+ *
+ * \param obj_s  #OBJECT smob to inspect.
+ *
+ * \return       Boolean value indicating whether \a obj_s is selectable.
+ */
+SCM_DEFINE (object_selectable_p, "%object-selectable?", 1, 0, 0,
+            (SCM obj_s), "Check whether an object is locked.")
+{
+  SCM_ASSERT (EDASCM_OBJECTP (obj_s), obj_s,
+              SCM_ARG1, s_object_selectable_p);
+
+  OBJECT* obj = edascm_to_object (obj_s);
+
+  return scm_from_bool (obj->selectable);
+
+} /* object_selectable_p() */
+
+
+
+/*! \brief Lock or unlock an object.
+ *
+ * \par Function Description
+ * Set object's selectable flag: locked objects cannot be selected.
+ *
+ * \note Scheme API: Implements the %set-object-selectable! procedure in
+ * the (lepton core object) module.
+ *
+ * \param obj_s         #OBJECT smob to modify.
+ * \param selectable_s  boolean: object's selectable flag.
+ *
+ * \return          the object (\a obj_s).
+ */
+SCM_DEFINE (set_object_selectable_x, "%set-object-selectable!", 2, 0, 0,
+            (SCM obj_s, SCM selectable_s), "Lock or unlock an object.")
+{
+  SCM_ASSERT (EDASCM_OBJECTP (obj_s), obj_s,
+              SCM_ARG1, s_set_object_selectable_x);
+  SCM_ASSERT (scm_is_bool (selectable_s), selectable_s,
+              SCM_ARG2, s_set_object_selectable_x);
+
+  OBJECT* obj = edascm_to_object (obj_s);
+
+  int selectable = scm_is_true (selectable_s);
+
+  if (obj->selectable != selectable)
+  {
+    obj->selectable = selectable;
+
+    /* mark the page as changed:
+    */
+    o_page_changed (obj);
+  }
+
+  return obj_s;
+
+} /* set_object_selectable_x() */
+
+
+
+/*! \brief Check whether an object is embedded.
+ *
+ * \note Scheme API: Implements the %object-embedded? procedure in the
+ * (lepton core object) module.
+ *
+ * \param obj_s  #OBJECT smob to inspect.
+ *
+ * \return       Boolean value indicating whether \a obj_s is embedded.
+ */
+SCM_DEFINE (object_embedded_p, "%object-embedded?", 1, 0, 0,
+            (SCM obj_s), "Check whether an object is embedded.")
+{
+  SCM_ASSERT (EDASCM_OBJECTP (obj_s), obj_s,
+              SCM_ARG1, s_object_embedded_p);
+
+  OBJECT*  obj = edascm_to_object (obj_s);
+  gboolean ret = FALSE;
+
+  if (obj->type == OBJ_COMPONENT)
+  {
+    ret = o_component_is_embedded (obj);
+  }
+  else
+  if (obj->type == OBJ_PICTURE)
+  {
+    ret = o_picture_is_embedded (obj);
+  }
+
+  return scm_from_bool (ret);
+
+} /* object_embedded_p() */
+
+
+
+/*! \brief Embed or unembed an object.
+ *
+ * \par Function Description
+ * Embeds (or unembeds) component or picture.
+ * If either the object \a obj_s is already embedded and \a embed_s is #t,
+ * or \a obj_s is not embedded and \a embed_s is #f,
+ * or \a obj_s is not a component or picture, does nothing.
+ *
+ * \note Scheme API: Implements the %set-object-embedded! procedure in
+ * the (lepton core object) module.
+ *
+ * \param obj_s    #OBJECT smob to modify.
+ * \param embed_s  boolean: whether to embed (#t) or unembed (#f) the object.
+ *
+ * \return         the object (\a obj_s).
+ */
+SCM_DEFINE (set_object_embedded_x, "%set-object-embedded!", 2, 0, 0,
+            (SCM obj_s, SCM embed_s), "Embed or unembed an object.")
+{
+  SCM_ASSERT (EDASCM_OBJECTP (obj_s), obj_s,
+              SCM_ARG1, s_set_object_embedded_x);
+  SCM_ASSERT (scm_is_bool (embed_s), embed_s,
+              SCM_ARG2, s_set_object_embedded_x);
+
+  OBJECT* obj   = edascm_to_object (obj_s);
+  int     embed = scm_is_true (embed_s);
+
+  gboolean component  = obj->type == OBJ_COMPONENT;
+  gboolean picture    = obj->type == OBJ_PICTURE;
+  gboolean embeddable = component || picture;
+
+  if (embeddable)
+  {
+    gboolean  embedded = component ? o_component_is_embedded (obj)
+                                   : o_picture_is_embedded (obj);
+
+    if (embed && !embedded)
+    {
+      o_embed (obj);
+      o_page_changed (obj);
+    }
+    else
+    if (!embed && embedded)
+    {
+      o_unembed (obj);
+      o_page_changed (obj);
+    }
+  }
+
+  return obj_s;
+
+} /* set_object_embedded_x() */
+
+
 
 /*! \brief Create a new line.
  * \par Function Description
  * Creates a new line object, with all its parameters set to default
  * values.
  *
- * \note Scheme API: Implements the %make-line procedure in the (geda
- * core object) module.
+ * \note Scheme API: Implements the %make-line procedure in the
+ * (lepton core object) module.
  *
  * \return a newly-created line object.
  */
 SCM_DEFINE (make_line, "%make-line", 0, 0, 0,
             (), "Create a new line object.")
 {
-  GedaObject *object = geda_line_object_new (edascm_c_current_toplevel (),
-                                             DEFAULT_COLOR,
+  GedaObject *object = geda_line_object_new (DEFAULT_COLOR,
                                              0,
                                              0,
                                              0,
@@ -752,8 +894,8 @@ SCM_DEFINE (make_line, "%make-line", 0, 0, 0,
  * \par Function Description
  * Modifies a line object by setting its parameters to new values.
  *
- * \note Scheme API: Implements the %set-line! procedure in the (geda
- * core object) module.
+ * \note Scheme API: Implements the %set-line! procedure in the
+ * (lepton core object) module.
  *
  * This function also works on net, bus and pin objects.  For pins,
  * the start is the connectable point on the pin.
@@ -784,7 +926,6 @@ SCM_DEFINE (set_line_x, "%set-line!", 6, 0, 0,
   SCM_ASSERT (scm_is_integer (y2_s),    y2_s,    SCM_ARG5, s_set_line_x);
   SCM_ASSERT (scm_is_integer (color_s), color_s, SCM_ARG6, s_set_line_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (line_s);
   int x1 = scm_to_int (x1_s);
   int y1 = scm_to_int (y1_s);
@@ -792,38 +933,38 @@ SCM_DEFINE (set_line_x, "%set-line!", 6, 0, 0,
   int y2 = scm_to_int (y2_s);
 
   /* We may need to update connectivity. */
-  s_conn_remove_object_connections (toplevel, obj);
+  s_conn_remove_object_connections (obj);
 
   switch (obj->type) {
   case OBJ_LINE:
-    geda_line_object_modify (toplevel, obj, x1, y1, LINE_END1);
-    geda_line_object_modify (toplevel, obj, x2, y2, LINE_END2);
+    geda_line_object_modify (obj, x1, y1, LINE_END1);
+    geda_line_object_modify (obj, x2, y2, LINE_END2);
     break;
   case OBJ_NET:
-    geda_net_object_modify (toplevel, obj, x1, y1, 0);
-    geda_net_object_modify (toplevel, obj, x2, y2, 1);
+    geda_net_object_modify (obj, x1, y1, 0);
+    geda_net_object_modify (obj, x2, y2, 1);
     break;
   case OBJ_BUS:
-    geda_bus_object_modify (toplevel, obj, x1, y1, 0);
-    geda_bus_object_modify (toplevel, obj, x2, y2, 1);
+    geda_bus_object_modify (obj, x1, y1, 0);
+    geda_bus_object_modify (obj, x2, y2, 1);
     break;
   case OBJ_PIN:
     /* Swap ends according to pin's whichend flag. */
-    geda_pin_object_modify (toplevel, obj, x1, y1, obj->whichend ? 1 : 0);
-    geda_pin_object_modify (toplevel, obj, x2, y2, obj->whichend ? 0 : 1);
+    geda_pin_object_modify (obj, x1, y1, obj->whichend ? 1 : 0);
+    geda_pin_object_modify (obj, x2, y2, obj->whichend ? 0 : 1);
     break;
   default:
     return line_s;
   }
-  o_set_color (toplevel, obj, scm_to_int (color_s));
+  o_set_color (obj, scm_to_int (color_s));
 
   /* We may need to update connectivity. */
-  PAGE *page = o_get_page (toplevel, obj);
+  PAGE *page = o_get_page (obj);
   if (page != NULL) {
     s_conn_update_object (page, obj);
   }
 
-  o_page_changed (toplevel, obj);
+  o_page_changed (obj);
 
   return line_s;
 }
@@ -876,8 +1017,8 @@ SCM_DEFINE (line_info, "%line-info", 1, 0, 0,
  * Creates a new net object, with all its parameters set to default
  * values.
  *
- * \note Scheme API: Implements the %make-net procedure in the (geda
- * core object) module.
+ * \note Scheme API: Implements the %make-net procedure in the
+ * (lepton core object) module.
  *
  * \return a newly-created net object.
  */
@@ -887,8 +1028,7 @@ SCM_DEFINE (make_net, "%make-net", 0, 0, 0,
   OBJECT *obj;
   SCM result;
 
-  obj = geda_net_object_new (edascm_c_current_toplevel (),
-                             OBJ_NET, NET_COLOR, 0, 0, 0, 0);
+  obj = geda_net_object_new (OBJ_NET, NET_COLOR, 0, 0, 0, 0);
 
 
   result = edascm_from_object (obj);
@@ -905,8 +1045,8 @@ SCM_DEFINE (make_net, "%make-net", 0, 0, 0,
  * Creates a new bus object, with all its parameters set to default
  * values.
  *
- * \note Scheme API: Implements the %make-bus procedure in the (geda
- * core object) module.
+ * \note Scheme API: Implements the %make-bus procedure in the
+ * (lepton core object) module.
  *
  * \todo Do we need a way to get/set bus ripper direction?
  *
@@ -918,8 +1058,7 @@ SCM_DEFINE (make_bus, "%make-bus", 0, 0, 0,
   OBJECT *obj;
   SCM result;
 
-  obj = geda_bus_object_new (edascm_c_current_toplevel (),
-                             BUS_COLOR,
+  obj = geda_bus_object_new (BUS_COLOR,
                              0,
                              0,
                              0,
@@ -941,8 +1080,8 @@ SCM_DEFINE (make_bus, "%make-bus", 0, 0, 0,
  * values.  type_s is a Scheme symbol indicating whether the pin
  * should be a "net" pin or a "bus" pin.
  *
- * \note Scheme API: Implements the %make-pin procedure in the (geda
- * core object) module.
+ * \note Scheme API: Implements the %make-pin procedure in the
+ * (lepton core object) module.
  *
  * \return a newly-created pin object.
  */
@@ -963,8 +1102,7 @@ SCM_DEFINE (make_pin, "%make-pin", 1, 0, 0,
                     scm_list_1 (type_s));
   }
 
-  OBJECT *obj = geda_pin_object_new (edascm_c_current_toplevel (),
-                                     PIN_COLOR,
+  OBJECT *obj = geda_pin_object_new (PIN_COLOR,
                                      0,
                                      0,
                                      0,
@@ -985,8 +1123,8 @@ SCM_DEFINE (make_pin, "%make-pin", 1, 0, 0,
  * Returns a symbol describing the pin type of the pin object \a
  * pin_s.
  *
- * \note Scheme API: Implements the %make-pin procedure in the (geda
- * core object) module.
+ * \note Scheme API: Implements the %make-pin procedure in the
+ * (lepton core object) module.
  *
  * \return the symbol 'pin or 'bus.
  */
@@ -1020,16 +1158,15 @@ SCM_DEFINE (pin_type, "%pin-type", 1, 0, 0,
  * Creates a new box object, with all its parameters set to default
  * values.
  *
- * \note Scheme API: Implements the %make-box procedure in the (geda
- * core object) module.
+ * \note Scheme API: Implements the %make-box procedure in the
+ * (lepton core object) module.
  *
  * \return a newly-created box object.
  */
 SCM_DEFINE (make_box, "%make-box", 0, 0, 0,
             (), "Create a new box object.")
 {
-  OBJECT *obj = geda_box_object_new (edascm_c_current_toplevel (),
-                                     OBJ_BOX, DEFAULT_COLOR,
+  OBJECT *obj = geda_box_object_new (OBJ_BOX, DEFAULT_COLOR,
                                      0, 0, 0, 0);
 
   SCM result = edascm_from_object (obj);
@@ -1045,8 +1182,8 @@ SCM_DEFINE (make_box, "%make-box", 0, 0, 0,
  * \par Function Description
  * Modifies a box object by setting its parameters to new values.
  *
- * \note Scheme API: Implements the %set-box! procedure in the (geda
- * core object) module.
+ * \note Scheme API: Implements the %set-box! procedure in the
+ * (lepton core object) module.
  *
  * \param box_s  the box object to modify.
  * \param x1_s   the new x-coordinate of the top left of the box.
@@ -1070,14 +1207,13 @@ SCM_DEFINE (set_box_x, "%set-box!", 6, 0, 0,
   SCM_ASSERT (scm_is_integer (y2_s),    y2_s,    SCM_ARG5, s_set_box_x);
   SCM_ASSERT (scm_is_integer (color_s), color_s, SCM_ARG6, s_set_box_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (box_s);
-  geda_box_object_modify_all (toplevel, obj,
+  geda_box_object_modify_all (obj,
                               scm_to_int (x1_s), scm_to_int (y1_s),
                               scm_to_int (x2_s), scm_to_int (y2_s));
-  o_set_color (toplevel, obj, scm_to_int (color_s));
+  o_set_color (obj, scm_to_int (color_s));
 
-  o_page_changed (toplevel, obj);
+  o_page_changed (obj);
 
   return box_s;
 }
@@ -1119,15 +1255,14 @@ SCM_DEFINE (box_info, "%box-info", 1, 0, 0,
  * values.
  *
  * \note Scheme API: Implements the %make-circle procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \return a newly-created circle object.
  */
 SCM_DEFINE (make_circle, "%make-circle", 0, 0, 0,
             (), "Create a new circle object.")
 {
-  GedaObject *object = geda_circle_object_new (edascm_c_current_toplevel (),
-                                               DEFAULT_COLOR,
+  GedaObject *object = geda_circle_object_new (DEFAULT_COLOR,
                                                0,
                                                0,
                                                1);
@@ -1146,7 +1281,7 @@ SCM_DEFINE (make_circle, "%make-circle", 0, 0, 0,
  * Modifies a circle object by setting its parameters to new values.
  *
  * \note Scheme API: Implements the %set-circle! procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param circle_s the circle object to modify.
  * \param x_s    the new x-coordinate of the center of the circle.
@@ -1168,14 +1303,13 @@ SCM_DEFINE (set_circle_x, "%set-circle!", 5, 0, 0,
   SCM_ASSERT (scm_is_integer (r_s),     r_s,     SCM_ARG4, s_set_circle_x);
   SCM_ASSERT (scm_is_integer (color_s), color_s, SCM_ARG5, s_set_circle_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (circle_s);
-  geda_circle_object_modify (toplevel, obj, scm_to_int(x_s), scm_to_int(y_s),
+  geda_circle_object_modify (obj, scm_to_int(x_s), scm_to_int(y_s),
                              CIRCLE_CENTER);
-  geda_circle_object_modify (toplevel, obj, scm_to_int(r_s), 0, CIRCLE_RADIUS);
-  o_set_color (toplevel, obj, scm_to_int (color_s));
+  geda_circle_object_modify (obj, scm_to_int(r_s), 0, CIRCLE_RADIUS);
+  o_set_color (obj, scm_to_int (color_s));
 
-  o_page_changed (toplevel, obj);
+  o_page_changed (obj);
 
   return circle_s;
 }
@@ -1215,15 +1349,14 @@ SCM_DEFINE (circle_info, "%circle-info", 1, 0, 0,
  * values.
  *
  * \note Scheme API: Implements the %make-arc procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \return a newly-created arc object.
  */
 SCM_DEFINE (make_arc, "%make-arc", 0, 0, 0,
             (), "Create a new arc object.")
 {
-  GedaObject *object = geda_arc_object_new (edascm_c_current_toplevel (),
-                                            DEFAULT_COLOR,
+  GedaObject *object = geda_arc_object_new (DEFAULT_COLOR,
                                             0,
                                             0,
                                             1,
@@ -1244,7 +1377,7 @@ SCM_DEFINE (make_arc, "%make-arc", 0, 0, 0,
  * Modifies a arc object by setting its parameters to new values.
  *
  * \note Scheme API: Implements the %set-arc! procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param arc_s         the arc object to modify.
  * \param x_s           the new x-coordinate of the center of the arc.
@@ -1273,15 +1406,14 @@ SCM_DEFINE (set_arc_x, "%set-arc!", 7, 0, 0,
   SCM_ASSERT (scm_is_integer (end_angle_s),
                                   end_angle_s, SCM_ARG6, s_set_arc_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (arc_s);
-  geda_arc_object_modify (toplevel, obj, scm_to_int(x_s), scm_to_int(y_s), ARC_CENTER);
-  geda_arc_object_modify (toplevel, obj, scm_to_int(r_s), 0, ARC_RADIUS);
-  geda_arc_object_modify (toplevel, obj, scm_to_int(start_angle_s), 0, ARC_START_ANGLE);
-  geda_arc_object_modify (toplevel, obj, scm_to_int(end_angle_s), 0, ARC_SWEEP_ANGLE);
-  o_set_color (toplevel, obj, scm_to_int (color_s));
+  geda_arc_object_modify (obj, scm_to_int(x_s), scm_to_int(y_s), ARC_CENTER);
+  geda_arc_object_modify (obj, scm_to_int(r_s), 0, ARC_RADIUS);
+  geda_arc_object_modify (obj, scm_to_int(start_angle_s), 0, ARC_START_ANGLE);
+  geda_arc_object_modify (obj, scm_to_int(end_angle_s), 0, ARC_SWEEP_ANGLE);
+  o_set_color (obj, scm_to_int (color_s));
 
-  o_page_changed (toplevel, obj);
+  o_page_changed (obj);
 
   return arc_s;
 }
@@ -1299,7 +1431,7 @@ SCM_DEFINE (set_arc_x, "%set-arc!", 7, 0, 0,
  * -# Colormap index of color to be used for drawing the arc
  *
  * \note Scheme API: Implements the %arc-info procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param arc_s the arc object to inspect.
  * \return a list of arc parameters.
@@ -1327,15 +1459,14 @@ SCM_DEFINE (arc_info, "%arc-info", 1, 0, 0,
  * values.
  *
  * \note Scheme API: Implements the %make-text procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \return a newly-created text object.
  */
 SCM_DEFINE (make_text, "%make-text", 0, 0, 0,
             (), "Create a new text object.")
 {
-  OBJECT *obj = geda_text_object_new (edascm_c_current_toplevel (),
-                                      DEFAULT_COLOR,
+  OBJECT *obj = geda_text_object_new (DEFAULT_COLOR,
                                       0,
                                       0,
                                       LOWER_LEFT,
@@ -1365,7 +1496,7 @@ SCM_DEFINE (make_text, "%make-text", 0, 0, 0,
  * the symbols "name", "value" or "both".
  *
  * \note Scheme API: Implements the %set-text! procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param text_s    the text object to modify.
  * \param x_s       the new x-coordinate of the anchor of the text.
@@ -1398,7 +1529,6 @@ SCM_DEFINE (set_text_x, "%set-text!", 10, 0, 0,
   SCM_ASSERT (scm_is_symbol (show_s),    show_s,     9, s_set_text_x);
   SCM_ASSERT (scm_is_integer (color_s),  color_s,   10, s_set_text_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (text_s);
 
   /* Alignment. Sadly we can't switch on pointers. :-( */
@@ -1454,7 +1584,7 @@ SCM_DEFINE (set_text_x, "%set-text!", 10, 0, 0,
   }
 
   /* Actually make changes */
-  o_emit_pre_change_notify (toplevel, obj);
+  o_emit_pre_change_notify (obj);
 
   obj->text->x = scm_to_int (x_s);
   obj->text->y = scm_to_int (y_s);
@@ -1465,18 +1595,18 @@ SCM_DEFINE (set_text_x, "%set-text!", 10, 0, 0,
   obj->visibility = visibility;
   obj->show_name_value = show;
 
-  o_emit_change_notify (toplevel, obj);
+  o_emit_change_notify (obj);
 
   char *tmp = scm_to_utf8_string (string_s);
-  o_text_set_string (toplevel, obj, tmp);
+  o_text_set_string (obj, tmp);
   free (tmp);
 
-  o_text_recreate (toplevel, obj);
+  o_text_recreate (obj);
 
   /* Color */
-  o_set_color (toplevel, obj, scm_to_int (color_s));
+  o_set_color (obj, scm_to_int (color_s));
 
-  o_page_changed (toplevel, obj);
+  o_page_changed (obj);
 
   return text_s;
 }
@@ -1497,7 +1627,7 @@ SCM_DEFINE (set_text_x, "%set-text!", 10, 0, 0,
  * -# Colormap index of color to be used for drawing the text
  *
  * \note Scheme API: Implements the %text-info procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param text_s the text object to inspect.
  * \return a list of text parameters.
@@ -1562,11 +1692,11 @@ SCM_DEFINE (text_info, "%text-info", 1, 0, 0,
  * \par Function Description
  * Returns a list of all objects directly connected to \a obj_s.  If
  * \a obj_s is not included in a page, throws a Scheme error.  If \a
- * obj_s is not a pin, net, bus, or complex object, returns the empty
+ * obj_s is not a pin, net, bus, or component object, returns the empty
  * list.
  *
  * \note Scheme API: Implements the %object-connections procedure of
- * the (geda core object) module.
+ * the (lepton core object) module.
  *
  * \param obj_s #OBJECT smob for object to get connections for.
  * \return a list of #OBJECT smobs.
@@ -1578,9 +1708,8 @@ SCM_DEFINE (object_connections, "%object-connections", 1, 0, 0,
   SCM_ASSERT (edascm_is_object (obj_s), obj_s,
               SCM_ARG1, s_object_connections);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
-  if (o_get_page (toplevel, obj) == NULL) {
+  if (o_get_page (obj) == NULL) {
     scm_error (edascm_object_state_sym,
                s_object_connections,
                _("Object ~A is not included in a page."),
@@ -1593,27 +1722,26 @@ SCM_DEFINE (object_connections, "%object-connections", 1, 0, 0,
   return result;
 }
 
-/*! \brief Get the complex object that contains an object.
+/*! \brief Get the component object that contains an object.
  * \par Function Description
- * Returns the complex object that contains the object \a obj_s.  If
- * \a obj_s is not part of a component, returns SCM_BOOL_F.
+ * Returns the component object that contains the object \a obj_s.
+ * If \a obj_s is not part of a component, returns SCM_BOOL_F.
  *
- * \note Scheme API: Implements the %object-complex procedure of the
- * (geda core object) module.
+ * \note Scheme API: Implements the %object-component procedure of the
+ * (lepton core object) module.
  *
  * \param obj_s #OBJECT smob for object to get component of.
  * \return the #OBJECT smob of the containing component, or SCM_BOOL_F.
  */
-SCM_DEFINE (object_complex, "%object-complex", 1, 0, 0,
-            (SCM obj_s), "Get containing complex object of an object.")
+SCM_DEFINE (object_component, "%object-component", 1, 0, 0,
+            (SCM obj_s), "Get containing component object of an object.")
 {
   /* Ensure that the argument is an object smob */
   SCM_ASSERT (edascm_is_object (obj_s), obj_s,
-              SCM_ARG1, s_object_complex);
+              SCM_ARG1, s_object_component);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
-  OBJECT *parent = o_get_parent (toplevel, obj);
+  OBJECT *parent = o_get_parent (obj);
 
   if (parent == NULL) return SCM_BOOL_F;
 
@@ -1625,16 +1753,15 @@ SCM_DEFINE (object_complex, "%object-complex", 1, 0, 0,
  * Creates a new, empty path object with default color, stroke and
  * fill options.
  *
- * \note Scheme API: Implements the %make-path procedure in the (geda
- * core object) module.
+ * \note Scheme API: Implements the %make-path procedure in the
+ * (lepton core object) module.
  *
  * \return a newly-created path object.
  */
 SCM_DEFINE (make_path, "%make-path", 0, 0, 0,
             (), "Create a new path object")
 {
-  OBJECT *obj = geda_path_object_new (edascm_c_current_toplevel (),
-                                      OBJ_PATH, DEFAULT_COLOR, "");
+  OBJECT *obj = geda_path_object_new (OBJ_PATH, DEFAULT_COLOR, "");
 
   SCM result = edascm_from_object (obj);
 
@@ -1650,7 +1777,7 @@ SCM_DEFINE (make_path, "%make-path", 0, 0, 0,
  * Retrieves the number of path elements in the path object \a obj_s.
  *
  * \note Scheme API: Implements the %path-length procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param obj_s #OBJECT smob for path object to inspect.
  * \return The number of path elements in \a obj_s.
@@ -1687,8 +1814,8 @@ SCM_DEFINE (path_length, "%path-length", 1, 0, 0,
  *
  * All coordinates are absolute.
  *
- * \note Scheme API: Implements the %path-ref procedure in the (geda
- * core object) module.
+ * \note Scheme API: Implements the %path-ref procedure in the
+ * (lepton core object) module.
  *
  * \param obj_s   #OBJECT smob of path object to get element from.
  * \param index_s Index of element to retrieve from \a obj_s
@@ -1749,7 +1876,7 @@ SCM_DEFINE (path_ref, "%path-ref", 2, 0, 0,
  * "out-of-range" error.
  *
  * \note Scheme API: Implements the %path-remove! procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param obj_s   #OBJECT smob of path object to remove element from.
  * \param index_s Index of element to remove from \a obj_s.
@@ -1764,7 +1891,6 @@ SCM_DEFINE (path_remove_x, "%path-remove!", 2, 0, 0,
               SCM_ARG1, s_path_ref);
   SCM_ASSERT (scm_is_integer (index_s), index_s, SCM_ARG2, s_path_ref);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
   int idx = scm_to_int (index_s);
 
@@ -1774,7 +1900,7 @@ SCM_DEFINE (path_remove_x, "%path-remove!", 2, 0, 0,
 
   }
 
-  o_emit_pre_change_notify (toplevel, obj);
+  o_emit_pre_change_notify (obj);
 
   if (idx + 1 == obj->path->num_sections) {
     /* Section is last in path */
@@ -1789,8 +1915,8 @@ SCM_DEFINE (path_remove_x, "%path-remove!", 2, 0, 0,
     obj->path->num_sections--;
   }
 
-  o_emit_change_notify (toplevel, obj);
-  o_page_changed (toplevel, obj);
+  o_emit_change_notify (obj);
+  o_page_changed (obj);
 
   return obj_s;
 }
@@ -1815,7 +1941,7 @@ SCM_DEFINE (path_remove_x, "%path-remove!", 2, 0, 0,
  * to the path.
  *
  * \note Scheme API: Implements the %path-insert! procedure of the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param obj_s   #OBJECT smob for the path object to modify.
  * \param index_s Index at which to insert new element.
@@ -1838,7 +1964,6 @@ SCM_DEFINE (path_insert_x, "%path-insert", 3, 6, 0,
   SCM_ASSERT (scm_is_integer (index_s), index_s, SCM_ARG2, s_path_insert_x);
   SCM_ASSERT (scm_is_symbol (type_s), type_s, SCM_ARG3, s_path_insert_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
   PATH *path = obj->path;
   PATH_SECTION section = {(PATH_CODE) 0, 0, 0, 0, 0, 0, 0};
@@ -1883,7 +2008,7 @@ SCM_DEFINE (path_insert_x, "%path-insert", 3, 6, 0,
   }
 
   /* Start making changes */
-  o_emit_pre_change_notify (toplevel, obj);
+  o_emit_pre_change_notify (obj);
 
   /* Make sure there's enough space for the new element */
   if (path->num_sections == path->num_sections_max) {
@@ -1904,8 +2029,8 @@ SCM_DEFINE (path_insert_x, "%path-insert", 3, 6, 0,
   path->num_sections++;
   path->sections[idx] = section;
 
-  o_emit_change_notify (toplevel, obj);
-  o_page_changed (toplevel, obj);
+  o_emit_change_notify (obj);
+  o_page_changed (obj);
 
   return obj_s;
 }
@@ -1917,15 +2042,14 @@ SCM_DEFINE (path_insert_x, "%path-insert", 3, 6, 0,
  * be embedded.
  *
  * \note Scheme API: Implements the %make-picture procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \return a newly-created picture object.
  */
 SCM_DEFINE (make_picture, "%make-picture", 0, 0, 0, (),
             "Create a new picture object")
 {
-  OBJECT *obj = o_picture_new (edascm_c_current_toplevel (),
-                               NULL, 0, NULL, OBJ_PICTURE,
+  OBJECT *obj = o_picture_new (NULL, 0, NULL, OBJ_PICTURE,
                                0, 0, 0, 0, 0, FALSE, TRUE);
   SCM result = edascm_from_object (obj);
 
@@ -1950,7 +2074,7 @@ SCM_DEFINE (make_picture, "%make-picture", 0, 0, 0, (),
  * -# Whether object is mirrored.
  *
  * \note Scheme API: Implements the %picture-info procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param obj_s the picture object to inspect.
  * \return a list of picture object parameters.
@@ -1984,7 +2108,7 @@ SCM_DEFINE (picture_info, "%picture-info", 1, 0, 0,
  * Sets the parameters of the picture object \a obj_s.
  *
  * \note Scheme API: Implements the %set-picture! procedure in the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param obj_s       the picture object to modify
  * \param x1_s  the new x-coordinate of the top left of the picture.
@@ -2007,7 +2131,6 @@ SCM_DEFINE (set_picture_x, "%set-picture!", 7, 0, 0,
   SCM_ASSERT (scm_is_integer (y2_s), x1_s, SCM_ARG5, s_set_picture_x);
   SCM_ASSERT (scm_is_integer (angle_s), angle_s, SCM_ARG6, s_set_picture_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
 
   /* Angle */
@@ -2026,15 +2149,15 @@ SCM_DEFINE (set_picture_x, "%set-picture!", 7, 0, 0,
                     scm_list_1 (angle_s));
   }
 
-  o_emit_pre_change_notify (toplevel, obj);
+  o_emit_pre_change_notify (obj);
 
   obj->picture->angle = scm_to_int (angle_s);
   obj->picture->mirrored = scm_is_true (mirror_s);
-  o_picture_modify_all (toplevel, obj,
+  o_picture_modify_all (obj,
                         scm_to_int (x1_s), scm_to_int (y1_s),
                         scm_to_int (x2_s), scm_to_int (y2_s));
 
-  o_emit_change_notify (toplevel, obj);
+  o_emit_change_notify (obj);
   return obj_s;
 }
 
@@ -2047,7 +2170,7 @@ SCM_DEFINE (set_picture_x, "%set-picture!", 7, 0, 0,
  * format.
  *
  * \note Scheme API: Implements the %set-picture-data/vector!
- * procedure in the (geda core object) module.
+ * procedure in the (lepton core object) module.
  *
  * \param obj_s       The picture object to modify.
  * \param data_s      Vector containing encoded image data.
@@ -2086,12 +2209,11 @@ SCM_DEFINE (set_picture_data_vector_x, "%set-picture-data/vector!",
 
   gboolean status;
   GError *error = NULL;
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
   gchar *filename = scm_to_utf8_string (filename_s);
   scm_dynwind_unwind_handler (g_free, filename, SCM_F_WIND_EXPLICITLY);
 
-  status = o_picture_set_from_buffer (toplevel, obj, filename,
+  status = o_picture_set_from_buffer (obj, filename,
                                       buf, len, &error);
 
   if (!status) {
@@ -2102,7 +2224,7 @@ SCM_DEFINE (set_picture_data_vector_x, "%set-picture-data/vector!",
                     scm_list_1 (scm_from_utf8_string (error->message)));
   }
 
-  o_page_changed (toplevel, obj);
+  o_page_changed (obj);
   scm_dynwind_end ();
   return obj_s;
 }
@@ -2115,7 +2237,7 @@ SCM_DEFINE (set_picture_data_vector_x, "%set-picture-data/vector!",
  * y-axis.
  *
  * \note Scheme API: Implements the %translate-object! procedure of the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param obj_s  #OBJECT smob for object to translate.
  * \param dx_s   Integer distance to translate along x-axis.
@@ -2133,15 +2255,14 @@ SCM_DEFINE (translate_object_x, "%translate-object!", 3, 0, 0,
   SCM_ASSERT (scm_is_integer (dy_s), dy_s,
               SCM_ARG3, s_translate_object_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
   int dx = scm_to_int (dx_s);
   int dy = scm_to_int (dy_s);
 
-  o_emit_pre_change_notify (toplevel, obj);
+  o_emit_pre_change_notify (obj);
   geda_object_translate (obj, dx, dy);
-  o_emit_change_notify (toplevel, obj);
-  o_page_changed (toplevel, obj);
+  o_emit_change_notify (obj);
+  o_page_changed (obj);
 
   return obj_s;
 }
@@ -2153,7 +2274,7 @@ SCM_DEFINE (translate_object_x, "%translate-object!", 3, 0, 0,
  * multiple of 90 degrees.
  *
  * \note Scheme API: Implements the %rotate-object! procedure of the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param obj_s    #OBJECT smob for object to translate.
  * \param x_s      x-coordinate of centre of rotation.
@@ -2175,24 +2296,23 @@ SCM_DEFINE (rotate_object_x, "%rotate-object!", 4, 0, 0,
   SCM_ASSERT (scm_is_integer (angle_s), angle_s,
               SCM_ARG4, s_rotate_object_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
   int x = scm_to_int (x_s);
   int y = scm_to_int (y_s);
   int angle = scm_to_int (angle_s);
 
-  /* FIXME Work around horribly broken libgeda behaviour.  Some
-   * libgeda functions treat a rotation of -90 degrees as a rotation
+  /* FIXME Work around horribly broken liblepton behaviour.  Some
+   * liblepton functions treat a rotation of -90 degrees as a rotation
    * of +90 degrees, etc., which is not sane. */
   while (angle < 0) angle += 360;
   while (angle >= 360) angle -= 360;
   SCM_ASSERT (angle % 90 == 0, angle_s,
               SCM_ARG4, s_rotate_object_x);
 
-  o_emit_pre_change_notify (toplevel, obj);
-  geda_object_rotate (toplevel, x, y, angle, obj);
-  o_emit_change_notify (toplevel, obj);
-  o_page_changed (toplevel, obj);
+  o_emit_pre_change_notify (obj);
+  geda_object_rotate (x, y, angle, obj);
+  o_emit_change_notify (obj);
+  o_page_changed (obj);
 
   return obj_s;
 }
@@ -2202,7 +2322,7 @@ SCM_DEFINE (rotate_object_x, "%rotate-object!", 4, 0, 0,
  * Mirrors \a obj_s in the line x = \a x_s.
  *
  * \note Scheme API: Implements the %mirror-object! procedure of the
- * (geda core object) module.
+ * (lepton core object) module.
  *
  * \param obj_s    #OBJECT smob for object to translate.
  * \param x_s      x-coordinate of centre of rotation.
@@ -2218,55 +2338,82 @@ SCM_DEFINE (mirror_object_x, "%mirror-object!", 2, 0, 0,
   SCM_ASSERT (scm_is_integer (x_s), x_s,
               SCM_ARG2, s_mirror_object_x);
 
-  TOPLEVEL *toplevel = edascm_c_current_toplevel ();
   OBJECT *obj = edascm_to_object (obj_s);
   int x = scm_to_int (x_s);
 
-  o_emit_pre_change_notify (toplevel, obj);
-  geda_object_mirror (toplevel, x, 0, obj);
-  o_emit_change_notify (toplevel, obj);
-  o_page_changed (toplevel, obj);
+  o_emit_pre_change_notify (obj);
+  geda_object_mirror (x, 0, obj);
+  o_emit_change_notify (obj);
+  o_page_changed (obj);
 
   return obj_s;
 }
 
 /*!
- * \brief Create the (geda core object) Scheme module.
+ * \brief Create the (lepton core object) Scheme module.
  * \par Function Description
- * Defines procedures in the (geda core object) module. The module can
- * be accessed using (use-modules (geda core object)).
+ * Defines procedures in the (lepton core object) module. The module can
+ * be accessed using (use-modules (lepton core object)).
  */
 static void
-init_module_geda_core_object (void *unused)
+init_module_lepton_core_object (void *unused)
 {
   /* Register the functions and symbols */
   #include "scheme_object.x"
 
   /* Add them to the module's public definitions. */
   scm_c_export (s_object_id,
-                s_object_type, s_copy_object, s_object_bounds,
-                s_object_stroke, s_set_object_stroke_x,
-                s_object_fill, s_set_object_fill_x,
-                s_object_color, s_set_object_color_x,
-                s_make_line, s_make_net, s_make_bus,
-                s_make_pin, s_pin_type,
-                s_set_line_x, s_line_info,
-                s_make_box, s_set_box_x, s_box_info,
-                s_make_circle, s_set_circle_x, s_circle_info,
-                s_make_arc, s_set_arc_x, s_arc_info,
-                s_make_text, s_set_text_x, s_text_info,
-                s_object_connections, s_object_complex,
-                s_make_path, s_path_length, s_path_ref,
-                s_path_remove_x, s_path_insert_x,
-                s_make_picture, s_picture_info, s_set_picture_x,
+                s_object_type,
+                s_copy_object,
+                s_object_bounds,
+                s_object_stroke,
+                s_set_object_stroke_x,
+                s_object_fill,
+                s_set_object_fill_x,
+                s_object_color,
+                s_set_object_color_x,
+                s_make_line,
+                s_make_net,
+                s_make_bus,
+                s_make_pin,
+                s_pin_type,
+                s_set_line_x,
+                s_line_info,
+                s_make_box,
+                s_set_box_x,
+                s_box_info,
+                s_make_circle,
+                s_set_circle_x,
+                s_circle_info,
+                s_make_arc,
+                s_set_arc_x,
+                s_arc_info,
+                s_make_text,
+                s_set_text_x,
+                s_text_info,
+                s_object_connections,
+                s_object_component,
+                s_make_path,
+                s_path_length,
+                s_path_ref,
+                s_path_remove_x,
+                s_path_insert_x,
+                s_make_picture,
+                s_picture_info,
+                s_set_picture_x,
                 s_set_picture_data_vector_x,
-                s_translate_object_x, s_rotate_object_x,
+                s_translate_object_x,
+                s_rotate_object_x,
                 s_mirror_object_x,
+                s_object_selectable_p,
+                s_set_object_selectable_x,
+                s_object_embedded_p,
+                s_set_object_embedded_x,
                 NULL);
 }
 
 /*!
- * \brief Initialise the basic gEDA object manipulation procedures.
+ * \brief Initialise the basic Lepton EDA object manipulation procedures.
  * \par Function Description
  * Registers some Scheme procedures for working with #OBJECT
  * smobs. Should only be called by edascm_init().
@@ -2274,8 +2421,8 @@ init_module_geda_core_object (void *unused)
 void
 edascm_init_object ()
 {
-  /* Define the (geda core object) module */
-  scm_c_define_module ("geda core object",
-                       (void (*) (void*)) init_module_geda_core_object,
+  /* Define the (lepton core object) module */
+  scm_c_define_module ("lepton core object",
+                       (void (*) (void*)) init_module_lepton_core_object,
                        NULL);
 }

@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,9 +31,8 @@ struct st_object
   PAGE *page; /* Parent page */
 
   GedaBounds bounds;
-  TOPLEVEL *w_bounds_valid_for;
 
-  COMPLEX *complex;
+  COMPONENT *component;
   GedaLine *line;
   GedaCircle *circle;
   GedaArc *arc;
@@ -59,8 +58,8 @@ struct st_object
   int fill_angle1, fill_pitch1;
   int fill_angle2, fill_pitch2;
 
-  gboolean complex_embedded;                    /* is embedded component? */
-  gchar *complex_basename;              /* Component Library Symbol name */
+  gboolean component_embedded;          /* is embedded component? */
+  gchar *component_basename;            /* Component Library Symbol name */
   OBJECT *parent;                       /* Parent object pointer */
 
   int color; 				/* Which color */
@@ -96,10 +95,10 @@ OBJECT*
 s_basic_new_object (int type, char const *prefix);
 
 OBJECT*
-o_object_copy (TOPLEVEL *toplevel, OBJECT *selected);
+o_object_copy (OBJECT *selected);
 
 void
-s_delete_object (TOPLEVEL *toplevel, OBJECT *o_current);
+s_delete_object (OBJECT *o_current);
 
 /* methods */
 
@@ -127,15 +126,13 @@ gint
 geda_object_get_visible (const GedaObject *object);
 
 void
-geda_object_rotate (TOPLEVEL *toplevel,
-                    int world_centerx,
+geda_object_rotate (int world_centerx,
                     int world_centery,
                     int angle,
                     OBJECT *object);
 
 void
-geda_object_mirror (TOPLEVEL *toplevel,
-                    int world_centerx,
+geda_object_mirror (int world_centerx,
                     int world_centery,
                     OBJECT *object);
 
@@ -176,30 +173,29 @@ o_get_line_options (OBJECT *object,
                     int *space);
 
 PAGE*
-o_get_page (TOPLEVEL *toplevel, OBJECT *object);
+o_get_page (OBJECT *object);
 
 OBJECT*
-o_get_parent (TOPLEVEL *toplevel, OBJECT *object);
+o_get_parent (OBJECT *object);
 
 gboolean
-o_is_visible (const TOPLEVEL *toplevel, const OBJECT *object);
+o_is_visible (const OBJECT *object);
 
 void
-o_set_color(TOPLEVEL *toplevel, OBJECT *object, int color);
+o_set_color (OBJECT *object,
+             int color);
 
 void
-o_set_fill_options(TOPLEVEL *toplevel,
-                   OBJECT *o_current,
-                   OBJECT_FILLING type,
-                   int width,
-                   int pitch1,
-                   int angle1,
-                   int pitch2,
-                   int angle2);
+o_set_fill_options (OBJECT *o_current,
+                    OBJECT_FILLING type,
+                    int width,
+                    int pitch1,
+                    int angle1,
+                    int pitch2,
+                    int angle2);
 
 void
-o_set_line_options (TOPLEVEL *toplevel,
-                    OBJECT *o_current,
+o_set_line_options (OBJECT *o_current,
                     OBJECT_END end,
                     OBJECT_TYPE type,
                     int width,
@@ -207,7 +203,8 @@ o_set_line_options (TOPLEVEL *toplevel,
                     int space);
 
 void
-o_set_visibility (TOPLEVEL *toplevel, OBJECT *object, int visibility);
+o_set_visibility (OBJECT *object,
+                  int visibility);
 
 void
 o_add_change_notify (TOPLEVEL *toplevel,

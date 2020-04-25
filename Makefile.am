@@ -1,10 +1,10 @@
-if ENABLE_GATTRIB
-GATTRIB_DIR=attrib
+if ENABLE_ATTRIB
+ATTRIB_DIR=attrib
 endif
 if ENABLE_CONTRIB
 CONTRIB_DIR=contrib
 endif
-SUBDIRS = liblepton libleptonrenderer cli schematic ${GATTRIB_DIR} \
+SUBDIRS = libleptonrenderer liblepton cli schematic ${ATTRIB_DIR} \
 	symcheck netlist utils symbols docs examples ${CONTRIB_DIR}
 
 ACLOCAL_AMFLAGS = -I m4
@@ -22,7 +22,7 @@ DISTCHECK_CONFIGURE_FLAGS = \
 
 BUILT_SOURCES = version.h
 EXTRA_DIST = autogen.sh version.h version.h.in CODE_OF_CONDUCT.md \
-	CONTRIBUTING.md COPYING COPYING.LGPL NEWS.md
+	CONTRIBUTING.md COPYING COPYING.LGPL NEWS.md README.md
 
 # Generate version.h. This works by looking at any git repository that
 # is present in the source directory (detected at configure time). If
@@ -63,14 +63,35 @@ endif HAVE_GIT_REPO
 
 doxygen:
 if ENABLE_DOXYGEN
-	@for subdir in attrib/docs schematic/docs netlist/docs \
-	  liblepton/docs symcheck/docs utils/docs ; do \
+	@for subdir in attrib/docs schematic/docs \
+	  liblepton/docs utils/docs ; do \
 	  (cd $$subdir; $(MAKE) doxygen) || exit 1; \
-        done
+	done
 else
 	@echo 'configure was not run with the --enable-doxygen switch.'
 	@echo 'The documentation cannot be built from the sources.'
 endif
 
-DISTCLEANFILES = stamp-git
-MAINTAINERCLEANFILES=Makefile.in aclocal.m4 config.h.in configure
+
+precompile:
+	@LEPTON_SCM_PRECOMPILE=1 \
+	LEPTON_SCM_PRECOMPILE_SCRIPT=$(datadir)/lepton-eda/scheme/schematic/precompile.scm \
+	LEPTON_SCM_PRECOMPILE_SCM_DIR=$(datadir)/lepton-eda/scheme \
+	LEPTON_SCM_PRECOMPILE_OUT_DIR=$(datadir)/lepton-eda/ccache \
+	LEPTON_SCM_PRECOMPILE_RECURSIVE=1 \
+	LEPTON_SCM_PRECOMPILE_FNAME_EXT=.scm \
+	$(bindir)/lepton-schematic
+
+
+install-data-local:
+	$(MKDIR_P) $(DESTDIR)$(docdir)
+	cp -v $(srcdir)/README.md $(DESTDIR)$(docdir)
+	cp -v $(srcdir)/NEWS.md $(DESTDIR)$(docdir)
+
+uninstall-local:
+	rm -vfr $(DESTDIR)$(includedir)/liblepton
+	rm -vfr $(DESTDIR)$(includedir)/libleptonrenderer
+	rm -vfr $(DESTDIR)$(pkgdatadir)
+	rm -vfr $(DESTDIR)$(docdir)
+
+CLEANFILES = stamp-git

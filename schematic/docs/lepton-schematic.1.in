@@ -39,16 +39,6 @@ Specify a Scheme script to be executed at startup.
 \fB-c\fR \fIEXPR\fR
 Specify a Scheme expression to be evaluated at startup.
 .TP 8
-\fB-o\fR, \fB--output\fR=\fIFILE\fR
-Specify a filename for PostScript output.  This command line argument
-is useful when running \fBlepton-schematic\fR from a shell script and with a
-Scheme script.  The filename can be changed through the print dialog
-box.
-.TP 8
-\fB-p\fR
-Automatically place the window. This may be useful if running \fBlepton-schematic\fR
-from the command line and generating output.
-.TP 8
 \fB-h\fR, \fB--help\fR
 Print a help message.
 .TP 8
@@ -66,16 +56,6 @@ startup as separate documents in the schematic editor.
 .PP
 If no \fIFILE\fRs are specified, a blank schematic is created for
 editing.
-
-.SH ENVIRONMENT
-.TP 8
-.B GEDADATA
-specifies the search directory for Scheme and rc files.
-The default is `${prefix}/share/lepton-eda'.
-.TP 8
-.B GEDADATARC
-specifies the search directory for rc files.
-The default is `$GEDADATA'.
 
 .SH AUTHORS
 See the `AUTHORS' file included with this program.

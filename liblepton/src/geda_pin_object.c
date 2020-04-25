@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
+/* Lepton EDA library
  * Copyright (C) 1998-2010 Ales Hvezda
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+ * Copyright (C) 1998-2016 gEDA Contributors
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,13 +32,11 @@
  *
  *  On failure, this function sets the bounds to empty.
  *
- *  \param [in]  toplevel Unused
  *  \param [in]  object   The pin object
  *  \param [out] bounds   The bounds of the pin
  */
 void
-geda_pin_object_calculate_bounds (TOPLEVEL *toplevel,
-                                  const OBJECT *object,
+geda_pin_object_calculate_bounds (const OBJECT *object,
                                   GedaBounds *bounds)
 {
   gint expand;
@@ -277,7 +275,6 @@ geda_pin_object_set_y1 (GedaObject *object, gint y)
  *  \par Function Description
  *  This function creates and returns a new pin object.
  *
- *  \param [in]     toplevel    The TOPLEVEL object.
  *  \param [in]     color       The color of the pin
  *  \param [in]     x1          x-coord of the first point
  *  \param [in]     y1          y-coord of the first point
@@ -288,8 +285,7 @@ geda_pin_object_set_y1 (GedaObject *object, gint y)
  *  \return A new pin OBJECT
  */
 OBJECT*
-geda_pin_object_new (TOPLEVEL *toplevel,
-                     int color,
+geda_pin_object_new (int color,
                      int x1,
                      int y1,
                      int x2,
@@ -309,9 +305,7 @@ geda_pin_object_new (TOPLEVEL *toplevel,
   new_node->line->x[1] = x2;
   new_node->line->y[1] = y2;
 
-  geda_pin_object_set_type (toplevel, new_node, pin_type);
-
-  new_node->w_bounds_valid_for = NULL;
+  geda_pin_object_set_type (new_node, pin_type);
 
   new_node->whichend = whichend;
 
@@ -324,14 +318,16 @@ geda_pin_object_new (TOPLEVEL *toplevel,
  *  If the pin object was read successfully, a new pin object is
  *  allocated and appended to the \a object_list.
  *
- *  \param [in] toplevel     The TOPLEVEL object
  *  \param [in] buf          a text buffer (usually a line of a schematic file)
  *  \param [in] release_ver  The release number gEDA
  *  \param [in] fileformat_ver a integer value of the file format
  *  \return The object list, or NULL on error.
  */
-OBJECT *o_pin_read (TOPLEVEL *toplevel, const char buf[],
-                    unsigned int release_ver, unsigned int fileformat_ver, GError **err)
+OBJECT*
+o_pin_read (const char buf[],
+            unsigned int release_ver,
+            unsigned int fileformat_ver,
+            GError **err)
 {
   OBJECT *new_obj;
   char type;
@@ -371,8 +367,7 @@ OBJECT *o_pin_read (TOPLEVEL *toplevel, const char buf[],
     color = DEFAULT_COLOR;
   }
 
-  new_obj = geda_pin_object_new (toplevel,
-                                 color,
+  new_obj = geda_pin_object_new (color,
                                  x1,
                                  y1,
                                  x2,
@@ -434,21 +429,17 @@ geda_pin_object_translate (GedaObject *object, int dx, int dy)
   object->line->y[0] = object->line->y[0] + dy;
   object->line->x[1] = object->line->x[1] + dx;
   object->line->y[1] = object->line->y[1] + dy;
-
-  /* Update bounding box */
-  object->w_bounds_valid_for = NULL;
 }
 
 /*! \brief create a copy of a pin object
  *  \par Function Description
  *  This function creates a copy of the pin object \a o_current.
  *
- *  \param [in] toplevel     The TOPLEVEL object
  *  \param [in] o_current    The object that is copied
  *  \return a new pin object
  */
 OBJECT*
-geda_pin_object_copy(TOPLEVEL *toplevel, OBJECT *o_current)
+geda_pin_object_copy (OBJECT *o_current)
 {
   OBJECT *new_obj;
 
@@ -456,8 +447,7 @@ geda_pin_object_copy(TOPLEVEL *toplevel, OBJECT *o_current)
   g_return_val_if_fail (o_current->line != NULL, NULL);
   g_return_val_if_fail (o_current->type == OBJ_PIN, NULL);
 
-  new_obj = geda_pin_object_new (toplevel,
-                                 o_current->color,
+  new_obj = geda_pin_object_new (o_current->color,
                                  o_current->line->x[0],
                                  o_current->line->y[0],
                                  o_current->line->x[1],
@@ -473,15 +463,16 @@ geda_pin_object_copy(TOPLEVEL *toplevel, OBJECT *o_current)
  *  This function rotates a pin \a object around the point
  *  (\a world_centerx, \a world_centery).
  *
- *  \param [in] toplevel      The TOPLEVEL object
  *  \param [in] world_centerx x-coord of the rotation center
  *  \param [in] world_centery y-coord of the rotation center
  *  \param [in] angle         The angle to rotat the pin object
  *  \param [in] object        The pin object
  *  \note only steps of 90 degrees are allowed for the \a angle
  */
-void geda_pin_object_rotate (TOPLEVEL *toplevel, int world_centerx,
-			int world_centery, int angle,
+void
+geda_pin_object_rotate (int world_centerx,
+			int world_centery,
+                        int angle,
 			OBJECT *object)
 {
   int newx, newy;
@@ -516,13 +507,14 @@ void geda_pin_object_rotate (TOPLEVEL *toplevel, int world_centerx,
  *  This function mirrors a pin \a object horizontaly at the point
  *  (\a world_centerx, \a world_centery).
  *
- *  \param [in] toplevel      The TOPLEVEL object
  *  \param [in] world_centerx x-coord of the mirror position
  *  \param [in] world_centery y-coord of the mirror position
  *  \param [in] object        The pin object
  */
-void geda_pin_object_mirror (TOPLEVEL *toplevel,
-			int world_centerx, int world_centery, OBJECT *object)
+void
+geda_pin_object_mirror (int world_centerx,
+                        int world_centery,
+                        OBJECT *object)
 {
   g_return_if_fail (object != NULL);
   g_return_if_fail (object->line != NULL);
@@ -544,7 +536,6 @@ void geda_pin_object_mirror (TOPLEVEL *toplevel,
  *  is specified by the \a whichone variable and the new coordinate
  *  is (\a x, \a y).
  *
- *  \param toplevel   The TOPLEVEL object
  *  \param object     The pin OBJECT to modify
  *  \param x          new x-coord of the pin point
  *  \param y          new y-coord of the pin point
@@ -552,7 +543,10 @@ void geda_pin_object_mirror (TOPLEVEL *toplevel,
  *
  */
 void
-geda_pin_object_modify(TOPLEVEL *toplevel, OBJECT *object, int x, int y, int whichone)
+geda_pin_object_modify (OBJECT *object,
+                        int x,
+                        int y,
+                        int whichone)
 {
   g_return_if_fail (object != NULL);
   g_return_if_fail (object->line != NULL);
@@ -562,8 +556,6 @@ geda_pin_object_modify(TOPLEVEL *toplevel, OBJECT *object, int x, int y, int whi
 
   object->line->x[whichone] = x;
   object->line->y[whichone] = y;
-
-  object->w_bounds_valid_for = NULL;
 }
 
 /*! \brief guess the whichend of pins of object list
@@ -577,64 +569,61 @@ geda_pin_object_modify(TOPLEVEL *toplevel, OBJECT *object, int x, int y, int whi
  *
  *  \param toplevel    The TOPLEVEL object
  *  \param object_list list of OBJECTs
- *  \param num_pins    pin count in the object list
- *
+ *  \param force_boundingbox Use the whole symbol bounding box to
+ *                           find pin connection points.
  */
 void
 geda_pin_object_update_whichend (TOPLEVEL *toplevel,
-                                 GList *object_list, int num_pins)
+                                 GList *object_list,
+                                 gboolean force_boundingbox)
 {
   OBJECT *o_current;
   GList *iter;
+  GList *pin_list = NULL;
   int top = 0, left = 0;
   int right = 0, bottom = 0;
   int d1, d2, d3, d4;
   int min0, min1;
   int min0_whichend, min1_whichend;
-  int rleft, rtop, rright, rbottom;
-  int found;
 
-  if (object_list && num_pins) {
-    if (num_pins == 1 || toplevel->force_boundingbox) {
-      world_get_object_glist_bounds (toplevel, object_list,
-                                     &left, &top, &right, &bottom);
-    } else {
-      found = 0;
+  /* No objects, nothing to update. */
+  if (object_list == NULL) return;
 
-      /* only look at the pins to calculate bounds of the symbol */
-      iter = object_list;
-      while (iter != NULL) {
-        o_current = (OBJECT *)iter->data;
-        if (o_current->type == OBJ_PIN) {
-          (void) geda_object_calculate_visible_bounds(
-            toplevel, o_current, &rleft, &rtop, &rright, &rbottom);
-
-          if ( found ) {
-            left = MIN( left, rleft );
-            top = MIN( top, rtop );
-            right = MAX( right, rright );
-            bottom = MAX( bottom, rbottom );
-          } else {
-            left = rleft;
-            top = rtop;
-            right = rright;
-            bottom = rbottom;
-            found = 1;
-          }
-        }
-        iter = g_list_next (iter);
-      }
-
+  for (iter = object_list;
+       iter != NULL;
+       iter = g_list_next (iter)) {
+    o_current = (OBJECT *)iter->data;
+    if (o_current->type == OBJ_PIN) {
+      pin_list = g_list_prepend (pin_list, o_current);
     }
-  } else {
-    return;
   }
 
-  iter = object_list;
+  /* No pins, nothing to update. */
+  if (pin_list == NULL) return;
+
+  if (force_boundingbox) {
+    /* Include text objects since we need full bounds. */
+    world_get_object_glist_bounds (toplevel,
+                                   object_list,
+                                   &left,
+                                   &top,
+                                   &right,
+                                   &bottom);
+  } else {
+    /* Only look at the pins to calculate symbol bounds. */
+    world_get_object_glist_bounds (toplevel,
+                                   pin_list,
+                                   &left,
+                                   &top,
+                                   &right,
+                                   &bottom);
+  }
+
+  iter = pin_list;
   while (iter != NULL) {
     o_current = (OBJECT *)iter->data;
     /* Determine which end of the pin is on or nearest the boundary */
-    if (o_current->type == OBJ_PIN && o_current->whichend == -1) {
+    if (o_current->whichend == -1) {
       if (o_current->line->y[0] == o_current->line->y[1]) {
         /* horizontal */
 
@@ -698,6 +687,8 @@ geda_pin_object_update_whichend (TOPLEVEL *toplevel,
     }
     iter = g_list_next (iter);
   }
+
+  g_list_free (pin_list);
 }
 
 
@@ -706,17 +697,17 @@ geda_pin_object_update_whichend (TOPLEVEL *toplevel,
  *  \par Function Description
  *  Sets the pin's type and width to a particular style.
  *
- *  \param [in] toplevel   The TOPLEVEL object
  *  \param [in] o_current  The pin OBJECT being modified
  *  \param [in] pin_type   The new type of this pin
  */
 void
-geda_pin_object_set_type (TOPLEVEL *toplevel, OBJECT *o_current, int pin_type)
+geda_pin_object_set_type (OBJECT *o_current,
+                          int pin_type)
 {
   g_return_if_fail (o_current != NULL);
   g_return_if_fail (o_current->type == OBJ_PIN);
 
-  o_emit_pre_change_notify (toplevel, o_current);
+  o_emit_pre_change_notify (o_current);
   switch (pin_type) {
     default:
       g_critical ("geda_pin_object_set_type: Got invalid pin type %1$i\n", pin_type);
@@ -730,5 +721,5 @@ geda_pin_object_set_type (TOPLEVEL *toplevel, OBJECT *o_current, int pin_type)
       o_current->pin_type = PIN_TYPE_BUS;
       break;
   }
-  o_emit_change_notify (toplevel, o_current);
+  o_emit_change_notify (o_current);
 }

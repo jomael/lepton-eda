@@ -32,8 +32,7 @@ G_BEGIN_DECLS
 /* construction, destruction */
 
 GedaObject*
-geda_arc_object_new (TOPLEVEL *toplevel,
-                     gint color,
+geda_arc_object_new (gint color,
                      gint center_x,
                      gint center_y,
                      gint radius,
@@ -41,13 +40,12 @@ geda_arc_object_new (TOPLEVEL *toplevel,
                      gint sweep_angle);
 
 GedaObject*
-geda_arc_object_copy (TOPLEVEL *toplevel, const GedaObject *object);
+geda_arc_object_copy (const GedaObject *object);
 
 /* methods */
 
 void
-geda_arc_object_calculate_bounds (TOPLEVEL *toplevel,
-                                  const OBJECT *object,
+geda_arc_object_calculate_bounds (const OBJECT *object,
                                   gint *left,
                                   gint *top,
                                   gint *right,
@@ -72,21 +70,18 @@ gint
 geda_arc_object_get_sweep_angle (const GedaObject *object);
 
 void
-geda_arc_object_mirror (TOPLEVEL *toplevel,
-                        int world_centerx,
+geda_arc_object_mirror (int world_centerx,
                         int world_centery,
                         OBJECT *object);
 
 void
-geda_arc_object_modify (TOPLEVEL *toplevel,
-                        OBJECT *object,
+geda_arc_object_modify (OBJECT *object,
                         int x,
                         int y,
                         int whichone);
 
 void
-geda_arc_object_rotate (TOPLEVEL *toplevel,
-                        int world_centerx,
+geda_arc_object_rotate (int world_centerx,
                         int world_centery,
                         int angle,
                         OBJECT *object);
@@ -120,8 +115,7 @@ void
 geda_arc_object_translate (GedaObject *object, int dx, int dy);
 
 OBJECT*
-o_arc_read (TOPLEVEL *toplevel,
-            const char buf[],
+o_arc_read (const char buf[],
             unsigned int release_ver,
             unsigned int fileformat_ver,
             GError **err);

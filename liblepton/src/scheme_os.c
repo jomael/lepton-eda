@@ -1,7 +1,7 @@
-/* gEDA - GPL Electronic Design Automation
- * libgeda - gEDA's library
- * Copyright (C) 1998-2010 gEDA Contributors (see ChangeLog for details)
+/* Lepton EDA library -- Scheme API
+ * Copyright (C) 1998-2016 gEDA Contributors
  * Copyright (C) 2016 Peter Brett <peter@peter-b.co.uk>
+ * Copyright (C) 2017-2020 Lepton EDA Contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,7 +76,7 @@ SCM_DEFINE (platform, "%platform", 0, 0, 0, (),
  * Returns a list of directories to be searched for system data.
  *
  * \note Scheme API: Implements the %sys-data-dirs procedure in the
- * (geda core os) module.
+ * (lepton core os) module.
  *
  * \return a Scheme list of strings.
  */
@@ -100,7 +100,7 @@ SCM_DEFINE (sys_data_dirs, "%sys-data-dirs", 0, 0, 0, (),
  * configuration information.
  *
  * \note Scheme API: Implements the %sys-config-dirs procedure in the
- * (geda core os) module.
+ * (lepton core os) module.
  *
  * \return a Scheme list of strings.
  */
@@ -123,7 +123,7 @@ SCM_DEFINE (sys_config_dirs, "%sys-config-dirs", 0, 0, 0, (),
  * Returns the directory where per-user data should be stored
  *
  * \note Scheme API: Implements the %user-data-dir procedure is the
- * (geda core os) module.
+ * (lepton core os) module.
  *
  * \return a string.
  */
@@ -141,7 +141,7 @@ SCM_DEFINE (user_data_dir, "%user-data-dir", 0, 0, 0, (),
  * should be stored
  *
  * \note Scheme API: Implements the %user-config-dir procedure is the
- * (geda core os) module.
+ * (lepton core os) module.
  *
  * \return a string.
  */
@@ -153,21 +153,44 @@ SCM_DEFINE (user_config_dir, "%user-config-dir", 0, 0, 0, (),
   return scm_from_locale_string(eda_get_user_config_dir());
 }
 
-/*!
- * \brief Create the (geda core os) Scheme module.
+/*! \brief Get user cache directory.
  * \par Function Description
- * Defines procedures in the (geda core os) module. The module can
- * be accessed using (use-modules (geda core os)).
+ * Returns the directory where per-user cache data should be
+ * stored
+ *
+ * \note Scheme API: Implements the %user-cache-dir procedure is the
+ * (lepton core os) module.
+ *
+ * \return a string.
+ */
+SCM_DEFINE (user_cache_dir, "%user-cache-dir", 0, 0, 0, (),
+            "Return the directory for user cache data.")
+{
+  /* eda_get_user_cache_dir() returns a raw environment string, so assume
+   * it's in the current locale's encoding. */
+  return scm_from_locale_string (eda_get_user_cache_dir ());
+}
+
+
+/*!
+ * \brief Create the (lepton core os) Scheme module.
+ * \par Function Description
+ * Defines procedures in the (lepton core os) module. The module can
+ * be accessed using (use-modules (lepton core os)).
  */
 static void
-init_module_geda_core_os (void *unused)
+init_module_lepton_core_os (void *unused)
 {
   /* Register the functions and symbols */
   #include "scheme_os.x"
 
   /* Add them to the module's public definitions. */
-  scm_c_export (s_platform, s_sys_data_dirs, s_sys_config_dirs,
-                s_user_data_dir, s_user_config_dir,
+  scm_c_export (s_platform,
+                s_sys_config_dirs,
+                s_sys_data_dirs,
+                s_user_cache_dir,
+                s_user_config_dir,
+                s_user_data_dir,
                 NULL);
 }
 
@@ -181,8 +204,8 @@ init_module_geda_core_os (void *unused)
 void
 edascm_init_os ()
 {
-  /* Define the (geda core os) module */
-  scm_c_define_module ("geda core os",
-                       (void (*)(void*)) init_module_geda_core_os,
+  /* Define the (lepton core os) module */
+  scm_c_define_module ("lepton core os",
+                       (void (*)(void*)) init_module_lepton_core_os,
                        NULL);
 }

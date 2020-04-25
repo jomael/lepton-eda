@@ -42,8 +42,15 @@ input_files = \
 	hierarchy4-sources/h4-bottom.sch \
 	hierarchy4-symbols/h4-bottom.sym \
 	hierarchy4.sch \
+	hierarchy5-sources/simple.sch \
+	hierarchy5-symbols/simple.sym \
+	hierarchy5-symbols/res_h.sym \
+	hierarchy5-symbols/netif_other.sym \
+	hierarchy5.sch \
 	stack-torture.sch \
 	drc2/connected-noconnects.sch \
+	drc2/connected-noconnects-symbols/nc-2.sym \
+	drc2/connected-noconnects-symbols/nc-top-1-old.sym \
 	drc2/duplicated-refdes.sch \
 	drc2/duplicated_slot.sch \
 	drc2/gnd-with-nc-directive.sch \
@@ -79,10 +86,12 @@ input_files = \
 	common/netattrib-symbols/gnd-custom.sym \
 	common/netattrib.sch \
 	common/powersupply.sch \
-	common/singlenet.sch
+	common/singlenet.sch \
+	missing-source.sch \
+	verilog_rip_test.sch \
+	verilog_rip_test-symbols/D_FF.sym
 
 XFAIL_TESTS = \
-	missing-source-geda.out \
 	common/netattrib-switcap.out \
 	common/SlottedOpamps-futurenet2.out \
 	common/SlottedOpamps-switcap.out
@@ -125,9 +134,14 @@ TESTS = stack_1-geda.out \
 	hierarchy3-vams-device.out \
 	hierarchy4-geda.out \
 	hierarchy4-drc2.out \
+	hierarchy5-geda.out \
+	hierarchy5-tEDAx.out \
+	hierarchy5-pcbpins.out \
+	hierarchy5-PCB.out \
 	stack-torture-geda.out \
 	missing-source-geda.out \
 	drc2/connected-noconnects-drc2.out \
+	drc2/connected-noconnects-geda.out \
 	drc2/duplicated-refdes-drc2.out \
 	drc2/duplicated_slot-drc2.out \
 	drc2/gnd-with-nc-directive-drc2.out \
@@ -487,4 +501,5 @@ TESTS = stack_1-geda.out \
 	common/singlenet-vams-device.out \
 	common/singlenet-verilog.out \
 	common/singlenet-vhdl.out \
-	common/singlenet-vipec.out
+	common/singlenet-vipec.out \
+	verilog_rip_test-verilog.out

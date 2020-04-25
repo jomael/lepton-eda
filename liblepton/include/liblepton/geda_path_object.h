@@ -25,33 +25,48 @@
 G_BEGIN_DECLS
 
 OBJECT*
-geda_path_object_new (TOPLEVEL *toplevel, char type, int color, const char *path_string);
+geda_path_object_new (char type,
+                      int color,
+                      const char *path_string);
 
 OBJECT*
-geda_path_object_new_take_path (TOPLEVEL *toplevel, char type, int color, PATH *path_data);
+geda_path_object_new_take_path (char type,
+                                int color,
+                                PATH *path_data);
 
 OBJECT*
-geda_path_object_copy (TOPLEVEL *toplevel, OBJECT *o_current);
+geda_path_object_copy (OBJECT *o_current);
 
 void
-geda_path_object_calculate_bounds (TOPLEVEL *toplevel,
-                                   const OBJECT *object,
+geda_path_object_calculate_bounds (const OBJECT *object,
                                    GedaBounds *bounds);
 
 void
-geda_path_object_modify (TOPLEVEL *toplevel, OBJECT *object, int x, int y, int whichone);
+geda_path_object_modify (OBJECT *object,
+                         int x,
+                         int y,
+                         int whichone);
 
 void
 geda_path_object_translate (GedaObject *object, int dx, int dy);
 
 void
-geda_path_object_rotate (TOPLEVEL *toplevel, int world_centerx, int world_centery, int angle, OBJECT *object);
+geda_path_object_rotate (int world_centerx,
+                         int world_centery,
+                         int angle,
+                         OBJECT *object);
 
 void
-geda_path_object_mirror (TOPLEVEL *toplevel, int world_centerx, int world_centery, OBJECT *object);
+geda_path_object_mirror (int world_centerx,
+                         int world_centery,
+                         OBJECT *object);
 
 OBJECT*
-o_path_read(TOPLEVEL *toplevel, const char *first_line, TextBuffer *tb, unsigned int release_ver, unsigned int fileformat_ver, GError **err);
+o_path_read (const char *first_line,
+             TextBuffer *tb,
+             unsigned int release_ver,
+             unsigned int fileformat_ver,
+             GError **err);
 
 gchar*
 geda_path_object_to_buffer (const GedaObject *object);
